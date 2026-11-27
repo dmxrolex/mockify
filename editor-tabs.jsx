@@ -33,10 +33,11 @@ export function LooksRow({settings,onApply,onSave,autoId}){
     onContextMenu:event=>{if(look.custom){event.preventDefault();setRemoving(look.id);}},
   });
   const looks=[...saved.map(item=>({...item,custom:true})),...builtInLooks];
+  const currentId=looks.find(look=>sameLook(look,settings))?.id;
   return <div className="looks-row" role="group" aria-label={t('Looks')} onKeyDown={event=>{if(event.key==='Escape')setRemoving(null);}}>
     <button type="button" className="look-tile look-save" onClick={save}><span className="look-face"><Glyph name="plus"/></span><small>{t('Save look')}</small></button>
     {looks.map(look=><div key={look.id} className="look-cell">
-      <button type="button" className="look-tile" aria-pressed={sameLook(look,settings)} {...press(look)} onClick={()=>{if(removing){setRemoving(null);return;}hapticSelection();onApply(look);}}>
+      <button type="button" className="look-tile" aria-pressed={look.id===currentId} {...press(look)} onClick={()=>{if(removing){setRemoving(null);return;}hapticSelection();onApply(look);}}>
         <LookFace look={look}/>{look.id===autoId&&<b className="look-auto" title={t('Applied to new screenshots')}>A</b>}<small>{look.custom?look.name:t(look.name)}</small>
       </button>
       {removing===look.id&&<button type="button" className="look-remove" aria-label={t('Remove look')+' '+look.name} onClick={()=>remove(look.id)}><Glyph name="close"/></button>}
@@ -60,7 +61,7 @@ export function GroupPanel({label,chips,active,onChip,onBack,children}){
   useLayoutEffect(()=>{const node=row.current,chip=node?.querySelector('[aria-pressed=true]');if(!chip)return;const left=chip.offsetLeft-node.offsetLeft,right=left+chip.offsetWidth;if(left<node.scrollLeft)node.scrollLeft=left-8;else if(right>node.scrollLeft+node.clientWidth)node.scrollLeft=right-node.clientWidth+8;},[active]);
   return <div className="group-panel" role="group" aria-label={t(label)}>
     <div className="group-heading">
-      <button type="button" className="round-action controls-back" aria-label={t('Back to editor controls')} onClick={onBack}><Glyph name="back"/></button>
+      <button type="button" className="group-back controls-back" aria-label={t('Back to editor controls')} onClick={onBack}><Glyph name="back"/></button>
       <div ref={row} className="group-chips" role="tablist" aria-label={t(label)}>
         {chips.map(chip=><button key={chip.key} type="button" role="tab" aria-selected={active===chip.key} aria-pressed={active===chip.key} disabled={chip.disabled} onClick={()=>{hapticSelection();onChip(chip.key);}}>{t(chip.label)}</button>)}
       </div>
@@ -71,7 +72,7 @@ export function GroupPanel({label,chips,active,onChip,onBack,children}){
 
 export function MorePanel({items,onBack}){
   return <div className="group-panel more-panel" role="group" aria-label={t('More tools')}>
-    <div className="group-heading"><button type="button" className="round-action controls-back" aria-label={t('Back to editor controls')} onClick={onBack}><Glyph name="back"/></button><strong>{t('More')}</strong></div>
+    <div className="group-heading"><button type="button" className="group-back controls-back" aria-label={t('Back to editor controls')} onClick={onBack}><Glyph name="back"/></button><span className="group-title">{t('More')}</span></div>
     <div className="more-grid">{items.map(item=><button key={item.key} type="button" data-tool={item.key} disabled={item.disabled} onClick={()=>{hapticSelection();item.action();}}><span>{item.icon}</span>{t(item.label)}</button>)}</div>
   </div>;
 }

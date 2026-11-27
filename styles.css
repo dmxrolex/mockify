@@ -105,7 +105,7 @@ svg { display: block; width: 1.25rem; height: 1.25rem; flex: none; fill: none; s
 @supports (inline-size: 1cqh) {
   .artboard { container-type: size; }
   .artboard canvas { inline-size: min(100cqw, calc(100cqh * var(--ratio, 1))); block-size: auto; }
-  .artboard:not(.wide) canvas { inline-size: min(100cqw, calc(min(100cqh, 44vh) * var(--ratio, 1))); inline-size: min(100cqw, calc(min(100cqh, 44dvh) * var(--ratio, 1))); }
+  .artboard:not(.wide) canvas { inline-size: min(100cqw, calc(100cqh * var(--ratio, 1))); }
 }
 .playback { display: flex; inline-size: min(100%, 27rem); align-items: center; gap: .45rem; }
 .playback span { padding-inline-end: .3rem; font-size: .75rem; font-variant-numeric: tabular-nums; color: var(--muted); }

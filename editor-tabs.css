@@ -27,9 +27,13 @@
 
 /* Group panels: back + chips on one line, tool controls below. */
 .group-panel { display:grid; grid-template-columns:minmax(0,1fr); align-content:start; gap:4px; min-inline-size:0; padding:4px 0 10px; }
-.group-heading { display:flex; align-items:center; gap:8px; min-block-size:48px; padding-inline:12px; }
+.group-heading { display:flex; align-items:center; gap:6px; min-block-size:44px; padding-inline:12px; }
 .group-heading .controls-back { flex:none; margin:0; }
-.group-heading > strong { font:600 16px/1.2 -apple-system,BlinkMacSystemFont,system-ui,sans-serif; }
+/* Back is a bare arrow; the section name is small and quiet. */
+.group-heading .group-back { display:grid; place-items:center; inline-size:36px; block-size:44px; border-radius:12px; margin:0 -4px 0 -6px !important; padding:0; border:0; background:none !important; box-shadow:none !important; color:#f5f5f7; transition:scale .2s var(--spring),opacity .15s; }
+.group-heading .group-back svg { inline-size:22px; block-size:22px; stroke-width:2.2; }
+.group-heading .group-back:active { scale:.86; opacity:.7; }
+.group-title { color:#8e8e93; font:600 12px/1 -apple-system,BlinkMacSystemFont,system-ui,sans-serif; letter-spacing:.06em; text-transform:uppercase; }
 .group-chips { display:flex; gap:6px; min-inline-size:0; overflow-x:auto; scrollbar-width:none; overscroll-behavior-inline:contain; padding:4px 2px; }
 .group-chips::-webkit-scrollbar { display:none; }
 .group-chips button { flex:none; min-block-size:36px; padding:0 14px; border:0; border-radius:18px; background:var(--glass-fill),#1c1c1f; box-shadow:var(--glass-edge); color:#d1d1d6; font:600 13.5px/1 -apple-system,BlinkMacSystemFont,system-ui,sans-serif; white-space:nowrap; transition:background-color .2s,color .2s,scale .22s var(--spring); touch-action:manipulation; }
@@ -69,3 +73,15 @@
 .editor.page:not([data-video=true]):not([data-typing=true]):not([data-sheet]):not(.has-multiple) { grid-template-rows:minmax(0,1fr) 172px; }
 .editor:not([data-video=true]) > .control-sheet { padding-block-start:6px; }
 .editor:not([data-video=true]):not([data-typing=true]):not([data-sheet]) .control-stage { block-size:100%; overflow-y:auto; overscroll-behavior:contain; }
+
+/* Empty canvas: one obvious way to start. */
+.canvas-empty-add { position:absolute; inset:50% auto auto 50%; z-index:5; translate:-50% -50%; display:grid; justify-items:center; gap:10px; padding:16px 22px; border:0; border-radius:24px; background:var(--glass-fill),#1c1c1fb3; box-shadow:var(--glass-edge),0 12px 32px #0007; -webkit-backdrop-filter:var(--glass-blur); backdrop-filter:var(--glass-blur); color:#fff; font:600 15px/1.2 -apple-system,BlinkMacSystemFont,system-ui,sans-serif; white-space:nowrap; transition:scale .22s var(--spring); }
+.canvas-empty-add span { display:grid; place-items:center; inline-size:48px; block-size:48px; border-radius:50%; background:#fff; color:#000; }
+.canvas-empty-add svg { inline-size:24px; block-size:24px; stroke-width:2.2; }
+.canvas-empty-add:active { scale:.95; }
+
+/* The canvas row is exactly as tall as the canvas, so canvas and zoom ruler sit together,
+   centred, instead of leaving dead bands above and between them. */
+@supports (inline-size:1cqw) {
+  .editor:not([data-video=true]) .preview { container-type:inline-size; grid-template-rows:minmax(0,min(calc(100cqw / var(--canvas-ratio,1)),var(--canvas-cap,44dvh))) auto auto; align-content:center; row-gap:6px; }
+}
