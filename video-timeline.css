@@ -23,6 +23,7 @@
 .sequence-keyframe { position:absolute; inset-inline-start:50%; translate:-50% 0; }
 .sequence-keyframe svg { inline-size:23px; block-size:23px; }
 .sequence-keyframe:not(:disabled):active { background:var(--select); color:var(--select-ink); }
+.sequence-keyframe[aria-pressed=true] { background:var(--select); box-shadow:var(--select-edge); color:var(--select-ink); }
 .video-timeline-actions { display:flex; align-items:center; border-radius:22px; padding:0 2px; }
 .video-timeline-actions .sequence-action { flex-basis:42px; inline-size:42px; }
 .video-timeline-actions .sequence-action[aria-expanded=true] { background:#ffffff1f; }

@@ -94,5 +94,5 @@
 .toolstrip.tool-tabs button { overflow:visible; white-space:nowrap; font-size:10.5px; letter-spacing:-.01em; }
 .colour-flash { translate:-50% -50%; }
 /* Editor messages float above the tools instead of covering them. */
-.app-shell.is-editor .toast { inset-block-end:calc(196px + var(--safe-bottom)); }
+.app-shell.is-editor .toast { inset-block:calc(66px + var(--safe-top)) auto; }
 .editor[data-video=true] .toolstrip.tool-tabs button { font-size:10px; letter-spacing:-.02em; }

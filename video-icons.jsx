@@ -10,6 +10,7 @@ export function VideoIcon({name}){
     split:<><circle cx="6.5" cy="6.5" r="2.7"/><circle cx="6.5" cy="17.5" r="2.7"/><path d="M8.6 8.3 19.5 18M8.6 15.7 19.5 6"/></>,
     keyframe:<path d={diamond}/>,
     'add-keyframe':<><path d={diamond}/><path d="M12 9v6m-3-3h6"/></>,
+    'remove-keyframe':<><path d={diamond}/><path d="M9 12h6"/></>,
     video:<><rect x="3" y="5" width="18" height="14" rx="3.5"/><path d="m10 9.2 4.8 2.8-4.8 2.8Z" fill="currentColor"/></>,
     overlay:<><rect x="3" y="3.5" width="14" height="12" rx="3"/><rect x="9" y="10" width="12" height="10.5" rx="3" fill="currentColor" fillOpacity=".18"/></>,
     image:<><rect x="3" y="4" width="18" height="16" rx="3.5"/><circle cx="9" cy="9.5" r="1.8"/><path d="m21 16-4.6-4.6a1.5 1.5 0 0 0-2.1 0L6 19.7"/></>,
