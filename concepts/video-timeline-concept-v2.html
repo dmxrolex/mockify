@@ -1,0 +1,185 @@
+<!doctype html>
+<html><head><meta charset="utf-8">
+<style>
+:root{--bg:#000;--row:#1c1c1e;--ctl:#2c2c2e;--sep:rgba(84,84,88,.45);--txt:#f2f2f7;--dim:#8e8e93;--blue:#0a84ff;--red:#ff453a;
+--gold:#ffcc33;--tap1:#ff8a7a;--tap2:#ff375f;--hold1:#ffd84d;--hold2:#ff9f0a;--sw1:#d38bff;--sw2:#7a5cff;--zm1:#7ce7ff;--zm2:#0aa6d6}
+*{box-sizing:border-box;margin:0}
+body{background:#0b0b0d;font-family:Inter,system-ui,sans-serif;color:var(--txt);width:1540px;padding:44px 48px 52px;-webkit-font-smoothing:antialiased}
+header{display:flex;align-items:flex-end;justify-content:space-between;margin-bottom:30px}
+h1{font-family:'Inter Display',Inter;font-weight:700;font-size:30px;letter-spacing:-.4px}
+h1 span{color:var(--dim);font-weight:500}
+.legend{display:flex;gap:22px;font-size:13px;color:#c7c7cc}
+.legend i{display:inline-block;width:26px;height:4px;border-radius:2px;margin-right:8px;vertical-align:middle}
+.grid{display:grid;grid-template-columns:repeat(4,340px);gap:34px 28px;align-items:start}
+figure{display:flex;flex-direction:column;gap:10px}
+figcaption b{display:block;font-size:17px;font-weight:650;letter-spacing:-.2px}
+figcaption span{display:block;font-size:12.5px;color:var(--dim);line-height:1.45;margin-top:3px;min-height:54px}
+.phone{width:340px;background:var(--bg);border-radius:26px;overflow:hidden;position:relative;box-shadow:0 0 0 1px rgba(255,255,255,.07)}
+.stage{height:184px;display:grid;place-items:center;background:#0e0e10;overflow:hidden}
+.art{width:168px;height:162px;border-radius:5px;background:url(video-timeline-concept-v2-canvas.png) center/cover;position:relative;overflow:hidden}
+.art.zoomed{background-size:290%;background-position:38% 70%}
+.ctrl{height:54px;position:relative}
+.btn{position:absolute;top:9px;width:36px;height:36px;border-radius:50%;background:var(--ctl);display:grid;place-items:center}
+.btn svg{width:19px;height:19px}
+.btn.off{opacity:.35}
+.time{position:absolute;left:58px;top:18px;font-size:13px;font-weight:600;font-variant-numeric:tabular-nums}
+.time em{font-style:normal;color:var(--dim);font-weight:500}
+.adder{position:absolute;left:148px;top:5px;width:44px;height:44px;border-radius:50%;background:radial-gradient(circle at 50% 35%,#3a3a3c,#232325);display:grid;place-items:center;box-shadow:inset 0 0 0 1px rgba(255,204,51,.28)}
+.adder svg{width:26px;height:26px}
+.adder.pressed{box-shadow:inset 0 0 0 1.5px rgba(255,214,90,.9),0 0 0 6px rgba(255,204,51,.14),0 0 22px rgba(255,190,40,.45);transform:scale(.94)}
+.tl{height:156px;position:relative;overflow:hidden}.tl.short{height:112px}
+.ruler{position:absolute;top:0;left:0;right:0;height:18px;font-size:10.5px;color:#8e8e93;font-weight:500;font-variant-numeric:tabular-nums}
+.ruler span{position:absolute;top:2px;transform:translateX(-50%)}
+.ruler i{position:absolute;top:8px;width:3px;height:3px;border-radius:50%;background:#48484a;transform:translateX(-50%)}
+.clip{position:absolute;top:24px;height:46px;border-radius:9px;overflow:hidden;display:flex;background:#1c1c1e}
+.clip b{flex:0 0 auto;width:30px;height:46px;background:url(video-timeline-concept-v2-canvas.png) center/cover;border-right:1px solid rgba(0,0,0,.35)}
+.clip.c2 b{background-size:260%;background-position:40% 72%}
+.selbox{position:absolute;top:22px;height:50px;border-radius:11px;border:2.5px solid #fff;pointer-events:none}
+.grip{position:absolute;top:22px;width:16px;height:50px;background:#fff;display:grid;place-items:center}
+.grip.l{border-radius:11px 4px 4px 11px}.grip.r{border-radius:4px 11px 11px 4px}
+.grip::after{content:"";width:3px;height:16px;border-radius:2px;background:#1c1c1e}
+.chip{position:absolute;z-index:8;font-size:11px;font-weight:650;background:#fff;color:#000;border-radius:10px;padding:3px 8px;transform:translateX(-50%);white-space:nowrap;font-variant-numeric:tabular-nums;box-shadow:0 4px 12px rgba(0,0,0,.4)}
+.chip.dark{background:#2c2c2e;color:#fff}
+.lane{position:absolute;height:2px;border-radius:1px}
+.lane.g{background:linear-gradient(90deg,rgba(255,204,51,.42),rgba(255,170,40,.42))}
+.lane.z{background:linear-gradient(90deg,rgba(124,231,255,.38),rgba(10,166,214,.38))}
+.lanelabel{position:absolute;left:8px;width:22px;height:22px;border-radius:50%;display:grid;place-items:center;background:rgba(0,0,0,.75);z-index:3}
+.lanelabel svg{width:16px;height:16px}
+.bar{position:absolute;border-radius:6px}
+.node{position:absolute;width:18px;height:18px;border-radius:50%;transform:translate(-50%,-50%);display:grid;place-items:center;box-shadow:0 0 0 2.5px #000}
+.node::after{content:"";width:6px;height:6px;border-radius:50%;background:#fff}
+.node.sel{width:22px;height:22px;box-shadow:0 0 0 2px #fff,0 0 0 4.5px #000}
+.handle{position:absolute;width:22px;height:22px;border-radius:50%;background:#fff;transform:translate(-50%,-50%);display:grid;place-items:center;box-shadow:0 2px 10px rgba(0,0,0,.6)}
+.handle::after{content:"";width:2px;height:9px;border-radius:1px;background:#8e8e93;box-shadow:-4px 0 0 #c7c7cc,4px 0 0 #c7c7cc}
+.handle.live{box-shadow:0 0 0 6px rgba(255,255,255,.16),0 2px 10px rgba(0,0,0,.6)}
+.ghost{position:absolute;border:1.5px dashed rgba(255,255,255,.35);border-radius:8px}
+.halo{position:absolute;border-radius:50%;transform:translate(-50%,-50%);border:1.5px solid}
+.touch{position:absolute;width:34px;height:34px;border-radius:50%;transform:translate(-50%,-50%);background:radial-gradient(circle,rgba(255,255,255,.55),rgba(255,255,255,.12) 60%,transparent 72%)}
+.playhead{position:absolute;top:12px;bottom:6px;left:169px;width:2px;background:#fff;border-radius:1px;z-index:5;box-shadow:0 0 0 1px rgba(0,0,0,.25)}
+.playhead::before{content:"";position:absolute;top:-4px;left:-4px;width:10px;height:10px;border-radius:50%;background:#fff}
+.dim{opacity:.32}.playhead.hide{display:none}figcaption{height:78px}
+.bubble{position:absolute;width:44px;height:44px;border-radius:50%;background:#2c2c2e;display:grid;place-items:center;transform:translateX(-50%);box-shadow:0 8px 24px rgba(0,0,0,.6),inset 0 0 0 1px rgba(255,255,255,.08);z-index:8}
+.bubble::before{content:"";position:absolute;top:-5px;left:17px;width:10px;height:10px;background:#2c2c2e;transform:rotate(45deg);border-radius:2px}
+.bubble svg{width:20px;height:20px;position:relative}
+.hint{position:absolute;bottom:10px;z-index:8;left:0;right:0;text-align:center;font-size:11.5px;color:#8e8e93}
+.dock{border-top:1px solid var(--sep);background:#0c0c0e;padding:0 12px 14px}
+.dhead{height:46px;display:flex;align-items:center;justify-content:space-between}
+.dhead .t{font-size:15px;font-weight:650;text-align:center}
+.dhead .t small{display:block;font-size:11px;color:var(--dim);font-weight:500;font-variant-numeric:tabular-nums}
+.round{width:34px;height:34px;border-radius:50%;background:var(--ctl);display:grid;place-items:center}
+.round svg{width:18px;height:18px}
+.done{background:var(--blue);color:#fff;font-weight:650;font-size:14px;border-radius:17px;padding:7px 15px}
+.picker{display:flex;justify-content:space-around;padding:6px 0 2px}
+.opt{width:70px;display:flex;flex-direction:column;align-items:center;gap:6px;font-size:12px;color:#8e8e93;font-weight:550}
+.opt .g{width:54px;height:54px;border-radius:50%;display:grid;place-items:center;position:relative}
+.opt .g svg{width:32px;height:32px;position:relative}
+.opt.on{color:#fff}
+.opt.on .g::before{content:"";position:absolute;inset:0;border-radius:50%;background:radial-gradient(circle,var(--c) 0,transparent 70%);opacity:.38}
+.opt.on .g::after{content:"";position:absolute;inset:0;border-radius:50%;box-shadow:inset 0 0 0 1.5px var(--c);opacity:.7}
+.slider{display:flex;align-items:center;gap:12px;height:44px;margin-top:6px;background:var(--row);border-radius:12px;padding:0 14px;font-size:13.5px}
+.slider .track{flex:1;height:4px;border-radius:2px;background:#3a3a3c;position:relative}
+.slider .fill{position:absolute;left:0;top:0;bottom:0;border-radius:2px;background:linear-gradient(90deg,var(--zm1),var(--zm2))}
+.slider .thumb{position:absolute;top:50%;width:22px;height:22px;border-radius:50%;background:#fff;transform:translate(-50%,-50%);box-shadow:0 2px 6px rgba(0,0,0,.5)}
+.slider output{font-variant-numeric:tabular-nums;font-weight:600;width:38px;text-align:right}
+.iconset{background:#000;border-radius:26px;padding:20px 18px;box-shadow:0 0 0 1px rgba(255,255,255,.07);display:grid;grid-template-columns:repeat(3,1fr);gap:20px 6px}
+.iconset div{display:flex;flex-direction:column;align-items:center;gap:8px;font-size:12px;color:#c7c7cc;text-align:center}
+.iconset svg{width:38px;height:38px}
+.iconset .r{width:58px;height:58px;border-radius:50%;display:grid;place-items:center}
+.iconset .r.btn2{background:#2c2c2e}
+.iconset small{color:#636366;font-size:10.5px;display:block;margin-top:-4px}
+</style></head><body>
+<header>
+  <div><h1>Video timeline <span>· concept v2</span></h1></div>
+  <div class="legend"><span><i style="background:linear-gradient(90deg,var(--tap1),var(--tap2))"></i>Tap</span><span><i style="background:linear-gradient(90deg,var(--hold1),var(--hold2))"></i>Hold</span><span><i style="background:linear-gradient(90deg,var(--sw1),var(--sw2))"></i>Swipe</span><span><i style="background:linear-gradient(90deg,var(--zm1),var(--zm2))"></i>Zoom</span></div>
+</header>
+<div class="grid" id="grid"></div>
+<script>
+let uid=0;
+const grad=(a,b)=>{const id='g'+(uid++);return [id,`<defs><linearGradient id="${id}" gradientUnits="userSpaceOnUse" x1="4" y1="4" x2="28" y2="28"><stop offset="0" stop-color="${a}"/><stop offset="1" stop-color="${b}"/></linearGradient></defs>`];};
+const C={tap:['#ff8a7a','#ff375f'],hold:['#ffd84d','#ff9f0a'],swipe:['#d38bff','#7a5cff'],zoom:['#7ce7ff','#0aa6d6']};
+const I={
+ tap(){const [id,d]=grad(...C.tap);return `<svg viewBox="0 0 32 32">${d}<circle cx="16" cy="16" r="5.2" fill="url(#${id})"/><circle cx="16" cy="16" r="9.6" fill="none" stroke="url(#${id})" stroke-width="2" opacity=".75"/><circle cx="16" cy="16" r="13.6" fill="none" stroke="url(#${id})" stroke-width="1.6" opacity=".32"/></svg>`},
+ hold(){const [id,d]=grad(...C.hold);return `<svg viewBox="0 0 32 32">${d}<circle cx="16" cy="16" r="11" fill="none" stroke="#ffffff" stroke-opacity=".12" stroke-width="2.6"/><path d="M16 5a11 11 0 1 1-10.46 7.6" fill="none" stroke="url(#${id})" stroke-width="2.8" stroke-linecap="round"/><circle cx="16" cy="16" r="5.2" fill="url(#${id})"/></svg>`},
+ swipe(){const [id,d]=grad(...C.swipe);return `<svg viewBox="0 0 32 32">${d}<circle cx="9" cy="16" r="5.2" fill="url(#${id})"/><path d="M16.5 16h11" stroke="url(#${id})" stroke-width="2.6" stroke-linecap="round"/><path d="M23.5 11.5 28 16l-4.5 4.5" fill="none" stroke="url(#${id})" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>`},
+ zoom(){const [id,d]=grad(...C.zoom);return `<svg viewBox="0 0 32 32">${d}<g fill="none" stroke="url(#${id})" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 11V8a3 3 0 0 1 3-3h3M21 5h3a3 3 0 0 1 3 3v3M27 21v3a3 3 0 0 1-3 3h-3M11 27H8a3 3 0 0 1-3-3v-3"/></g><circle cx="16" cy="16" r="5.2" fill="url(#${id})"/></svg>`},
+ key(){const [id,d]=grad('#ffe27a','#ffa31a');return `<svg viewBox="0 0 32 32">${d}<rect x="7.5" y="7.5" width="17" height="17" rx="4.2" transform="rotate(45 16 16)" fill="url(#${id})"/><path d="M16 11.6v8.8M11.6 16h8.8" stroke="#2a1d00" stroke-width="2.4" stroke-linecap="round"/></svg>`},
+ play:()=>`<svg viewBox="0 0 24 24"><path d="M8.5 5.8v12.4a1 1 0 0 0 1.5.86l10.2-6.2a1 1 0 0 0 0-1.72L10 4.94a1 1 0 0 0-1.5.86Z" fill="#fff"/></svg>`,
+ cut:(c='#fff')=>`<svg viewBox="0 0 24 24" fill="none" stroke="${c}" stroke-width="1.9" stroke-linecap="round"><circle cx="6.5" cy="6.5" r="2.8"/><circle cx="6.5" cy="17.5" r="2.8"/><path d="M8.6 8.4 20 18.5M8.6 15.6 20 5.5"/></svg>`,
+ undo:()=>`<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></svg>`,
+ redo:()=>`<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="m15 14 5-5-5-5"/><path d="M20 9H9.5a5.5 5.5 0 0 0 0 11H13"/></svg>`,
+ trash:(c='#ff453a')=>`<svg viewBox="0 0 24 24" fill="none" stroke="${c}" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6.5h16M9.5 6.5V4.8c0-.7.5-1.3 1.2-1.3h2.6c.7 0 1.2.6 1.2 1.3v1.7M6.3 6.5l.8 12.3c.1 1 .9 1.7 1.9 1.7h6c1 0 1.8-.7 1.9-1.7l.8-12.3"/></svg>`,
+};
+const S=34,X=170,W=340;
+const x=(t,now)=>X+(t-now)*S;
+function ruler(now){let h='';for(let s=Math.floor(now-6);s<=now+6;s++){if(s<0)continue;const p=x(s,now);if(s%2===0)h+=`<span style="left:${p}px">0:${String(s).padStart(2,'0')}</span>`;else h+=`<i style="left:${p}px"></i>`;}return `<div class="ruler">${h}</div>`;}
+function clip(a,b,now,cls=''){const l=x(a,now),w=(b-a)*S-2;let fr='';for(let i=0;i<Math.ceil(w/30)+1;i++)fr+='<b></b>';return `<div class="clip ${cls}" style="left:${l}px;width:${w}px">${fr}</div>`;}
+const DEF={g:[['tap',1.0],['hold',3.2,4.6],['swipe',6.8,7.7],['tap',9.6]],z:[[2.6,5.4],[8.2,10.6]]};
+function seg(type,a,b,now,y,o={}){const [c1,c2]=C[type];let h='';const l=x(a,now);
+ if(b!=null){const hgt=o.sel?12:8;h+=`<div class="bar" style="left:${l}px;width:${(b-a)*S}px;top:${y-hgt/2}px;height:${hgt}px;background:linear-gradient(90deg,${c1},${c2});${o.sel?'box-shadow:0 0 0 1.5px #fff;':''}${o.lift?'box-shadow:0 0 0 1.5px #fff,0 8px 18px rgba(0,0,0,.7);':''}"></div>`;}
+ h+=`<div class="node ${o.sel?'sel':''}" style="left:${l}px;top:${y}px;background:linear-gradient(135deg,${c1},${c2})"></div>`;
+ if(o.sel&&b!=null)h+=`<div class="handle ${o.live?'live':''}" style="left:${x(b,now)}px;top:${y}px"></div>`;
+ return h;}
+function lanes(now,opt={}){const g=opt.g??DEF.g,z=opt.z??DEF.z;let h='';
+ if(opt.collapsed){const y1=78,y2=84;h+=`<div class="lane g" style="left:${x(0,now)}px;width:${25*S}px;top:${y1}px;height:3px"></div><div class="lane z" style="left:${x(0,now)}px;width:${25*S}px;top:${y2}px;height:3px"></div>`;
+  for(const [t,a,b] of g){const [c1,c2]=C[t];if(b==null)h+=`<div class="bar" style="left:${x(a,now)-3}px;top:${y1-1}px;width:6px;height:5px;border-radius:3px;background:${c2}"></div>`;else h+=`<div class="bar" style="left:${x(a,now)}px;width:${(b-a)*S}px;top:${y1}px;height:3px;border-radius:2px;background:linear-gradient(90deg,${c1},${c2})"></div>`;}
+  for(const [a,b] of z)h+=`<div class="bar" style="left:${x(a,now)}px;width:${(b-a)*S}px;top:${y2}px;height:3px;border-radius:2px;background:linear-gradient(90deg,${C.zoom[0]},${C.zoom[1]})"></div>`;
+  return `<div class="${opt.dimAll?'dim':''}">${h}</div>`;}
+ const y1=96,y2=132;
+ h+=`<div class="${opt.dimG?'dim':''}"><div class="lane g" style="left:${x(0,now)}px;width:${25*S}px;top:${y1-1}px"></div>`;
+ g.forEach(([t,a,b],i)=>h+=seg(t,a,b,now,y1,opt.selG===i?opt:{}));
+ h+=`</div><div class="${opt.dimZ?'dim':''}"><div class="lane z" style="left:${x(0,now)}px;width:${25*S}px;top:${y2-1}px"></div>`;
+ z.forEach(([a,b],i)=>h+=seg('zoom',a,b,now,y2,opt.selZ===i?opt:{}));
+ h+=`</div>`;
+ return h;}
+function controls(now,o={}){return `<div class="ctrl"><div class="btn" style="left:14px">${I.play()}</div><div class="time">0:${now.toFixed(1).padStart(4,'0')} <em>/ 0:25</em></div><div class="adder ${o.pressed?'pressed':''} ${o.noKey?'off':''}">${I.key()}</div><div class="btn" style="left:214px">${I.cut()}</div><div class="btn" style="left:256px">${I.undo()}</div><div class="btn off" style="left:298px">${I.redo()}</div></div>`;}
+function dock(type,time,o={}){const names={tap:'Tap',hold:'Hold',swipe:'Swipe',zoom:'Zoom'};
+ const opts=['tap','hold','swipe','zoom'].map(k=>`<div class="opt ${k===type?'on':''}" style="--c:${C[k][1]}"><div class="g">${I[k]()}</div>${names[k]}</div>`).join('');
+ return `<div class="dock"><div class="dhead"><div class="round">${I.trash()}</div><div class="t">${names[type]}<small>${time}</small></div><div class="done">Done</div></div><div class="picker">${opts}</div>${type==='zoom'?`<div class="slider"><span>Level</span><div class="track"><div class="fill" style="width:56%"></div><div class="thumb" style="left:56%"></div></div><output>1.8×</output></div>`:''}</div>`;}
+function phone({now,tl,ctrl={},dockHtml='',art='',short=false,ph=''}){return `<div class="phone"><div class="stage"><div class="art ${art}"></div></div>${controls(now,ctrl)}<div class="tl ${short?'short':''}">${ruler(now)}${tl}<div class="playhead ${ph}"></div></div>${dockHtml}</div>`;}
+const panels=[];
+// 1 Trim & cut
+{const now=3.0;let tl=clip(0,5.2,now)+clip(5.2,25,now,'c2');const l=x(0,now),r=x(5.2,now)-2;
+ tl+=`<div class="selbox" style="left:${l}px;width:${r-l}px"></div><div class="grip l" style="left:${l}px"></div><div class="grip r" style="left:${r-16}px"></div><div class="chip" style="left:${l+46}px;top:-1px">Clip 1 · 5.2 s</div>`;
+ tl+=lanes(now,{collapsed:true});
+ panels.push(['Trim or cut','Drag the white side grips to trim — frames update live on the canvas. Scissors cut at the playhead.',phone({now,tl,short:true})]);}
+// 2 Hold to delete
+{const now=3.0;let tl=`<div class="dim">${clip(5.2,25,now,'c2')}</div>`;const l=x(0,now),w=5.2*S-2;
+ tl+=`<div style="position:absolute;left:${l}px;top:0;width:${w}px;height:100px;transform:translateY(-3px) scale(1.04);transform-origin:center 47px;filter:drop-shadow(0 10px 18px rgba(0,0,0,.8))">${clip(0,5.2,0).replace(/left:[^;]+;/,'left:0;')}</div>`;
+ tl+=`<div class="bubble" style="left:${l+w/2}px;top:82px">${I.trash()}</div>`;
+ tl+=lanes(now,{collapsed:true,dimAll:true})+`<div class="hint">Tap anywhere to close</div>`;
+ panels.push(['Hold a clip → Delete','Long-press lifts the clip and shows one small delete bubble under it. Any tap outside closes it.',phone({now,tl,ph:'hide'})]);}
+// 3 Closed
+{const now=6.0;let tl=clip(0,5.2,now)+clip(5.2,25,now,'c2')+lanes(now,{collapsed:true});
+ panels.push(['Inspector closed','Both lanes fold into two thin lines under the clips — gold for gestures, cyan for zoom — each effect keeps its own colour.',phone({now,tl,short:true})]);}
+// 4 icon set
+panels.push(['New icon set','No boxes, no frames — rich iOS colours on a round 24-pt grid, one idea per glyph.',`<div class="iconset">
+<div><div class="r">${I.tap()}</div>Tap<small>ripple</small></div>
+<div><div class="r">${I.hold()}</div>Hold<small>press timer</small></div>
+<div><div class="r">${I.swipe()}</div>Swipe<small>motion path</small></div>
+<div><div class="r">${I.zoom()}</div>Zoom<small>focus frame</small></div>
+<div><div class="r btn2">${I.key()}</div>Add keyframe<small>at playhead</small></div>
+<div><div class="r btn2" style="--s:1">${I.cut().replace('<svg','<svg style="width:26px;height:26px"')}</div>Cut<small>at playhead</small></div>
+<div><div class="r btn2">${I.trash().replace('<svg','<svg style="width:24px;height:24px"')}</div>Delete<small>destructive red</small></div>
+<div><div class="r btn2">${I.undo().replace('<svg','<svg style="width:24px;height:24px"')}</div>Undo<small></small></div>
+<div><div class="r btn2">${I.play().replace('<svg','<svg style="width:24px;height:24px"')}</div>Play<small></small></div>
+</div>`]);
+// 5 Add keyframe
+{const now=3.2;const g=[['tap',1.0],['tap',3.2],['swipe',6.8,7.7]];let tl=clip(0,5.2,now)+clip(5.2,25,now,'c2')+lanes(now,{g,selG:1,sel:true,dimZ:true});
+ tl+=`<div class="halo" style="left:${X}px;top:96px;width:38px;height:38px;border-color:rgba(255,138,122,.55)"></div><div class="halo" style="left:${X}px;top:96px;width:54px;height:54px;border-color:rgba(255,138,122,.2)"></div>`;
+ panels.push(['Add keyframe','Gold ◆+ sits right above the playhead. One tap drops a keyframe on the gold line and the picker opens instantly.',phone({now,tl,ctrl:{pressed:true},dockHtml:dock('tap','at 0:03.2')})]);}
+// 6 Stretch forward
+{const now=5.0;const g=[['tap',1.0],['hold',3.2,5.0],['swipe',6.8,7.7]];let tl=clip(0,5.2,now)+clip(5.2,25,now,'c2')+lanes(now,{g,selG:1,sel:true,live:true,dimZ:true});
+ tl+=`<div class="ghost" style="left:${x(4.4,now)-2}px;top:${96-7}px;width:4px;height:14px;border-radius:2px"></div><div class="chip" style="left:${X}px;top:${96+18}px">1.8 s</div><div class="touch" style="left:${X}px;top:96px"></div>`;
+ panels.push(['Stretch forward only','The start stays pinned to its keyframe. Only the round end handle extends — the playhead and canvas follow it live.',phone({now,tl,dockHtml:dock('hold','0:03.2 → 0:05.0')})]);}
+// 7 Move whole
+{const now=4.4;const g=[['tap',1.0],['hold',4.4,6.2],['swipe',7.6,8.5]];let tl=clip(0,5.2,now)+clip(5.2,25,now,'c2');
+ tl+=`<div class="ghost" style="left:${x(3.2,now)-9}px;top:${96-11}px;width:${1.8*S+18}px;height:22px;border-radius:11px"></div>`;
+ tl+=lanes(now,{g,selG:1,lift:true,sel:true,dimZ:true});
+ tl+=`<div class="touch" style="left:${x(5.3,now)}px;top:96px"></div><div class="chip" style="left:${x(5.3,now)}px;top:${96+18}px">Start 0:04.4</div>`;
+ panels.push(['Hold the bar → move it whole','Press and drag the bar body: keyframe, length and end move together. Earlier timing = move it, never stretch backward.',phone({now,tl,dockHtml:dock('hold','0:04.4 → 0:06.2')})]);}
+// 8 Zoom
+{const now=3.6;let tl=clip(0,5.2,now)+clip(5.2,25,now,'c2')+lanes(now,{selZ:0,sel:true,dimG:true});
+ panels.push(['Zoom on its own line','Same timeline style on the cyan line: tap ◆+, pick Zoom, drag the end to time it, hold to move. Level is the only setting.',phone({now,tl,art:'zoomed',dockHtml:dock('zoom','0:02.6 → 0:05.4')})]);}
+document.getElementById('grid').innerHTML=panels.map(([t,s,h])=>`<figure><figcaption><b>${t}</b><span>${s}</span></figcaption>${h}</figure>`).join('');
+</script>
+</body></html>
