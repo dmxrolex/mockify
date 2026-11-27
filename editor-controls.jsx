@@ -1,7 +1,7 @@
 import { t } from './i18n.js';
 import React, { useEffect, useLayoutEffect, useId, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { soundEffectsEnabled } from './sound.js';
+import { hapticSelection } from './haptics.js';
 import { backdrops, zoomLevel } from './render.js';
 
 function Glyph({name}) {
@@ -145,25 +145,11 @@ export function BackgroundControls({settings,update,pickPhoto,photo}) {
   </div>;
 }
 
-function useMechanicalTicks() {
-  const audio=useRef(null),sample=useRef(null),last=useRef(0);
-  const unlock=()=>{
-    if(!soundEffectsEnabled())return;
-    const Audio=window.AudioContext||window.webkitAudioContext;
-    if(!audio.current&&Audio){const context=audio.current=new Audio(),buffer=context.createBuffer(1,Math.ceil(context.sampleRate*.024),context.sampleRate),data=buffer.getChannelData(0);for(let i=0;i<data.length;i++)data[i]=(Math.random()*2-1)*Math.exp(-i/(context.sampleRate*.003));sample.current=buffer;}
-    audio.current?.resume().catch(()=>{});
-  };
-  const tick=()=>{
-    const context=audio.current;if(!soundEffectsEnabled()||!context||context.state!=='running'||performance.now()-last.current<28)return;
-    last.current=performance.now();const source=context.createBufferSource(),filter=context.createBiquadFilter(),gain=context.createGain();
-    source.buffer=sample.current;filter.type='highpass';filter.frequency.value=900;gain.gain.value=.24;source.connect(filter);filter.connect(gain);gain.connect(context.destination);source.start();
-  };
-  useEffect(()=>()=>{audio.current?.close().catch(()=>{});},[]);
-  return{unlock,tick};
-}
+// Dial and wheel detents use native Telegram haptics.
+const detents={unlock(){},tick:hapticSelection};
 
 export function ShadowControls({settings,update,wheel,onWheelChange}) {
-  const sound=useMechanicalTicks(),previous=useRef(null),value=useRef(settings.shadowAngle);value.current=settings.shadowAngle;
+  const sound=detents,previous=useRef(null),value=useRef(settings.shadowAngle);value.current=settings.shadowAngle;
   const angleAt=event=>{const b=event.currentTarget.getBoundingClientRect();return Math.atan2(event.clientX-b.left-b.width/2,event.clientY-b.top-b.height/2)*180/Math.PI;};
   const move=event=>{
     if(previous.current===null)return;
@@ -199,11 +185,9 @@ function TimeWheel({label,options,initial,onChange,tick,unlock}) {
 }
 
 export function TimeControls({value,onDone}) {
-  const [initialHour,initialMinute]=value.split(':').map(Number),[hour,setHour]=useState(initialHour%12||12),[minute,setMinute]=useState(initialMinute),[period,setPeriod]=useState(initialHour>=12?1:0),[sound,setSound]=useState(true),audio=useRef(null),last=useRef(0);
-  const unlock=()=>{if(!soundEffectsEnabled())return;const Audio=window.AudioContext||window.webkitAudioContext;if(!audio.current&&Audio)audio.current=new Audio();audio.current?.resume().catch(()=>{});};
-  useEffect(()=>()=>{audio.current?.close().catch(()=>{});},[]);
-  const tick=()=>{const context=audio.current;if(!soundEffectsEnabled()||!sound||!context||context.state!=='running'||performance.now()-last.current<35)return;last.current=performance.now();const oscillator=context.createOscillator(),gain=context.createGain();oscillator.type='triangle';oscillator.frequency.setValueAtTime(1100,context.currentTime);gain.gain.setValueAtTime(.025,context.currentTime);gain.gain.exponentialRampToValueAtTime(.001,context.currentTime+.018);oscillator.connect(gain);gain.connect(context.destination);oscillator.start();oscillator.stop(context.currentTime+.02);};
+  const [initialHour,initialMinute]=value.split(':').map(Number),[hour,setHour]=useState(initialHour%12||12),[minute,setMinute]=useState(initialMinute),[period,setPeriod]=useState(initialHour>=12?1:0);
+  const unlock=()=>{},tick=hapticSelection;
   return <div className="time-picker-content"><div className="time-wheel-labels"><span>{t("Hour")}</span><span>{t("Minute")}</span><span>{t("Period")}</span></div><div className="time-wheel-group"><div className="time-selection-band" aria-hidden="true"/>
     <TimeWheel label={t("Hour")} options={Array.from({length:12},(_,index)=>index+1)} initial={(initialHour%12||12)-1} onChange={index=>setHour(index+1)} tick={tick} unlock={unlock}/><TimeWheel label={t("Minute")} options={Array.from({length:60},(_,index)=>String(index).padStart(2,'0'))} initial={initialMinute} onChange={setMinute} tick={tick} unlock={unlock}/><TimeWheel label={t("Period")} options={['AM','PM']} initial={initialHour>=12?1:0} onChange={setPeriod} tick={tick} unlock={unlock}/>
-    </div><div className="time-picker-footer"><button type="button" className="round-action" aria-label={sound?'Mute picker sound':'Enable picker sound'} onClick={()=>{unlock();setSound(!sound);}}><Glyph name={sound?'sound':'muted'}/></button><button type="button" className="time-confirm" onClick={()=>onDone(String(hour%12+period*12).padStart(2,'0')+':'+String(minute).padStart(2,'0'))}>{t("Done")}</button></div></div>;
+    </div><div className="time-picker-footer"><button type="button" className="time-confirm" onClick={()=>onDone(String(hour%12+period*12).padStart(2,'0')+':'+String(minute).padStart(2,'0'))}>{t("Done")}</button></div></div>;
 }

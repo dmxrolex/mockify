@@ -27,7 +27,7 @@ import SubscriptionPage from './subscription-page.jsx';
 import { subscriptionInfo } from './subscription-model.js';
 import { HeaderCoin } from './coin-motion.jsx';
 import { setLanguage, t } from './i18n.js';
-import { setSoundEffectsEnabled } from './sound.js';
+import { setHapticsEnabled } from './haptics.js';
 import { changeScene, itemId, loadProject, newProject, ownedMedia, saveProject, sceneFor } from './project.js';
 import { Picker, EffectsControls, EdgesControls, ImageControls, PreviewZoom, SizeControls, BackgroundControls, ShadowControls, StatusControls, TimeControls } from './editor-controls.jsx';
 import HomeScreen from './home.jsx';
@@ -124,8 +124,8 @@ function readPage() {
 
 function restorePreferences() {
   let stored;try{stored=JSON.parse(localStorage.getItem('styleit.preferences'));}catch{}
-  const result={haptics:true,...stored,cleanup:stored?.cleanup==='off'?'off':'auto',sound:stored?.sound!==false,language:stored?.language==='ru'?'ru':'en'};
-  setLanguage(result.language);setSoundEffectsEnabled(result.sound);return result;
+  const result={haptics:true,...stored,cleanup:stored?.cleanup==='off'?'off':'auto',language:stored?.language==='ru'?'ru':'en'};
+  setLanguage(result.language);setHapticsEnabled(result.haptics);return result;
 }
 
 function FrameCanvas({ settings, source = blank, photo, ready, thumbnail = false, time = 0, interactive=false }) {
@@ -935,7 +935,7 @@ function App({initialTelegram=null,initialProfile=null}) {
 
   function updatePreferences(patch) {
     const result = { ...preferences, ...patch };
-    setLanguage(result.language);setSoundEffectsEnabled(result.sound);
+    setLanguage(result.language);setHapticsEnabled(result.haptics);
     setPreferences(result);
     try { localStorage.setItem('styleit.preferences', JSON.stringify(result)); }
     catch { notify('Could not store settings'); }
@@ -983,7 +983,7 @@ function App({initialTelegram=null,initialProfile=null}) {
     <main ref={main} className="content">
       {page === 'home' && <HomeScreen busy={busy} onPick={kind => pickSource('new',kind)} onDrop={files => importSource(files, 'new')} recent={draftList} onOpen={openDraft} onFiles={()=>navigate('files')}/>}
       {page === 'files' && <DraftPage list={draftList} onOpen={openDraft} onRemove={draft => drafts.remove(draft.id).then(refreshDrafts).catch(() => notify('Could not delete the draft'))}/>}
-      {page === 'settings' && <SettingsPage preferences={preferences} update={updatePreferences} onBalance={openBalance} onSubscription={openSubscription} subscriptionActive={subscriptionInfo(profile?.subscription).active} balance={profile?.credits??0} draftCount={draftList?.length??0}/>}
+      {page === 'settings' && <SettingsPage preferences={preferences} update={updatePreferences} onBalance={openBalance} onSubscription={openSubscription} profile={profile} botUsername={config?.botUsername} draftCount={draftList?.length??0}/>}
       {balancePage&&<BalancePage onSubscription={openSubscription} balance={profile?.credits??0} premium={premiumActive(profile)} payment={payment} onSelection={purchaseSelection}/>}
       {subscriptionPage&&<SubscriptionPage subscription={profile?.subscription} payment={payment} onSelection={purchaseSelection}/>}
       {page === 'profile' && <ProfilePage profile={profile} authStatus={authStatus} telegram={telegram} config={config} onRetry={()=>signIn(telegram)}/>}
