@@ -56,4 +56,10 @@ dialog.download-sheet[open]:not([data-closing]) { opacity:1; translate:0 0; }
 /* Reserved line, so a status message never shifts the buttons below. */
 .download-notice { min-block-size:20px; margin:4px 0 10px; color:#9b9ba3; text-align:center; font:400 13px/1.5 system-ui,sans-serif; }
 @media(prefers-reduced-motion:reduce) { .download-actions button { transition:none; } }
+/* Sizes Telegram cannot deliver stay visible but disabled, with how to fix them. */
+.download-quality label:has(input:disabled) { cursor:default; }
+.download-quality label:has(input:disabled) strong,.download-quality label:has(input:disabled) > :not(span:first-child) { opacity:.45; }
+.download-quality label:has(input:disabled) small { color:#ff9f0a; }
+.download-limit { margin:-6px 0 14px; color:#ff9f0a; text-align:center; font:500 13px/1.4 system-ui,sans-serif; }
+.download-primary:disabled { opacity:.45; }
 
