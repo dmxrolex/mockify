@@ -1,6 +1,5 @@
-.editor.page[data-video=true]:not([data-typing=true]) { grid-template-rows:minmax(120px,1fr) 204px; }
-/* Only the tool row is showing: give the canvas the inspector's spare height. */
-.editor.page[data-video=true]:not([data-typing=true]):not([data-panel]) { grid-template-rows:minmax(120px,1fr) 136px; }
+/* One fixed layout: opening panels, playing or scrubbing never resizes the editor. */
+.editor.page[data-video=true]:not([data-typing=true]) { grid-template-rows:minmax(120px,1fr) 184px; }
 .editor[data-video="true"] .preview { grid-template-rows:minmax(0,1fr) auto auto auto; }
 .editor[data-video="true"] .preview > .preview-zoom { grid-row:3; }
 .editor[data-video="true"] .preview > .video-timeline { grid-row:4; }
@@ -30,9 +29,9 @@
 .sequence-action:focus-visible,.sequence-timeline button:focus-visible { outline:2px solid #fff; outline-offset:2px; }
 .sequence-timeline .destructive { color:#ff6961; }
 
-.sequence-track-window { position:relative; block-size:164px; overflow:hidden; transition:block-size .32s var(--ease-out); }
-/* Folded lanes are thin lines, so the track only needs ruler + clips + two lines. */
-.sequence-timeline:not([data-effects=true]):not([data-layers]) .sequence-track-window { block-size:104px; }
+/* Ruler + clips + two 28px animation lanes; extra layers scroll inside. Same height in every state. */
+.sequence-track-window { position:relative; block-size:132px; overflow:hidden; }
+.sequence-timeline[data-layers] .sequence-track-window { block-size:164px; }
 .sequence-scroll { inline-size:100%; block-size:100%; overflow:auto; overscroll-behavior:contain; scrollbar-width:none; touch-action:pan-x pan-y; }
 .sequence-scroll::-webkit-scrollbar { display:none; }
 .sequence-content { min-block-size:100%; position:relative; }
@@ -70,13 +69,12 @@
 .sequence-playhead::before { content:''; position:absolute; inset-block-start:-3px; inset-inline-start:-3px; inline-size:8px; block-size:8px; border-radius:50%; background:#fff; }
 
 /* Animation lanes: thin lines while browsing, roomy glass capsules while editing. */
-.sequence-gesture-row,.sequence-camera-row { block-size:12px; }
-.sequence-timeline[data-effects=true] :is(.sequence-gesture-row,.sequence-camera-row) { block-size:40px; }
+.sequence-gesture-row,.sequence-camera-row { block-size:28px; }
 .sequence-lane-track { position:absolute; inset-inline-start:var(--timeline-pad); inset-block-start:50%; block-size:1px; translate:0 -50%; background:var(--line); pointer-events:none; }
 .sequence-timeline[data-effects=true] .sequence-lane-track { block-size:2px; border-radius:1px; background:#ffffff1c; }
-.sequence-lane-icon { position:sticky; inset-inline-start:0; z-index:4; display:none; place-items:center; inline-size:30px; block-size:40px; padding-inline-end:6px; color:var(--muted); background:linear-gradient(90deg,#000 70%,#0000); pointer-events:none; }
+.sequence-lane-icon { position:sticky; inset-inline-start:0; z-index:4; display:grid; visibility:hidden; place-items:center; inline-size:30px; block-size:28px; padding-inline-end:6px; color:var(--muted); background:linear-gradient(90deg,#000 70%,#0000); pointer-events:none; }
 .sequence-lane-icon svg { inline-size:16px; block-size:16px; }
-.sequence-timeline[data-effects=true] .sequence-lane-icon { display:grid; }
+.sequence-timeline[data-effects=true] .sequence-lane-icon { visibility:visible; }
 .sequence-effect { position:absolute; inset-block:0; pointer-events:none; }
 .sequence-timeline[data-effects=true] .sequence-effect { pointer-events:auto; }
 .sequence-effect.selected,.sequence-effect.is-moving { z-index:3; }
@@ -85,17 +83,17 @@
 .sequence-effect-capsule { position:absolute; inset-inline-start:0; inset-block-start:50%; inline-size:max(4px,var(--effect-length)); block-size:4px; translate:0 -50%; border-radius:2px; background:#ffffffc7; }
 .sequence-effect-capsule svg { display:none; }
 .sequence-effect.is-dot .sequence-effect-capsule { inline-size:6px; block-size:6px; translate:-50% -50%; border-radius:50%; }
-.sequence-timeline[data-effects=true] .sequence-effect-body { inset:6px -14px; }
-.sequence-timeline[data-effects=true] .sequence-effect-capsule { inset-inline-start:0; inline-size:calc(var(--effect-length) + 28px); block-size:28px; translate:0 -50%; display:flex; align-items:center; padding-inline-start:6px; border-radius:14px; background:var(--glass),#202023; box-shadow:var(--glass-edge),0 2px 8px #0007; transition:background-color .18s,box-shadow .18s,scale .22s var(--spring); }
-.sequence-timeline[data-effects=true] .sequence-effect-capsule svg { display:block; inline-size:16px; block-size:16px; flex:none; }
-.sequence-timeline[data-effects=true] .is-dot .sequence-effect-capsule { inline-size:28px; translate:0 -50%; border-radius:50%; }
+.sequence-timeline[data-effects=true] .sequence-effect-body { inset:2px -12px; }
+.sequence-timeline[data-effects=true] .sequence-effect-capsule { inset-inline-start:0; inline-size:calc(var(--effect-length) + 24px); block-size:24px; translate:0 -50%; display:flex; align-items:center; padding-inline-start:4px; border-radius:12px; background:var(--glass),#202023; box-shadow:var(--glass-edge),0 2px 8px #0007; transition:background-color .18s,box-shadow .18s,scale .22s var(--spring); }
+.sequence-timeline[data-effects=true] .sequence-effect-capsule svg { display:block; inline-size:15px; block-size:15px; flex:none; }
+.sequence-timeline[data-effects=true] .is-dot .sequence-effect-capsule { inline-size:24px; translate:0 -50%; border-radius:50%; }
 .sequence-effect.selected .sequence-effect-capsule { background:#f5f5f7; color:#000; box-shadow:0 4px 14px #000a; }
 .sequence-effect.is-moving .sequence-effect-capsule { scale:1.06; box-shadow:0 10px 22px #000d; }
 .sequence-effect-readout { position:absolute; inset-block-start:50%; inset-inline-start:calc(100% + 24px); translate:0 -50%; color:var(--ink); font:600 11px/1 -apple-system,BlinkMacSystemFont,system-ui,sans-serif; font-variant-numeric:tabular-nums; white-space:nowrap; pointer-events:none; text-shadow:0 1px 4px #000; }
 /* Only the end grows: the start stays pinned to its keyframe. */
 .sequence-duration { position:absolute; z-index:2; inset-block:-2px; inset-inline-start:100%; translate:-50% 0; inline-size:44px; padding:0; border:0; background:none; touch-action:none; cursor:ew-resize; }
-.sequence-duration span { position:absolute; inset-inline-start:50%; inset-block-start:50%; translate:-50% -50%; inline-size:22px; block-size:22px; border-radius:50%; background:#fff; box-shadow:0 0 0 2px #000,0 3px 10px #000a; pointer-events:none; transition:scale .18s var(--spring); }
-.sequence-duration span::after { content:''; position:absolute; inset:7px 9px; border-inline:1.5px solid #8e8e93; }
+.sequence-duration span { position:absolute; inset-inline-start:50%; inset-block-start:50%; translate:-50% -50%; inline-size:20px; block-size:20px; border-radius:50%; background:#fff; box-shadow:0 0 0 2px #000,0 3px 10px #000a; pointer-events:none; transition:scale .18s var(--spring); }
+.sequence-duration span::after { content:''; position:absolute; inset:6px 8px; border-inline:1.5px solid #8e8e93; }
 .sequence-duration:active span { scale:1.18; }
 .sequence-cluster { position:absolute; inset-block-start:50%; translate:-50% -50%; display:grid; place-items:center; inline-size:28px; block-size:28px; padding:0; border:0; border-radius:50%; background:var(--glass),#202023; box-shadow:var(--glass-edge); color:var(--ink); font:600 12px/1 -apple-system,BlinkMacSystemFont,system-ui,sans-serif; pointer-events:none; }
 .sequence-timeline[data-effects=true] .sequence-cluster { pointer-events:auto; }
@@ -128,9 +126,8 @@
 }
 @media(prefers-reduced-motion:reduce) { .video-timeline * { transition:none !important; } }
 @media(max-height:700px) {
-  .sequence-timeline:is([data-effects=true],[data-layers]) .sequence-track-window { block-size:146px; }
   .video-timeline-heading { min-block-size:48px; }
-  .sequence-timeline[data-effects=true] :is(.sequence-gesture-row,.sequence-camera-row) { block-size:36px; }
+  .sequence-timeline[data-layers] .sequence-track-window { block-size:146px; }
 }
 
 .effect-options { display:flex; gap:10px; inline-size:max-content; min-inline-size:0; padding:0; margin:0; border:0; }

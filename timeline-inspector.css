@@ -1,5 +1,7 @@
 .editor[data-video=true]:not([data-typing=true]) > .control-sheet { block-size:100%; min-block-size:0; padding:0; overflow:hidden; }
-.editor[data-video=true]:not([data-typing=true]) .control-stage { block-size:100%; overflow:auto; }
+.editor[data-video=true]:not([data-typing=true]) .control-stage { block-size:100%; overflow:auto; overscroll-behavior:contain; -webkit-overflow-scrolling:touch; }
+/* Inspectors scroll as one surface inside the fixed sheet, never as nested scrollers. */
+.editor[data-video=true]:not([data-typing=true]) .control-stage > .text-inspector { max-block-size:none; overflow:visible; }
 .editor[data-video=true]:not([data-typing=true]) .control-stage > .tool-navigation { padding-block-start:18px; }
 .sequence-inspector { --glass:var(--glass-fill); display:grid; align-content:start; gap:6px; block-size:100%; min-block-size:0; max-block-size:none; }
 .sequence-inspector-heading { display:grid; grid-template-columns:44px 1fr auto; align-items:center; min-block-size:44px; }

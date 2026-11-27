@@ -431,7 +431,9 @@ function Editor({ project, profile, telegram, ready, exporting=false, backHandle
     const parent=type==='gesture'||type==='camera'?timelineOwner(timeline,entry?.clipId):timelineOwner(timeline,id);
     if(parent?.objectId)mutateProject(prior=>baseSettings.pageObjects.some(o=>o.id===parent.objectId)?selectObject(prior,parent.objectId):changePage(prior,{selectedLayerId:parent.objectId}));
     if(type==='gesture'||type==='camera'){sequence.seek(effectTime(timeline,entry));switchControls('showcase');}
-    else {if(parent&&(current<parent.start||current>=parent.start+parent.out-parent.in))sequence.seek(parent.start);const text=baseSettings.layers.some(l=>l.id===parent?.objectId&&l.type==='text');if(settings||text||activePanel==='showcase')switchControls(text||!settings?null:'showcase',text?'text':null);}
+    else {if(parent&&(current<parent.start||current>=parent.start+parent.out-parent.in))sequence.seek(parent.start);const text=baseSettings.layers.some(l=>l.id===parent?.objectId&&l.type==='text');
+      // Selecting a clip keeps the open panel; only text or an explicit Clip settings request switches it.
+      if(text)switchControls(null,'text');else if(settings)switchControls('showcase');}
   }
   function deleteTimeline(type=timelineTarget?.type,id=timelineTarget?.id){if(!id)return;const next=removeTimelineItem(timeline,type,id);if(next===timeline)return;mutateProject(prior=>{let p=changePage(ensurePages(prior),{timeline:next,showcase:null});const entry=({clip:timeline.main,overlay:timeline.overlays}[type]??[]).find(e=>e.id===id);if(entry&&![...next.main,...next.overlays].some(e=>e.objectId===entry.objectId)){const page=pageFor(p);p={...p,pages:p.pages.map(pg=>pg.id===page.id?{...pg,objects:pg.objects.filter(o=>o.id!==entry.objectId),settings:{...pg.settings,layers:pg.settings.layers.filter(l=>l.id!==entry.objectId)}}:pg)};}return p;});setTimelineSelection(null);setKeyframeId(null);}
   function splitVideo(){const clip=timelineTarget?.type==='overlay'?owner:activeMain;if(clip)commitTimeline(splitTimelineClip(timeline,clip.id,current));}

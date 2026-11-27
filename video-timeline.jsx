@@ -154,7 +154,8 @@ export default function VideoTimeline({timeline={main:[],overlays:[],gestures:[]
         hold.current=setTimeout(()=>{
           const point=points.current.get(pointerId);
           if(!point||distance(point,{x:clientX,y:clientY})>5||!target.isConnected)return;
-          if(type==='clip')start({button:0,pointerId,clientX,currentTarget:target,stopPropagation(){}},type,item,'reorder');
+          // Reordering only makes sense with several clips; otherwise a hold just offers Delete.
+          if(type==='clip'&&main.length>1)start({button:0,pointerId,clientX,currentTarget:target,stopPropagation(){}},type,item,'reorder');
           openClipMenu(target,type,item);
           navigator.vibrate?.(8);
           dragMoved.current=true;
