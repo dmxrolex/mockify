@@ -1,11 +1,11 @@
 /* Looks row: round previews of background + phone, saved looks first. */
-.looks-row { display:flex; gap:4px; padding:0 12px 4px; overflow-x:auto; overscroll-behavior-inline:contain; scrollbar-width:none; scroll-snap-type:x proximity; scroll-padding-inline:12px; }
+.looks-row { display:flex; gap:4px; padding:6px 12px 4px; overflow-x:auto; overscroll-behavior-inline:contain; scrollbar-width:none; scroll-snap-type:x proximity; scroll-padding-inline:12px; }
 .looks-row::-webkit-scrollbar { display:none; }
 .look-cell { position:relative; flex:none; }
 .look-tile { position:relative; display:grid; justify-items:center; gap:5px; inline-size:60px; min-block-size:70px; padding:2px 0 0; border:0; background:none; color:#a1a1a8; font:500 11px/1.15 -apple-system,BlinkMacSystemFont,system-ui,sans-serif; scroll-snap-align:start; -webkit-tap-highlight-color:transparent; -webkit-touch-callout:none; touch-action:manipulation; }
 .look-tile small { max-inline-size:58px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:inherit; }
 .look-face { position:relative; display:grid; place-items:center; inline-size:46px; block-size:46px; overflow:hidden; border-radius:50%; background:var(--look-bg,var(--glass-fill)),#1c1c1f; box-shadow:var(--glass-edge); transition:scale .24s var(--spring),box-shadow .2s; }
-.look-face i { inline-size:14px; block-size:24px; margin-block-start:10px; border-radius:4px; background:#1c1c1e; box-shadow:0 0 0 2px var(--look-finish),3px 4px 6px #0006; }
+.look-face i { inline-size:14px; block-size:24px; border-radius:4px; background:#1c1c1e; box-shadow:0 0 0 2px var(--look-finish),3px 4px 6px #0006; }
 .look-face[data-long] i { box-shadow:0 0 0 2px var(--look-finish),6px 7px 0 #0003; }
 .look-face svg { inline-size:22px; block-size:22px; color:#fff; stroke-width:2; }
 .look-save .look-face { background:var(--glass-fill),#1c1c1f; }
