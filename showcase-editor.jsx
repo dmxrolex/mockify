@@ -39,3 +39,36 @@ function FocusPoint({endpoint=false,settings,source,index,moment,root,onPatch,di
   useEffect(()=>{function measure(){const rect=root.current.getBoundingClientRect(),p=mediaMapping({...settings,renderProgress:0},source,rect.width,rect.height,index).to(endpoint?{x:moment.endX??moment.x,y:moment.endY??Math.max(0,moment.y-.25)}:moment);point.current.style.left=p.x+'px';point.current.style.top=p.y+'px';}const watch=new ResizeObserver(measure);watch.observe(root.current);measure();return()=>watch.disconnect();},[settings,source,index,moment,endpoint]);
   return <button ref={point} data-endpoint={endpoint} type="button" className="showcase-focus-point" disabled={disabled} aria-label={t(endpoint?'Swipe end. Use arrow keys to move.':'Focus point. Use arrow keys to move.')} onKeyDown={event=>{const movement={ArrowLeft:[-.02,0],ArrowRight:[.02,0],ArrowUp:[0,-.02],ArrowDown:[0,.02]}[event.key];if(movement){event.preventDefault();onPatch(endpoint?{endX:clamp((moment.endX??moment.x)+movement[0],0,1),endY:clamp((moment.endY??Math.max(0,moment.y-.25))+movement[1],0,1)}:{x:clamp(moment.x+movement[0],0,1),y:clamp(moment.y+movement[1],0,1),suggested:false},moment.id);}}}>{!endpoint&&moment.focus&&<span className="animation-zoom-label">{(moment.zoom??1.65).toFixed(1)}×</span>}</button>;
 }
+
+// Live touch recording: while the video plays, tap, hold or slide on the canvas and each
+// touch is captured at that moment with its type. Touches are committed when recording stops.
+export function TouchRecorder({settings,source,index,now,onTouch,onStop,count=0}){
+  const root=useRef(null),active=useRef(new Map()),[rings,setRings]=useState([]);
+  const toSource=(event)=>{const rect=root.current.getBoundingClientRect(),map=mediaMapping({...settings,renderProgress:0},source,rect.width,rect.height,index);const p=map.from({x:event.clientX-rect.left,y:event.clientY-rect.top});return {x:clamp(p.x,0,1),y:clamp(p.y,0,1),px:event.clientX-rect.left,py:event.clientY-rect.top};};
+  function down(event){
+    // Recording owns the canvas: these touches must not select or dismiss anything underneath.
+    event.stopPropagation();
+    if(event.target.closest('.touch-recorder-bar'))return;
+    event.preventDefault();event.currentTarget.setPointerCapture(event.pointerId);
+    const p=toSource(event);if(p.x<=0||p.x>=1||p.y<=0||p.y>=1)return;
+    active.current.set(event.pointerId,{time:now(),started:performance.now(),start:p,last:p});
+    setRings(list=>[...list,{id:event.pointerId,x:p.px,y:p.py}]);
+  }
+  function move(event){const touch=active.current.get(event.pointerId);if(!touch)return;const p=toSource(event);touch.last=p;setRings(list=>list.map(ring=>ring.id===event.pointerId?{...ring,x:p.px,y:p.py}:ring));}
+  function up(event){
+    const touch=active.current.get(event.pointerId);if(!touch)return;active.current.delete(event.pointerId);
+    setRings(list=>list.filter(ring=>ring.id!==event.pointerId));
+    if(event.type==='pointercancel')return;
+    const held=(performance.now()-touch.started)/1000,travel=Math.hypot(touch.last.x-touch.start.x,touch.last.y-touch.start.y);
+    const kind=travel>.04?'swipe':held>=.35?'hold':'tap';
+    onTouch({kind,time:touch.time,x:touch.start.x,y:touch.start.y,endX:touch.last.x,endY:touch.last.y,duration:held});
+  }
+  return <div ref={root} className="touch-recorder" onPointerDown={down} onClick={event=>event.stopPropagation()} onPointerMove={move} onPointerUp={up} onPointerCancel={up} role="application" aria-label={t('Recording touches. Tap, hold or slide on the screen.')}>
+    {rings.map(ring=><span key={ring.id} className="touch-recorder-ring" style={{left:ring.x,top:ring.y}}/>)}
+    <div className="touch-recorder-bar">
+      <span className="touch-recorder-dot" aria-hidden="true"/><span>{t('Recording')}{count?' · '+count:''}</span>
+      <button type="button" onClick={onStop}>{t('Stop')}</button>
+    </div>
+    {!count&&<p className="touch-recorder-hint">{t('Tap, hold or slide where your finger went')}</p>}
+  </div>;
+}
