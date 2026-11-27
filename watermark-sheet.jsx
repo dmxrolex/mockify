@@ -35,7 +35,7 @@ export default function WatermarkSheet({mark,onChange,onDone,profile,ratio='squa
       <button type="button" className="ios-text-done mark-done" onClick={onDone}>{t('Done')}</button>
     </header>
     <div className="mark-scroll">
-      <div className="mark-segment" role="radiogroup" aria-label={t('Watermark type')} style={{'--segment':mark.kind==='image'?1:0}}>
+      <div className="ios-segment" role="radiogroup" aria-label={t('Watermark type')} style={{'--segment':mark.kind==='image'?1:0}}>
         {[['text','Text'],['image','Image']].map(([kind,label])=><button key={kind} type="button" role="radio" aria-checked={mark.kind===kind} onClick={()=>{hapticSelection();set({kind});}}>{t(label)}</button>)}
       </div>
 

@@ -58,6 +58,8 @@ import './navigation.css';
 import './text-editor.css';
 
 const loadFilesSticker=()=>import('./assets/files-duck.json');
+// New touches keep the ring style the user last chose.
+const ringOf=gesture=>gesture?.ring?{ring:gesture.ring}:{};
 
 const paths = {
   // Animation: the touch disc used across the timeline, with motion sparks.
@@ -461,7 +463,7 @@ function Editor({ lookId, lookAuto=false, onLookSaved, project, profile, telegra
       const camera={id,clipId:parent.id,time:sourceTime,duration:length,preset:true,keyframes:[key(sourceTime,1),key(sourceTime+ramp,1.65),key(holdEnd,1.65),key(sourceTime+length,1)]};
       commitTimeline({...timeline,gestures,cameras:[...cameras,camera]});setTimelineSelection({type:'camera',id});setKeyframeId(null);
     }else{
-      const gesture={id,clipId:parent.id,time:sourceTime,gesture:kind,duration:Math.min(kind==='tap'?.65:Math.min(4,Math.max(.3,savedDuration??1)),parent.out-sourceTime),...position,endX:previous?.endX??position.x,endY:previous?.endY??(position.y>.25?position.y-.25:position.y+.25)};
+      const gesture={id,clipId:parent.id,time:sourceTime,gesture:kind,duration:Math.min(kind==='tap'?.65:Math.min(4,Math.max(.3,savedDuration??1)),parent.out-sourceTime),...position,endX:previous?.endX??position.x,endY:previous?.endY??(position.y>.25?position.y-.25:position.y+.25),...ringOf(previous??gestures.at(-1))};
       commitTimeline({...timeline,cameras,gestures:[...gestures,gesture]});setTimelineSelection({type:'gesture',id});setKeyframeId(null);
     }
     sequence.seek(current);switchControls('showcase');return id;
@@ -595,7 +597,7 @@ function Editor({ lookId, lookAuto=false, onLookSaved, project, profile, telegra
   function gestureFrom(track,touch){
     const parent=placedClips(track).find(c=>touch.time>=c.start&&touch.time<c.end);if(!parent)return null;
     const time=parent.in+touch.time-parent.start,room=Math.max(.001,parent.out-time);
-    return {id:timelineId(),clipId:parent.id,time,gesture:touch.kind,x:touch.x,y:touch.y,endX:touch.endX??touch.x,endY:touch.endY??touch.y,duration:touch.kind==='tap'?Math.min(.65,room):Math.min(room,4,Math.max(.3,touch.duration??1)),...(touch.auto?{auto:true}:{})};
+    return {id:timelineId(),clipId:parent.id,time,gesture:touch.kind,x:touch.x,y:touch.y,endX:touch.endX??touch.x,endY:touch.endY??touch.y,duration:touch.kind==='tap'?Math.min(.65,room):Math.min(room,4,Math.max(.3,touch.duration??1)),...ringOf(track.gestures.at(-1)),...(touch.auto?{auto:true}:{})};
   }
   function commitRecorded(){
     const touches=recorded.current;recorded.current=[];setRecordedCount(0);if(!touches.length)return;

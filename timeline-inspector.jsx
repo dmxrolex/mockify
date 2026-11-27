@@ -3,6 +3,7 @@ import {Range} from './text-editor.jsx';
 import {VideoIcon} from './video-icons.jsx';
 import {cameraFrames,timelineOwner} from './timeline-model.js';
 import {t} from './i18n.js';
+import {hapticSelection} from './haptics.js';
 import './timeline-inspector.css';
 
 const kinds=[['tap','Tap'],['hold','Hold'],['swipe','Swipe'],['zoom','Zoom']];
@@ -36,6 +37,9 @@ export default function TimelineInspector({timeline,selection,onPatch,onDelete,o
     </header>
     {/* What to do next for the selected item: everything else is direct manipulation. */}
     <p className="sequence-hint">{t(kind?hints[kind]:playing?'Tap, hold or slide on the screen as it plays':'Add Tap, Hold, Swipe or Zoom under the timeline')}</p>
+    {type==='gesture'&&item?<div className="ios-segment sequence-ring" role="radiogroup" aria-label={t('Ring colour')} style={{'--segment':item.ring==='blue'?1:0}}>
+      {[['clear','Clear'],['blue','Blue']].map(([ring,label])=><button key={ring} type="button" role="radio" aria-checked={(item.ring??'clear')===ring} onClick={()=>{if((item.ring??'clear')===ring)return;hapticSelection();patch({ring});}}>{t(label)}</button>)}
+    </div>:null}
     {type==='camera'&&item?<Range label={t('Zoom')} min={110} max={280} value={Math.round(Math.max(1.1,peak)*100)} display={peak.toFixed(1)+'×'} onChange={v=>changeZoom(v/100)}/>
       :volume?<Range label={t('Volume')} min={0} max={100} value={Math.round((item.volume??(type==='clip'?1:0))*100)} display={Math.round((item.volume??(type==='clip'?1:0))*100)+'%'} onChange={v=>patch({volume:v/100})}/>:null}
   </section>;
