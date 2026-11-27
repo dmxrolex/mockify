@@ -1,0 +1,68 @@
+.telegram-star-art { position:relative; display:inline-block; flex:none; inline-size:24px; block-size:24px; vertical-align:middle; }
+.telegram-star-art > img { display:block; inline-size:100%; block-size:100%; object-fit:contain; }
+.telegram-star-animation { position:absolute; inset:0; display:block; pointer-events:none; }
+.telegram-star-animation > svg { display:block; inline-size:100%; block-size:100%; stroke:none; }
+.telegram-star-art:has(.telegram-star-animation[data-ready=true]) > img { opacity:0; }
+.balance-coin-scene { --coin-size:180px; position:relative; display:grid; place-items:center; block-size:clamp(205px,28dvh,235px); isolation:isolate; }
+.balance-star { inline-size:var(--coin-size); block-size:var(--coin-size); }
+.header-coin { display:grid; place-items:center; flex:none; inline-size:28px; block-size:28px; }
+.header-coin .telegram-star-art { inline-size:26px; block-size:26px; }
+.balance-hero {
+  background:
+    radial-gradient(ellipse at 82% 14%,#f1ae4738,transparent 56%),
+    radial-gradient(ellipse at 92% 94%,#97612b40,transparent 62%),
+    linear-gradient(120deg,#161310,#241b12);
+
+}
+.balance-hero .balance-coin-scene { --coin-size:104px; inline-size:128px; block-size:104px; }
+.balance-hero .balance-total {
+  display:flex; align-items:baseline; flex-wrap:wrap; column-gap:8px; row-gap:3px; margin-block-start:0;
+  font-size:1.75rem; font-size:clamp(1.5rem,8.4cqi,2.5rem); line-height:1;
+  letter-spacing:-.055em;
+}
+.balance-total strong { font-weight:700; font-variant-numeric:tabular-nums; overflow-wrap:anywhere; }
+.balance-total span { font:inherit; font-weight:700; color:#ffd75e; text-transform:uppercase; letter-spacing:inherit; }
+.balance-hero p { color:#cfbda6; font-size:.8125rem; margin-block-start:0; }
+.balance-features { list-style:none; margin:0; padding:0; }
+.credit-chooser { position:relative; }
+.credit-chooser .account-section-label { margin-block:0 0 12px; padding:0; }
+.credit-bonus-ribbon {
+  position:absolute; z-index:3; inset:0 0 auto auto;
+  min-inline-size:48px; padding:5px 8px; border:0;
+  border-radius:0 17px 0 11px;
+  background:linear-gradient(125deg,#d8ac4d,#9c6a19); color:#fff;
+  font:700 .75rem/1.1 system-ui,sans-serif; letter-spacing:.01em;
+}
+.purchase-option:has(.credit-bonus-ribbon) .purchase-check { inset-inline-start:7px; inset-inline-end:auto; }
+.purchase-option-face:has(.credit-bonus-ribbon) { padding-block-start:23px; }
+.coin-sparkles { position:absolute; inset:0; pointer-events:none; }
+.coin-particle {
+  position:absolute; left:var(--particle-x); top:var(--particle-y);
+  inline-size:var(--particle-size); block-size:var(--particle-size); background:#ffe6ab; opacity:.65;
+}
+.coin-particle.particle-0 { clip-path:polygon(50% 0,61% 38%,100% 50%,61% 62%,50% 100%,39% 62%,0 50%,39% 38%); }
+.coin-particle.particle-1 { inline-size:3px; block-size:3px; border-radius:50%; background:#cda75c; }
+.coin-particle.particle-2 { background:transparent; border:1px solid #cda75c; rotate:45deg; border-radius:1px; }
+@media(prefers-reduced-motion:no-preference) {
+  .coin-particle { animation:coin-sparkle-drift 4.6s var(--particle-delay) ease-in-out infinite; }
+}
+@keyframes coin-sparkle-drift { 0%,100% { translate:0 3px; opacity:.25; scale:.8; } 50% { translate:0 -5px; opacity:.85; scale:1.1; } }
+.unlimited-offer {
+  display:flex; align-items:center; gap:8px;
+  inline-size:100%; min-block-size:64px; padding:10px 12px;
+  background:linear-gradient(115deg,#252019,#17191f); border:0; border-radius:18px; text-align:start;
+}
+.unlimited-copy { display:grid; flex:1; min-inline-size:0; gap:2px; }
+.unlimited-copy > strong { font-size:1rem; font-weight:650; letter-spacing:-.025em; color:#ead3a4; }
+.unlimited-copy > span { color:#aab8ca; font-size:.75rem; line-height:1.35; }
+.unlimited-icon { display:grid; place-items:center; flex:none; inline-size:30px; block-size:30px; }
+.unlimited-icon svg { inline-size:100%; block-size:100%; }
+.offer-next { inline-size:14px; block-size:14px; color:#9aabc0; }
+@container (max-width:280px) {
+  .balance-hero .balance-coin-scene { --coin-size:84px; inline-size:98px; }
+}
+
+.unlimited-copy > span { display:flex; align-items:center; gap:8px; }
+.unlimited-copy .star-price { color:#f4d18a; background:#44351e; border-radius:20px; padding:3px 7px; }
+
+.balance-features .ios-setting-value { padding:4px 8px; border-radius:20px; background:#29251d; color:#dfc89a; font-size:.75rem; }

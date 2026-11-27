@@ -1,0 +1,82 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="px-title px-desc">
+  <title id="px-title">Pixova gold coin</title>
+  <desc id="px-desc">A polished gold coin with a milled edge, engraved rings, and the faceted orange and pink Pixova emblem.</desc>
+  <defs>
+    <linearGradient id="px-edge" x1="55" y1="220" x2="442" y2="438" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#b96d08"/><stop offset=".22" stop-color="#ffdd60"/><stop offset=".43" stop-color="#bd6500"/><stop offset=".68" stop-color="#7c3500"/><stop offset=".88" stop-color="#e8a521"/><stop offset="1" stop-color="#9b4c03"/>
+    </linearGradient>
+    <linearGradient id="px-rim" x1="102" y1="63" x2="412" y2="424" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#fce087"/><stop offset=".14" stop-color="#f8d76a"/><stop offset=".27" stop-color="#e9a914"/><stop offset=".39" stop-color="#ffdc56"/><stop offset=".52" stop-color="#edbc46"/><stop offset=".64" stop-color="#f9c43b"/><stop offset=".81" stop-color="#d68a0b"/><stop offset=".91" stop-color="#eaba47"/><stop offset="1" stop-color="#b86a05"/>
+    </linearGradient>
+    <linearGradient id="px-bevel" x1="142" y1="91" x2="377" y2="411" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#b96c08"/><stop offset=".28" stop-color="#eab029"/><stop offset=".55" stop-color="#ffec89"/><stop offset=".76" stop-color="#f3d473"/><stop offset="1" stop-color="#edc55a"/>
+    </linearGradient>
+    <radialGradient id="px-face" cx=".3" cy=".23" r=".93">
+      <stop stop-color="#c48d22"/><stop offset=".31" stop-color="#ffdb58"/><stop offset=".67" stop-color="#efb327"/><stop offset="1" stop-color="#cf7f08"/>
+    </radialGradient>
+    <linearGradient id="px-face-light" x1="82" y1="128" x2="422" y2="350" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#fffad0" stop-opacity=".47"/><stop offset=".45" stop-color="#fffad0" stop-opacity="0"/><stop offset="1" stop-color="#fff4b2" stop-opacity=".16"/>
+    </linearGradient>
+    <linearGradient id="px-gem-top" x1="39" y1="8" x2="154" y2="93" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#fff378"/><stop offset=".37" stop-color="#ffc719"/><stop offset=".72" stop-color="#ff8735"/><stop offset="1" stop-color="#ff4e79"/>
+    </linearGradient>
+    <linearGradient id="px-gem-fold" x1="75" y1="100" x2="152" y2="66" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#f52b39"/><stop offset=".52" stop-color="#ff3762"/><stop offset="1" stop-color="#f8559e"/>
+    </linearGradient>
+    <linearGradient id="px-gem-leg" x1="18" y1="95" x2="69" y2="144" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#ffd41c"/><stop offset=".5" stop-color="#ffb500"/><stop offset="1" stop-color="#ff7111"/>
+    </linearGradient>
+    <filter id="px-logo-relief" x="-.3" y="-.3" width="1.6" height="1.7" color-interpolation-filters="sRGB">
+      <feDropShadow dx="1" dy="3.8" stdDeviation="2.2" flood-color="#7d3300" flood-opacity=".65"/>
+    </filter>
+    <filter id="px-coin-shadow" x="-.08" y="-.08" width="1.16" height="1.2" color-interpolation-filters="sRGB">
+      <feDropShadow dx="0" dy="5" stdDeviation="4" flood-color="#351800" flood-opacity=".26"/>
+    </filter>
+    <clipPath id="px-face-clip"><circle cx="256" cy="244" r="183"/></clipPath>
+    <path id="px-reed" d="M256 455v17" stroke="#643000" stroke-width="2"/>
+    <path id="px-bead" d="M256 47h.01" stroke="#ddab42" stroke-width="2.7" stroke-linecap="round"/>
+    <path id="px-etch" d="m256 70-2.2 6.5h4.4Z" fill="#b5740b" opacity=".48"/>
+    <path id="px-emblem" d="M54 6 154 59 153 103 116 127 64 107 113 79 39 41ZM18 97 70 68 59 151 18 178Z"/>
+  </defs>
+
+  <g filter="url(#px-coin-shadow)">
+    <circle cx="256" cy="260" r="213" fill="url(#px-edge)"/>
+    <g opacity=".55">
+      <use href="#px-reed"/><use href="#px-reed" transform="rotate(8 256 260)"/><use href="#px-reed" transform="rotate(16 256 260)"/><use href="#px-reed" transform="rotate(24 256 260)"/><use href="#px-reed" transform="rotate(32 256 260)"/><use href="#px-reed" transform="rotate(40 256 260)"/><use href="#px-reed" transform="rotate(48 256 260)"/><use href="#px-reed" transform="rotate(56 256 260)"/><use href="#px-reed" transform="rotate(64 256 260)"/><use href="#px-reed" transform="rotate(72 256 260)"/><use href="#px-reed" transform="rotate(-8 256 260)"/><use href="#px-reed" transform="rotate(-16 256 260)"/><use href="#px-reed" transform="rotate(-24 256 260)"/><use href="#px-reed" transform="rotate(-32 256 260)"/><use href="#px-reed" transform="rotate(-40 256 260)"/><use href="#px-reed" transform="rotate(-48 256 260)"/><use href="#px-reed" transform="rotate(-56 256 260)"/><use href="#px-reed" transform="rotate(-64 256 260)"/><use href="#px-reed" transform="rotate(-72 256 260)"/>
+    </g>
+    <circle cx="256" cy="244" r="213" fill="url(#px-rim)" stroke="#f5cf61" stroke-width="1.5"/>
+    <circle cx="256" cy="244" r="208.5" fill="none" stroke="#e7b245" stroke-width="1" opacity=".45"/>
+    <circle cx="256" cy="244" r="193" fill="url(#px-bevel)"/>
+    <circle cx="256" cy="244" r="188" fill="#a86607"/>
+    <circle cx="256" cy="244" r="185.5" fill="#efc55b"/>
+    <circle cx="256" cy="244" r="183" fill="url(#px-face)"/>
+    <g clip-path="url(#px-face-clip)">
+      <circle cx="256" cy="244" r="176" fill="none" stroke="#c48d22" stroke-width=".75" opacity=".6"/>
+      <circle cx="256" cy="244" r="173" fill="none" stroke="#c4840d" stroke-width=".65" opacity=".4"/>
+      <path d="M111 153a171 171 0 0 1 162-79M324 401a171 171 0 0 0 94-113" fill="none" stroke="#e6b648" stroke-width="1.4" stroke-linecap="round" opacity=".6"/>
+    </g>
+    <g>
+      
+      <use href="#px-etch"/><use href="#px-etch" transform="rotate(45 256 244)"/><use href="#px-etch" transform="rotate(90 256 244)"/><use href="#px-etch" transform="rotate(135 256 244)"/><use href="#px-etch" transform="rotate(180 256 244)"/><use href="#px-etch" transform="rotate(225 256 244)"/><use href="#px-etch" transform="rotate(270 256 244)"/><use href="#px-etch" transform="rotate(315 256 244)"/>
+    </g>
+
+    <g transform="translate(119 103) scale(1.62)" filter="url(#px-logo-relief)">
+      <use href="#px-emblem" fill="#a35408" stroke="#995100" stroke-width="4" stroke-linejoin="round" transform="translate(0 1.5)"/>
+      <path d="M54 6 154 59 113 79 39 41Z" fill="url(#px-gem-top)"/>
+      <path d="m54 6 39 37-54-2Z" fill="#fff17a"/>
+      <path d="m54 6 65 35-26 2Z" fill="#ffda43"/>
+      <path d="m39 41 54 2 20 36Z" fill="#ffb516"/>
+      <path d="m93 43 61 16-41 20Z" fill="#ff9752"/>
+      <path d="m64 107 49-28 41-20-1 44-37 24Z" fill="url(#px-gem-fold)"/>
+      <path d="m113 79 41-20-4 36Z" fill="#ff5c9c"/>
+      <path d="m113 79 37 16-34 32Z" fill="#ee376f"/>
+      <path d="m64 107 49-28 3 48Z" fill="#ff3545"/>
+      <path d="m64 107 32-18-14 26Z" fill="#d82130"/>
+      <path d="M18 97 70 68 59 151 18 178Z" fill="url(#px-gem-leg)"/>
+      <path d="m18 97 52-29-27 67Z" fill="#ffc91b"/>
+      <path d="m70 68-11 83-16-16Z" fill="#ff8d0e"/>
+      <path d="m18 97 25 38-25 43Z" fill="#ffba08"/>
+      <path d="m43 135 16 16-41 27Z" fill="#ff7511"/>
+    </g>
+  </g>
+</svg>

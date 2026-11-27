@@ -1,0 +1,4 @@
+# Copy to .dev.vars for local Wrangler development.
+# Public bot and app settings are in wrangler.jsonc.
+TELEGRAM_BOT_TOKEN=
+PAYMENTS_SETUP_KEY=

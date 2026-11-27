@@ -1,0 +1,20 @@
+Use case: ui-mockup.
+Create a polished, implementation-ready mobile UI concept board for Pixova, a Telegram image editor. Show TWO states of the SAME subscription screen side by side, not two different plans. Landscape board, two equally sized frameless mobile app screen crops approximately 390x740 logical px with modest gutters. Outside the screens, very small captions "Inactive" and "Active". No physical iPhone hardware.
+
+Visual style: pure black app background, restrained charcoal #1c1c1e iOS Settings grouped rows, continuous 22px rounded corners, thin inset separators, immaculate SF-style system typography, white and muted grey text, familiar thin iOS outline icons in consistent blue/mint/purple rounded square icon tiles. Main premium accent is a soft luminous lavender, not heavy liquid glass. No harsh blue rectangular HTML focus boxes. Premium mark: refined purple rounded-square medallion with a white infinity loop and one tiny four-point glint, inspired by an iOS subscription icon. Keep hero moderate, about 80px, no giant hero or excessive empty space.
+
+Both screens share exactly the same structure and aligned positions:
+1. At top, a small charcoal circular back arrow hit area on left; centered small navigation title "My subscription". No profile avatar, balance pill or bottom navigation on this dedicated screen.
+2. A compact centered premium identity area: purple infinity medallion, "Pixova Premium" as a medium-sized title. Under it a small status capsule. On LEFT capsule says "Inactive" in muted grey. On RIGHT says "Active" with a small mint dot, tasteful green/mint tint. Beneath the right badge show "Valid until 22 Feb 2027" with tiny calendar outline. Preserve corresponding space on left without adding filler copy.
+3. One compact grouped charcoal benefits card, NO heading above it. Exactly three rows, icon tile at left and benefit name:
+"Unlimited access"
+"Full-quality exports"
+"All editing tools"
+These are illustrative feature choices. Do not show a checklist with a sales paragraph, no descriptions or arrows.
+4. One charcoal purchase card. Small top row label "Duration". A three-part rounded segmented selector inside it with EXACT options "1 month", "3 months", "5 months". The middle "3 months" is selected, using a smooth lighter charcoal/lavender inset pill; the other two remain quiet. It is ONE plan with three validity choices, not three price cards or tiers.
+Below selector show a nicely detailed gold Telegram Stars symbol followed by large "129", with small grey "Stars total". Price is illustrative. Beneath price show a short two-column row: on left screen "Valid for" at left and "3 months" at right; on right screen "New expiry" at left and "22 May 2027" at right.
+Then a full-width 50px tall soft-lavender rounded primary button with dark readable text. LEFT button says "Get Premium". RIGHT button says "Extend Premium".
+Bottom of screen has comfortable safe-area spacing, no extra marketing text or links.
+
+Composition should feel compact and real, with ample breathing room inside components but not a very long page. Entire UI comfortably fits one normal phone screen. Same feature rows and purchase controls remain visible in active state. No countdown, automatic renewal switch, free trial, multiple tiers, discount tags, comparison table, coin balance, payment confirmation, or invented extra buttons.
+Outside both screen crops, a single small board footnote "Illustrative benefits and prices". All text must be crisp, correctly spelled and limited to these specified labels.

@@ -1,0 +1,50 @@
+.home-screen {
+ inline-size:min(100%,430px); margin-inline:auto; padding:38px 14px 20px;
+ display:flex; flex-direction:column; gap:30px;
+}
+.create-dock {
+ position:relative; display:grid; grid-template-columns:1fr 92px 1fr; align-items:center;
+ min-block-size:72px; margin-inline:18px; border:1px solid #ffffff15; border-radius:40px;
+ background:linear-gradient(160deg,#242528,#111214 65%,#191a1c);
+ box-shadow:inset 0 1px 1px #ffffff13,inset 0 -1px 1px #ffffff04;
+}
+.create-dock.is-dragging { outline:2px solid #aaa0ff; outline-offset:5px; }
+.create-shortcut {
+ display:grid; place-items:center; min-inline-size:44px; min-block-size:60px; padding:0;
+ border:0; border-radius:32px; background:transparent; color:#eeeef1;
+}
+.create-shortcut svg { inline-size:29px; block-size:29px; stroke-width:1.6; }
+.create-shortcut:hover:not(:disabled) { color:#c1b6ff; }
+.create-main {
+ position:relative; align-self:center; display:grid; place-items:center; padding:0;
+ inline-size:82px; block-size:82px; margin-block:-17px -3px; margin-inline:auto;
+ border:0; border-radius:27px; background:transparent; isolation:isolate;
+}
+.create-plus {
+ display:grid; place-items:center; inline-size:100%; block-size:100%; border-radius:27px;
+ color:#fff; background:linear-gradient(140deg,#d54ff2,#843dff 36%,#394aff 74%,#16a2fb);
+ box-shadow:inset 0 1px 1px #ffffff55,inset 0 -1px 2px #221baf44,0 4px 12px #0004;
+}
+.create-plus svg { inline-size:38px; block-size:38px; stroke-width:1.8; }
+.create-ribbon {
+ position:absolute; z-index:1; inset:-8px -21px auto auto; padding:6px 10px; border-radius:10px 12px 3px 10px;
+ color:#fff; font-size:9px; line-height:1.1; font-weight:550; white-space:nowrap;
+ background:linear-gradient(135deg,#ff5b59,#e83139 70%,#bf1625);
+ transform:rotate(16deg); transform-origin:85% 50%; box-shadow:inset 0 1px 0 #ffffff38,0 3px 6px #0004; pointer-events:none;
+}
+.create-ribbon::after {
+ content:""; position:absolute; inset-inline-end:0; inset-block-start:100%; inline-size:7px; block-size:7px;
+ background:#9b1725; clip-path:polygon(0 0,100% 0,100% 100%);
+}
+.draft-gallery {
+ min-inline-size:0; padding:14px 12px 15px; border:1px solid #ffffff0e; border-radius:25px;
+ background:linear-gradient(150deg,#1b1c1f,#101113 55%,#17181a);
+ box-shadow:inset 0 1px 0 #ffffff0b;
+}
+.draft-gallery-heading { display:block; min-block-size:34px; margin-block:0 10px; padding:0 3px; background:none; border:0; border-radius:8px; text-align:start; }
+.draft-gallery-heading h2 { font-size:15px; font-weight:450; letter-spacing:-.02em; color:#d1d1d7; }
+@media(prefers-reduced-motion:no-preference) {
+ .create-plus { transition:transform 300ms cubic-bezier(.2,.8,.2,1.3); }
+ .create-main:active .create-plus { transform:scale(.93); }
+}
+@media(max-height:700px) { .home-screen { padding-block-start:26px; gap:25px; } }

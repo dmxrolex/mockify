@@ -1,0 +1,23 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "styleit-miniapp",
+  "main": "worker.js",
+  "compatibility_date": "2026-11-21",
+  "assets": {
+    "directory": "./dist",
+    "binding": "ASSETS",
+    "not_found_handling": "single-page-application",
+    "run_worker_first": ["/api/*"]
+  },
+  "d1_databases": [{
+    "binding": "DB",
+    "database_name": "styleit-users",
+    "database_id": "deed2330-4359-4602-9ba2-b6e54c9dd457",
+    "migrations_dir": "./migrations"
+  }],
+  "vars": {
+    "PAYMENTS_BASE_URL": "https://styleit-miniapp.smokikj.workers.dev",
+    "TELEGRAM_BOT_ID": "8670388222",
+    "TELEGRAM_BOT_USERNAME": "Mockify_app"
+  }
+}

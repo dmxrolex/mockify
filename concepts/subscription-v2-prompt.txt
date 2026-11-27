@@ -1,0 +1,30 @@
+Use case: ui-mockup. Redesign the attached Pixova subscription concept board. The attached board is the edit target. Keep its three-row feature group visually identical: same coloured icon tiles, same labels, same restrained charcoal iOS Settings styling. Rework everything else according to these instructions, not a minor restyle.
+
+Show the same one Premium membership in TWO states side by side, inactive and active. Do NOT depict different tiers. Maintain two normal phone-screen crops with black backgrounds, no physical iPhone hardware. Screens should be compact, not long. Small captions "Inactive" and "Active" belong OUTSIDE the screens only.
+
+REMOVE the top "My subscription" navigation title entirely. REMOVE the big centered "Pixova Premium" title entirely. REMOVE the purple rounded-square infinity icon and its glint entirely. No infinity icon anywhere in the hero. Keep a small, refined round back button at top left.
+
+New status placement: a discreet compact membership chip at the upper right, on the same line as the back button. LEFT chip: a tiny grey dot and "Not active" with a tiny down chevron. RIGHT chip: tiny mint dot and "Active" with a tiny down chevron. Status details live behind this chip, rather than forming a big centered status stack. On the RIGHT show that chip's small anchored iOS popover open, containing one clean calendar row with "Valid until" and "22 Feb 2027". This is a tiny floating disclosure near the header and must not cover the feature rows. On the LEFT the disclosure remains closed. No other header copy.
+
+New premium emblem: a beautiful standalone sculptural folded ribbon prism, forming a subtle angular P silhouette. Brushed platinum surfaces with refined indigo/violet iridescent edges and restrained cyan highlights. Distinctive premium image-editor identity, sharp but softly bevelled details, approximately 90px tall, floating directly on black with faint controlled reflected light beneath. No square backing tile, no circular frame, no infinity loop, no crown, no star, no generic diamond. Place it in a compact hero area between header and feature group. Do NOT put text below the emblem. Keep it sophisticated and restrained, not a giant illustration.
+
+Keep the accepted feature group:
+row 1 blue rounded icon tile + "Unlimited access"
+row 2 mint icon tile + "Full-quality exports"
+row 3 purple icon tile + "All editing tools"
+White system typography, thin inset separators, continuous rounded charcoal outer shape.
+
+Completely REPLACE the big Duration purchase card, segmented selector, huge 129 total and validity row. The new purchase area is THREE SMALL SQUARE CARDS in a SINGLE HORIZONTAL ROW (1 by 3). All three cards have equal dimensions, approximately 104x104 logical px, neat 20px continuous corners and quiet charcoal backgrounds, no outer wrapper. Each square holds its own duration and its own Telegram Stars price:
+LEFT square: large "1", small "month", then a small detailed GOLD TELEGRAM STARS symbol and "49".
+MIDDLE square: large "3", small "months", then the same gold Stars symbol and "129".
+RIGHT square: large "5", small "months", then the same gold Stars symbol and "199".
+Select ONLY the middle square with a fine lavender outline, a subtly lighter charcoal-purple fill and a tiny round tick in its top-right corner. This is one plan with duration selection. No card headers or tier names, no "most popular" or discount ribbons. Align everything perfectly and make prices readable at mobile size. Gold Stars symbols should be proper shaded 3D Telegram-style stars, not a text asterisk or flat unicode star.
+
+Below the cards, ONE wide polished rounded soft-lavender button:
+LEFT "Get Premium" and a modest gold star with "129" at its right end.
+RIGHT "Extend Premium" and the same star with "129" at its right end.
+No giant separate price. On RIGHT only, a tiny quiet line below the button says "New expiry · 22 May 2027". The LEFT has no filler text. Safe-area room below, no bottom navigation.
+
+Visual hierarchy: a quiet functional header, distinctive premium emblem, accepted feature rows, compact three-square duration picker, one clear action. Use black, charcoal, platinum and lavender with tiny mint status and gold Stars accents. No heavy glass, extra gradients behind panels, oversized text, marketing paragraphs, duplicated Premium labels, credit balance, renewal switch, trials or comparison tables.
+
+At the bottom OUTSIDE the screens, keep just one tiny board note "Illustrative benefits and prices". Render all specified text correctly and crisply.

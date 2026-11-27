@@ -1,0 +1,2 @@
+.alignment-guides { position:absolute; inset:0; inline-size:100%; block-size:100%; z-index:1900; pointer-events:none; overflow:hidden; color:#64b5ff; }
+.alignment-guides line { stroke:currentColor; stroke-width:1; vector-effect:non-scaling-stroke; }

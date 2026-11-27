@@ -1,0 +1,4 @@
+Telegram Stars BalanceStar artwork
+Source: https://github.com/TelegramMessenger/Telegram-iOS/blob/master/submodules/TelegramUI/Images.xcassets/Premium/Stars/BalanceStar.imageset/StarBalance.pdf
+Converted from the original PDF to SVG without redesign.
+Source repository and licensing information: https://github.com/TelegramMessenger/Telegram-iOS

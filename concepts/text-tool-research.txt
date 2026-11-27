@@ -1,0 +1,34 @@
+TEXT TOOL — PROPOSED IMPLEMENTATION
+2026-11-22. The three accompanying PNGs are concepts, not implemented screens.
+
+Two modes
+Text: one editable overlay, moved freely on the artwork; font, weight, colour, size, opacity and optional soft shadow.
+Tiled: the same text/style repeated across the artwork; independent density, size, angle and opacity controls. Switching modes preserves the typed content and style.
+
+Direct manipulation
+Tap text to select; drag to move. Uniform corner resizing preserves letter proportions. A separate rotation handle and two-finger pinch/rotation cover precise and touch interaction. Double tap enters a real textarea so keyboard, selection, IME and accessibility work normally. Tap outside to deselect. Selection handles are editor-only and never exported.
+Keep preview swipe gestures available when no text is selected; lock carousel navigation only during text manipulation. Provide keyboard movement and ordinary range controls as alternatives to dragging.
+Use larger invisible hit areas around small handles, constrained so they do not overlap. Snap subtly to artwork centre/edges and nearby rotation increments; include reset and undo. Text positions and dimensions are stored relative to the artwork, not the browser viewport or phone frame.
+
+Quick controls
+Use the existing visual colour picker. A 3x3 position grid offers corners, edge centres and centre with a safe inset. Rotation and opacity expand into compact controls. Shadow is one clear on/off control with optional details. Keep only relevant controls visible for each mode rather than showing a large form.
+Tiled density controls spacing independently of font size. Expand rotated tiling bounds beyond the canvas so every corner remains covered. Keep preview and export layout deterministic.
+
+Font browser
+Searchable native-feeling sheet with All / Sans / Serif / Script filters and live font previews. Proposed initial shortlist: Inter, Poppins, Montserrat, Manrope, DM Sans, Space Grotesk, Nunito, Plus Jakarta Sans, Playfair Display, Cormorant Garamond, Lora, Caveat. This is a curated shortlist, not a measured popularity ranking.
+Use the original font files with their bundled licences. Load font previews progressively, cache selected families, and avoid downloading the whole collection when opening Text. Self-host WOFF2 assets where practical. Wait for the chosen font before measuring text or exporting a still/video; do not silently export a fallback font.
+
+State and compatibility
+One overlay model should drive preview, direct-manipulation bounds and Canvas export. Store mode, enabled, text, font identifier, weight, italic, relative position, relative size, angle, colour, opacity, shadow and tiled spacing. Keep selected-object UI state separate from saved document state.
+Migrate old Corner watermarks to Text using their saved corner; migrate Tiled watermarks to Tiled mode; retain existing text, colour, size and strength. Old drafts must remain readable.
+
+Research sources (primary documentation)
+Apple Markup text tools: https://support.apple.com/guide/iphone/add-text-shapes-stickers-and-more-iphcdb1d0bc7/27/ios/27
+Native text entry over Canvas: https://konvajs.org/docs/sandbox/Editable_Text.html
+Selection, drag, resize and rotation: https://konvajs.org/docs/react/Transformer.html
+Touch scaling: https://konvajs.org/docs/sandbox/Multi-touch_Scale_Shape.html
+Variable fonts and targeted family/style requests: https://developers.google.com/fonts/docs/css2
+Inter font licence example: https://github.com/google/fonts/blob/main/ofl/inter/OFL.txt
+Font loading readiness: https://developer.mozilla.org/en-US/docs/Web/API/FontFaceSet/ready
+
+Design decisions above are proposals inferred from these interaction primitives, not claims that the sources prescribe this exact interface. Konva was researched for interaction patterns; adopting it as a dependency has not been decided.

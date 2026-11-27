@@ -1,0 +1,21 @@
+.draft-gallery-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:8px; }
+.page.files-grid { align-content:start; gap:10px; padding:18px 16px calc(110px + var(--safe-bottom)); }
+.draft-tile-wrap { position:relative; min-inline-size:0; aspect-ratio:1; }
+.draft-tile { position:relative; display:grid; place-items:center; inline-size:100%; min-inline-size:0; aspect-ratio:1; padding:0; border:0; border-radius:15px; background:#202126; overflow:hidden; }
+.draft-tile img,.draft-tile-fallback { display:block; inline-size:100%; block-size:100%; min-block-size:0; object-fit:cover; border-radius:inherit; }
+.draft-tile-fallback { display:grid; place-items:center; color:#9e9ea9; }
+.draft-tile-fallback svg { inline-size:24px; block-size:24px; }
+.draft-tile-empty { border:1px solid #ffffff06; background:linear-gradient(150deg,#ffffff03,#ffffff01); color:#ffffff12; }
+.draft-tile-empty svg { inline-size:21px; block-size:21px; stroke-width:1.2; }
+.draft-tile:focus-visible { outline:2px solid #91e5d8; outline-offset:3px; }
+.draft-tile-options { position:absolute; inset:0 0 auto auto; display:grid; place-items:center; inline-size:44px; block-size:44px; padding:0; border:0; border-radius:50%; background:none; }
+.draft-tile-options > span { display:grid; place-items:center; inline-size:29px; block-size:29px; border:1px solid #ffffff19; border-radius:50%; background:#242426dd; box-shadow:0 1px 7px #0003; color:#f1f1f5; }
+.draft-tile-options svg { inline-size:19px; block-size:19px; }
+.draft-options-picker { inline-size:225px; padding:4px; border-radius:17px; }
+.draft-options-picker button { display:flex; align-items:center; gap:10px; inline-size:100%; min-block-size:48px; padding:10px 12px; border:0; border-radius:12px; background:none; font-size:14px; text-align:start; }
+.draft-options-picker button + button { border-block-start:1px solid #ffffff0d; }
+.draft-options-picker .draft-delete-choice { color:#ff736c; }
+.draft-options-picker svg { inline-size:19px; block-size:19px; }
+.draft-video-badge { position:absolute; inset:auto auto 6px 6px; display:grid; place-items:center; inline-size:23px; block-size:23px; border-radius:50%; background:#202023a8; color:#fff; pointer-events:none; }
+.draft-video-badge svg { inline-size:14px; block-size:14px; fill:currentColor; stroke:none; }
+@media(prefers-reduced-motion:no-preference) { .draft-tile:not(.draft-tile-empty) { transition:transform .18s,opacity .18s; }.draft-tile:not(.draft-tile-empty):active { transform:scale(.95); opacity:.85; }.draft-tile-options:active { animation:zoom-jelly .28s ease-out; } }
