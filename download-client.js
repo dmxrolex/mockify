@@ -1,3 +1,4 @@
+import {sceneHasMotion} from './motion-effects.js';
 import {recordingInScene} from './video-plan.js';
 import { imageBlob,videoBlob } from './exports.js';
 import { sceneFor } from './project.js';
@@ -8,7 +9,7 @@ export async function prepareImage(project,quality,signal,report,index=project.p
   const scale=quality==='high'?2:1,bundle=project.pages?project.pages.length>1:project.items.length>1&&project.layout!=='collage';
   const name=project.title.trim().replace(/[^\p{L}\p{N}_-]+/gu,'-').replace(/^-|-$/g,'')||'styleit';
   const {settings,source,photo}=sceneFor(project,index);
-  if(recordingInScene(settings,source)){const mime='video/mp4',extension='mp4',blob=await videoBlob(settings,source,photo,mime,signal,report,audio,quality);return new File([blob],name+'.'+extension,{type:blob.type});}
+  if(recordingInScene(settings,source)||sceneHasMotion(settings)){const mime='video/mp4',extension='mp4',blob=await videoBlob(settings,source,photo,mime,signal,report,audio,quality);return new File([blob],name+'.'+extension,{type:blob.type});}
   const page=project.pages?pageFor(project,index):null;
   const primary=page?project.items.find(item=>page.objects.some(object=>object.itemId===item.id))?.source:source;
   const {mime,extension}=await formatForMedia(primary);

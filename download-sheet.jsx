@@ -1,4 +1,5 @@
-import {videoPlan,recordingInScene} from './video-plan.js';
+import {videoPlan,effectPlan,recordingInScene} from './video-plan.js';
+import {sceneHasMotion} from './motion-effects.js';
 import {watchExportLifecycle} from './export-lifecycle.js';
 import {exportPageIndices} from './page-model.js';
 import {sceneFor} from './project.js';
@@ -24,10 +25,11 @@ export default function DownloadSheet({project,telegram,onClose,onAbandon,accoun
   const dialog=useRef(null),body=useRef(null),task=useRef(null),urls=useRef([]),prepared=useRef(null),closing=useRef(false);
   const [quality,setQuality]=useState('high'),[phase,setPhase]=useState('choose'),[progress,setProgress]=useState(0),[error,setError]=useState('');
   const [delivery,setDelivery]=useState(null),[notice,setNotice]=useState(''),[busyAction,setBusyAction]=useState('');
-  const scene=sceneFor(project),recording=recordingInScene(scene.settings,scene.source);
+  const scene=sceneFor(project),recording=recordingInScene(scene.settings,scene.source),animated=!recording&&sceneHasMotion(scene.settings),moving=!!recording||animated;
+  const megabytes=value=>Math.max(1,Math.round((recording?videoPlan(recording.settings,recording.source,value,scene.source):effectPlan(scene.settings,value)).estimatedBytes/1024/1024));
   const pageIndices=exportPageIndices(project),totalPages=pageIndices.length;
   const bundle=totalPages>1;
-  function price(value,owner=account,from=0){let cost=0;for(let index=from;index<totalPages;index++){const page=sceneFor(project,pageIndices[index]);cost+=exportCreditCost(recordingInScene(page.settings,page.source)?'video':'image',value,premiumActive(owner));}return cost;}
+  function price(value,owner=account,from=0){let cost=0;for(let index=from;index<totalPages;index++){const page=sceneFor(project,pageIndices[index]);cost+=exportCreditCost(recordingInScene(page.settings,page.source)||sceneHasMotion(page.settings)?'video':'image',value,premiumActive(owner));}return cost;}
   const included=premiumActive(account),remaining=prepared.current?.quality===quality?prepared.current.confirmed:0;
   const go=next=>switchPanel(body.current,()=>setPhase(next));
   useLayoutEffect(()=>{dialog.current.showModal();return()=>{task.current?.abort();for(const url of urls.current)setTimeout(()=>URL.revokeObjectURL(url),30000);};},[]);
@@ -81,7 +83,7 @@ export default function DownloadSheet({project,telegram,onClose,onAbandon,accoun
       {phase==='choose'&&<>
         <fieldset className="download-quality"><legend className="visually-hidden">{t("Download quality")}</legend>
           {/* Named by outcome: what the file will be, not an abstract quality level. */}
-          {(recording?[['standard','HD 720p','Smaller file · Faster to send'],['high','Full HD 1080p','Sharper video · Larger file']]:[['standard','Full HD','Smaller file · Faster to send'],['high','Ultra HD','Sharpest detail · Larger file']]).map(([value,label,detail])=><label key={value}><span><strong>{t(label)}</strong><small>{recording?t(detail.split(' · ')[0])+' · '+Math.max(1,Math.round(videoPlan(recording.settings,recording.source,value,scene.source).estimatedBytes/1024/1024))+' MB':t(detail)}</small></span><CreditAmount included={included} value={price(value)}/><input type="radio" name="download-quality" value={value} checked={quality===value} onChange={()=>setQuality(value)}/></label>)}
+          {(moving?[['standard','HD 720p','Smaller file · Faster to send'],['high','Full HD 1080p','Sharper video · Larger file']]:[['standard','Full HD','Smaller file · Faster to send'],['high','Ultra HD','Sharpest detail · Larger file']]).map(([value,label,detail])=><label key={value}><span><strong>{t(label)}</strong><small>{moving?t(detail.split(' · ')[0])+' · '+megabytes(value)+' MB':t(detail)}</small></span><CreditAmount included={included} value={price(value)}/><input type="radio" name="download-quality" value={value} checked={quality===value} onChange={()=>setQuality(value)}/></label>)}
         </fieldset>
         {account&&<p className="download-credit-balance">{t('Balance')}: {account.credits??0} {t('stars')}</p>}
         <button type="button" className="download-primary download-priced" autoFocus aria-label={t('Download')} onClick={download}><span>{t("Download")}</span><CreditAmount included={included} value={price(quality,account,remaining)}/></button>

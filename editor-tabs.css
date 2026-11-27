@@ -89,10 +89,12 @@
 /* Colour name while swiping a locked phone. */
 .colour-flash { position:absolute; z-index:6; translate:-50% 0; padding:6px 12px; border-radius:999px; background:var(--glass-fill),#1c1c1fd9; box-shadow:var(--glass-edge),0 6px 18px #0008; color:#fff; font:600 13px/1 -apple-system,BlinkMacSystemFont,system-ui,sans-serif; white-space:nowrap; pointer-events:none; -webkit-backdrop-filter:var(--glass-blur); backdrop-filter:var(--glass-blur); }
 @media(prefers-reduced-motion:no-preference) { .colour-flash { animation:colour-flash .35s var(--spring); } @keyframes colour-flash { from { opacity:0; scale:.85; } } }
-/* Five tabs fit long labels such as Background and Watermark without clipping. */
+/* Six tabs fit long labels such as Background and Watermark without clipping. */
 .toolstrip.tool-tabs { padding-inline:6px; }
 .toolstrip.tool-tabs button { overflow:visible; white-space:nowrap; font-size:10.5px; letter-spacing:-.01em; }
 .colour-flash { translate:-50% -50%; }
 /* Editor messages float above the tools instead of covering them. */
 .app-shell.is-editor .toast { inset-block:calc(66px + var(--safe-top)) auto; }
 .editor[data-video=true] .toolstrip.tool-tabs button { font-size:10px; letter-spacing:-.02em; }
+/* Small phones (320–359px): slightly smaller discs and labels keep six tabs apart. */
+@media(max-width:359px) { .toolstrip.tool-tabs { padding-inline:2px; } .toolstrip.tool-tabs button > span { inline-size:44px; block-size:44px; } .toolstrip.tool-tabs button { font-size:9.5px; letter-spacing:-.025em; } }

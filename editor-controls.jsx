@@ -3,6 +3,7 @@ import React, { useEffect, useLayoutEffect, useId, useRef, useState } from 'reac
 import { createPortal } from 'react-dom';
 import { hapticSelection } from './haptics.js';
 import { backdrops, zoomLevel } from './render.js';
+import { motionEffects, effectOf } from './motion-effects.js';
 
 function Glyph({name}) {
   const shapes={
@@ -66,10 +67,26 @@ export function Picker({anchor,label,onClose,className='',children,placement='ab
   return createPortal(<div ref={popup} id={id} popover={native?'auto':undefined} role={menu?undefined:'group'} aria-label={menu?undefined:label} data-placement={placement} className={'editor-picker '+className}>{menu?<div focusgroup="menu nomemory" aria-label={label}>{children}</div>:children}</div>,anchor.current?.closest('dialog')??document.body);
 }
 
-export function EffectsControls({settings,update,disabled=false}){
-  return <fieldset className="effect-options" disabled={disabled}><legend className="visually-hidden">{t('Effects')}</legend>{[['still','None'],['push','Push in'],['sway','Sway']].map(([value,label])=><label className="effect-choice" key={value}>
-    <input type="radio" name="video-effect" value={value} checked={(settings.motion??'still')===value} onChange={()=>update({motion:value})}/><span className={'effect-preview effect-'+value}><svg viewBox="0 0 48 48" aria-hidden="true">{value==='still'?<><circle cx="24" cy="24" r="14"/><path d="m14 34 20-20"/></>:<><rect className="effect-card-shape" x="15" y="8" width="18" height="32" rx="5"/>{value==='push'?<path d="m9 17-4-4m0 0v7m0-7h7m27 18 4 4m0 0v-7m0 7h-7"/>:<path d="M7 17c3-5 8-8 14-8m20 22c-3 5-8 8-14 8M7 12v5h5m29 19v-5h-5"/>}</>}</svg></span><span className="effect-label">{t(label)}</span>
-  </label>)}</fieldset>;
+// Automatic motion for the selected phone or image. The chosen effect's preview phone moves,
+// so each choice shows what it does without extra text.
+const effectMarks={
+  still:<><circle cx="12" cy="12" r="8"/><path d="m6.5 17.5 11-11"/></>,
+  spin:<path d="M19.5 12a7.5 7.5 0 1 1-2.2-5.3M19.5 4v3.5H16"/>,
+  float:<path d="M8 21.2h8" opacity=".6"/>,
+  sway:<path d="M4.5 9.5c-1 1.6-1 3.4 0 5M19.5 9.5c1 1.6 1 3.4 0 5"/>,
+  push:<path d="M4 8V4h4M20 16v4h-4"/>,
+};
+export function EffectsControls({settings,update,disabled=false,video=false}){
+  const current=effectOf(settings);
+  return <fieldset className="effect-options" disabled={disabled}><legend className="visually-hidden">{t('Effects')}</legend>
+    <div className="effect-row" role="radiogroup" aria-label={t('Effects')}>
+      {motionEffects.map(({id,label})=><button key={id} type="button" role="radio" aria-checked={current===id} className={'effect-choice effect-'+id} onClick={()=>{if(current===id)return;hapticSelection();update({motion:id});}}>
+        <span className="effect-symbol"><svg viewBox="0 0 24 24" aria-hidden="true">{id!=='still'&&<rect className="effect-phone" x="8.75" y="4.5" width="6.5" height="13.5" rx="2"/>}{effectMarks[id]}</svg></span>
+        <span className="effect-label">{t(label)}</span>
+      </button>)}
+    </div>
+    <p className="effect-note">{t(disabled?'Select a phone or image to add an effect':video?'Plays across your video':'Exports as a 4-second video')}</p>
+  </fieldset>;
 }
 
 export function SizeControls({settings,update}) {

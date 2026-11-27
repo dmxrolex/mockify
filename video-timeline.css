@@ -139,19 +139,33 @@
   .sequence-timeline[data-layers] .sequence-track-window { block-size:146px; }
 }
 
-.effect-options { display:flex; gap:10px; inline-size:max-content; min-inline-size:0; padding:0; margin:0; border:0; }
 .control-fields { min-inline-size:0; padding:0; margin:0; border:0; }
 .control-fields:disabled { opacity:.42; }
 .control-fields:disabled button:disabled { opacity:1; }
-.effect-choice { position:relative; display:grid; justify-items:center; gap:8px; min-inline-size:86px; min-block-size:112px; padding:5px 0; cursor:pointer; }
-.effect-preview { display:grid; place-items:center; inline-size:86px; block-size:82px; border:1px solid #ffffff0c; border-radius:18px; background:#1c1c1e; color:#8e98a9; }
-.effect-preview svg { inline-size:45px; block-size:45px; stroke-width:1.7; }
-.effect-card-shape { fill:#409cff12; stroke:#8cbcff; transform-origin:24px 24px; }
-.effect-label { color:#9a9aa2; font:450 12px/1.2 system-ui,sans-serif; }
-.effect-choice input { position:absolute; inset:10px 7px auto auto; z-index:1; inline-size:17px; block-size:17px; margin:0; accent-color:#409cff; color-scheme:dark; }
-.effect-choice input:checked + .effect-preview { border-color:#409cff; color:#9cc8ff; background:#132237; }
 .effect-choice:has(input:checked) .effect-label { color:#f5f5f7; }
-.effect-choice input:focus-visible + .effect-preview { outline:2px solid #fff; outline-offset:3px; }
-@supports not(accent-color:#409cff) { .effect-choice input { inline-size:1px; block-size:1px; clip-path:inset(50%); overflow:hidden; }.effect-choice input:checked + .effect-preview::after { content:''; position:absolute; inset:11px 9px auto auto; inline-size:11px; block-size:11px; border:3px solid #132237; border-radius:50%; background:#409cff; box-shadow:0 0 0 1px #409cff; } }
-@media(prefers-reduced-motion:no-preference) { .effect-push .effect-card-shape { animation:effect-push-preview 2s ease-in-out infinite alternate; }.effect-sway .effect-card-shape { animation:effect-sway-preview 2.4s ease-in-out infinite alternate; }@keyframes effect-push-preview { from{transform:scale(.8);}to{transform:scale(1.08);} }@keyframes effect-sway-preview { from{transform:translateX(-3px) rotate(-8deg);}to{transform:translateX(3px) rotate(8deg);} } }
 @media(max-width:359px) { .video-timeline-heading output span { display:none; } }
+
+/* Effects: round glass choices matching the Tap / Hold / Swipe / Zoom buttons. */
+.effect-options { min-inline-size:0; padding:0; margin:0; border:0; }
+.effect-row { display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:2px; }
+.effect-choice { display:grid; justify-items:center; gap:6px; min-block-size:78px; padding:2px 0 4px; border:0; background:none; color:#8e8e93; font:500 12px/1.2 -apple-system,BlinkMacSystemFont,system-ui,sans-serif; -webkit-tap-highlight-color:transparent; }
+.effect-symbol { display:grid; place-items:center; inline-size:52px; block-size:52px; border-radius:50%; background:var(--glass-fill),#1c1c1e; box-shadow:var(--glass-edge); color:#f5f5f7; transition:background-color .2s,color .2s,scale .22s var(--spring),box-shadow .2s; }
+.effect-symbol svg { inline-size:26px; block-size:26px; overflow:visible; fill:none; stroke:currentColor; stroke-width:1.7; stroke-linecap:round; stroke-linejoin:round; }
+.effect-phone { transform-box:fill-box; transform-origin:center; }
+.effect-label { white-space:nowrap; }
+.effect-choice[aria-checked=true] { color:#f5f5f7; }
+.effect-choice[aria-checked=true] .effect-symbol { background:var(--select); color:var(--select-ink); box-shadow:var(--select-edge); }
+.effect-choice:not(:disabled):active .effect-symbol { scale:.9; }
+.effect-choice:focus-visible { outline:none; }.effect-choice:focus-visible .effect-symbol { outline:2px solid #fff; outline-offset:2px; }
+.effect-note { min-block-size:18px; margin:8px 4px 0; color:#8e8e93; font:500 12.5px/1.35 -apple-system,BlinkMacSystemFont,system-ui,sans-serif; text-align:center; }
+@media(prefers-reduced-motion:no-preference) {
+  .effect-spin[aria-checked=true] .effect-phone { animation:effect-spin 2.4s cubic-bezier(.65,0,.35,1) infinite; }
+  .effect-float[aria-checked=true] .effect-phone { animation:effect-float 2.4s ease-in-out infinite; }
+  .effect-sway[aria-checked=true] .effect-phone { animation:effect-sway 2.4s ease-in-out infinite; }
+  .effect-push[aria-checked=true] .effect-phone { animation:effect-push 2.4s ease-in-out infinite alternate; }
+  @keyframes effect-spin { to { rotate:360deg; } }
+  @keyframes effect-float { 50% { translate:0 -2px; rotate:-4deg; } }
+  @keyframes effect-sway { 25% { rotate:9deg; scale:.82 1; } 75% { rotate:-9deg; scale:.82 1; } }
+  @keyframes effect-push { to { scale:1.22; } }
+}
+

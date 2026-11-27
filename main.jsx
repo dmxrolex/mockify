@@ -28,6 +28,7 @@ import BalancePage from './balance-page.jsx';
 import SubscriptionPage from './subscription-page.jsx';
 import { subscriptionInfo } from './subscription-model.js';
 import { HeaderCoin } from './coin-motion.jsx';
+import { sceneHasMotion, EFFECT_SECONDS } from './motion-effects.js';
 import { setLanguage, t } from './i18n.js';
 import { setHapticsEnabled } from './haptics.js';
 import { changeScene, itemId, loadProject, newProject, ownedMedia, saveProject, sceneFor } from './project.js';
@@ -139,7 +140,7 @@ function restorePreferences() {
   setLanguage(result.language);setHapticsEnabled(result.haptics);return result;
 }
 
-function FrameCanvas({ settings, source = blank, photo, ready, thumbnail = false, time = 0, interactive=false }) {
+function FrameCanvas({ settings, source = blank, photo, ready, thumbnail = false, time = 0, interactive=false, loop = 0 }) {
   const canvas = useRef(null);
   const render = useRef(null);
   const frame = useRef(0);
@@ -150,6 +151,14 @@ function FrameCanvas({ settings, source = blank, photo, ready, thumbnail = false
   const videoKey=JSON.stringify(videos.map(media=>media.url));
   const snapshot=useRef(null);
   snapshot.current={settings,source,photo,time,interactive,videos};
+  // Effects preview: loop the effect on the canvas without re-rendering React every frame.
+  useEffect(()=>{
+    if(!loop)return;
+    let id=0;const start=performance.now();
+    const tick=now=>{snapshot.current={...snapshot.current,time:((now-start)/1000/loop)%1};paint();id=requestAnimationFrame(tick);};
+    id=requestAnimationFrame(tick);
+    return()=>{cancelAnimationFrame(id);snapshot.current={...snapshot.current,time};queuePaint();};
+  },[loop]);
   useEffect(()=>()=>{render.current?.dispose();render.current=null;},[]);
   useEffect(() => {
     const element = canvas.current;
@@ -288,7 +297,7 @@ function EditorControls({ panel, settings, update, source, photo, pickPhoto, rep
     case 'shadow': return <ShadowControls settings={settings} update={update} wheel={shadowWheel} onWheelChange={onShadowWheel}/>;
     case 'screen': return <StatusControls settings={settings} update={update} openTime={openTime}/>;
     case 'motion':
-      return <EffectsControls settings={settings} update={update}/>;
+      return <EffectsControls settings={settings} update={update} video={source?.kind==='video'}/>;
     default:return null;
   }
 }
@@ -325,7 +334,7 @@ function TimeSheet({ settings, update, onClose }) {
   </Sheet>;
 }
 
-function Artboard({ onEmptyAdd, touchRecorder, scene, ready, time, onAdd, busy, video, textEditing, updateText, onSelectText, textFocus, onSelectImage, onImageEdges, blurSession, setBlurSession, changeBlur, blurPreview, setBlurPreview, blurAdjusting, objectActions, showcaseEditor, showcaseEditing, showcasePlaying, onTextTyping, typingHost, onCrop, onBackgroundDuplicate, pickPhoto, mediaError, onRetryMedia }) {
+function Artboard({ effectLoop=0, onEmptyAdd, touchRecorder, scene, ready, time, onAdd, busy, video, textEditing, updateText, onSelectText, textFocus, onSelectImage, onImageEdges, blurSession, setBlurSession, changeBlur, blurPreview, setBlurPreview, blurAdjusting, objectActions, showcaseEditor, showcaseEditing, showcasePlaying, onTextTyping, typingHost, onCrop, onBackgroundDuplicate, pickPhoto, mediaError, onRetryMedia }) {
   const { settings, source, photo } = scene;
   const [blurView,setBlurView]=useState({scale:1,x:0,y:0});
   useEffect(()=>{setBlurView({scale:1,x:0,y:0});},[!!blurSession,blurSession?.target]);
@@ -333,8 +342,8 @@ function Artboard({ onEmptyAdd, touchRecorder, scene, ready, time, onAdd, busy, 
     <div className="artboard-frame">
       <div className="artboard-content" style={blurSession?{transform:`translate(${blurView.x}px,${blurView.y}px) scale(${blurView.scale})`}:undefined}>
       {!blurSession&&settings.background==='photo'&&photo&&settings.selectedLayerId==='background'&&<ImageHandles background settings={{...settings,imagePattern:null,scale:100,x:0,y:0,roll:0,imageEdges:0,imageFlip:false,...settings.backgroundPose,locked:settings.backgroundPose?.locked??false,selectedLayerId:'device'}} media={photo} geometryFor={backgroundGeometry} update={patch=>{const {selectedLayerId,...pose}=patch;updateText({backgroundPose:{...settings.backgroundPose,...pose},...('selectedLayerId' in patch?{selectedLayerId:selectedLayerId===null?null:'background'}:{})});}} onSelect={()=>{}} onEdges={()=>{}} onDuplicate={onBackgroundDuplicate} onRemove={()=>updateText({background:'gradient',selectedLayerId:null})} onMore={[{label:'Crop',icon:'crop',action:()=>onCrop('background')},{label:'Replace image',icon:'fill',action:pickPhoto}]}/>}
-      <FrameCanvas settings={blurPreview&&blurSession?{...settings,...patchBlur(settings,blurSession.target,{regions:blurPreview})}:{...settings,_showcaseEditing:showcaseEditing}} source={source ?? blank} photo={photo} ready={ready} time={time} interactive={blurAdjusting||!!blurPreview}/>
-      {!blurSession&&!showcaseEditor&&!showcasePlaying&&settings.pageObjects&&objectActions&&<PageObjects settings={video?{...settings,renderProgress:time}:settings} sources={source} {...objectActions}/>}
+      <FrameCanvas settings={blurPreview&&blurSession?{...settings,...patchBlur(settings,blurSession.target,{regions:blurPreview})}:{...settings,_showcaseEditing:showcaseEditing}} source={source ?? blank} photo={photo} ready={ready} time={time} interactive={blurAdjusting||!!blurPreview} loop={effectLoop}/>
+      {!blurSession&&!showcaseEditor&&!showcasePlaying&&!effectLoop&&settings.pageObjects&&objectActions&&<PageObjects settings={video?{...settings,renderProgress:time}:settings} sources={source} {...objectActions}/>}
       {!blurSession&&!showcaseEditor&&!showcasePlaying&&updateText&&source&&!Array.isArray(source)&&settings.device==='flat'&&imageLayers(settings).map(layer=><ImageHandles key={layer.id} id={layer.id} settings={settings} media={source} update={updateText} onSelect={onSelectImage} onEdges={onImageEdges} onMore={[{label:'Crop',icon:'crop',action:()=>onCrop(layer.id)}]}/>)}
       {!blurSession&&!showcaseEditor&&!showcasePlaying&&updateText&&<TextHandles settings={settings} update={updateText} onSelect={onSelectText} focusRequest={textFocus} menuOpen={textEditing} onTyping={onTextTyping} typingHost={typingHost}/>}
       {blurSession&&blurEffect(settings,blurSession.target).mode==='area'&&<BlurCanvas key={blurSession.target} settings={video?{...settings,renderProgress:time}:settings} source={source} session={blurSession} setSession={setBlurSession} change={changeBlur} onPreview={setBlurPreview} view={blurView} onView={setBlurView}/>}
@@ -416,8 +425,9 @@ function Editor({ lookId, lookAuto=false, onLookSaved, project, profile, telegra
   const videoSettings=settings;
   const duration=sequence.duration,progress=duration?current/duration:0;
   const hasSelectedObject=!!targetObject||!!settings.pageObjects?.some(item=>item.id===settings.selectedLayerId);
-  const toolPanels=video?[['showcase','Animation'],...panels.filter(([key])=>key!=='motion')]:panels.filter(([key])=>key!=='motion');
-  const activePanel=!video&&panel==='motion'?null:panel;
+  const activePanel=panel;
+  // While Effects is open on a still mockup, the canvas plays the effect as it will export.
+  const [reduceMotion]=useState(()=>matchMedia('(prefers-reduced-motion: reduce)').matches);
   function commitTimeline(next){mutateProject(prior=>changePage(ensurePages(prior),{timeline:next,showcase:null}));}
   function patchSequence(type,id,patch){commitTimeline(updateTimeline(timeline,type,id,patch));}
   function selectTimeline(type,id,{settings=false}={}){
@@ -588,6 +598,7 @@ function Editor({ lookId, lookAuto=false, onLookSaved, project, profile, telegra
   });
   function togglePlayback(){sequence.toggle();}
   const visibleScene=timeline?{...scene,settings:{...sequence.settings,_timelineWaiting:!sequence.ready,_showcaseEditing:activePanel==='showcase'&&!playing},source:sequence.sources}:scene;
+  const effectLoop=!video&&activePanel==='motion'&&!reduceMotion&&sceneHasMotion(visibleScene.settings)?EFFECT_SECONDS:0;
   const [groupTool,setGroupTool]=useState({phone:'device',canvas:'background'}),[addOpen,setAddOpen]=useState(false);
   // Animation panel open + video playing: tap, hold or slide on the screen where the finger went.
   // Touches are kept while the video plays and added together when it pauses or the panel closes.
@@ -608,11 +619,11 @@ function Editor({ lookId, lookAuto=false, onLookSaved, project, profile, telegra
   }
   useEffect(()=>{if(!liveTouches&&recorded.current.length)commitRecorded();},[liveTouches]);
   const framed=settings.device!=='flat',selectedText=!!baseSettings.layers?.some(l=>l.id===baseSettings.selectedLayerId&&l.type==='text');
-  const tabContext=sheet==='mark'?'mark':sheet==='text'||selectedText?'watermark':hasSelectedObject?'phone':null;
+  const tabContext=sheet==='mark'?'mark':sheet==='text'||selectedText?'watermark':activePanel==='motion'?'motion':hasSelectedObject?'phone':null;
   const phoneChips=[{key:framed?'device':'image',label:framed?'Phone':source?.kind==='video'?'Video':'Image'},{key:'edges',label:'Corners',disabled:framed},{key:'shadow',label:'Shadow'},{key:'screen',label:'Status bar',disabled:!framed}];
   const canvasChips=[{key:'background',label:'Background'},{key:'size',label:'Format'}];
   const firstPhoneTool=phoneChips[0].key,phoneTool=phoneChips.find(chip=>chip.key===groupTool.phone&&!chip.disabled)?.key??(groupTool.phone==='device'||groupTool.phone==='image'?firstPhoneTool:firstPhoneTool),canvasTool=groupTool.canvas;
-  const tabs=[{key:'phone',label:framed?'Phone':source?.kind==='video'?'Video':'Image',icon:<Icon name={framed?'device':source?.kind==='video'?'video':'image'}/>,disabled:!settings.pageObjects?.length},{key:'canvas',label:'Background',icon:<Icon name="background"/>},{key:'watermark',label:'Text',icon:<Icon name="text"/>},{key:'mark',label:'Watermark',icon:<Icon name="mark"/>},{key:'more',label:'More',icon:<Icon name="more"/>}];
+  const tabs=[{key:'phone',label:framed?'Phone':source?.kind==='video'?'Video':'Image',icon:<Icon name={framed?'device':source?.kind==='video'?'video':'image'}/>,disabled:!settings.pageObjects?.length},{key:'canvas',label:'Background',icon:<Icon name="background"/>},{key:'watermark',label:'Text',icon:<Icon name="text"/>},{key:'mark',label:'Watermark',icon:<Icon name="mark"/>},{key:'motion',label:'Effects',icon:<Icon name="motion"/>,disabled:!settings.pageObjects?.length},{key:'more',label:'More',icon:<Icon name="more"/>}];
   const moreItems=[
     {key:'adjust',label:'Adjust',icon:<Icon name="adjust"/>,disabled:!hasSelectedObject,action:()=>{mutateProject(prior=>ensurePages(prior));switchControls('adjust');}},
     {key:'blur',label:'Blur',icon:<Icon name="blur"/>,action:openBlur},
@@ -637,7 +648,7 @@ function Editor({ lookId, lookAuto=false, onLookSaved, project, profile, telegra
     if(key==='showcase')return openShowcase();
     if(key==='watermark')return openText();
     if(key==='mark'){sequence.seek(current);return switchControls(null,'mark');}
-    if(key==='phone'&&!hasSelectedObject){const first=currentPage?.objects.find(object=>!object.pose.hideDevice&&!object.pose.assetKind);if(first)mutateProject(prior=>selectObject(prior,first.id));}
+    if((key==='phone'||key==='motion')&&!hasSelectedObject){const first=currentPage?.objects.find(object=>!object.pose.hideDevice&&!object.pose.assetKind);if(first)mutateProject(prior=>selectObject(prior,first.id));}
     if(panel===key)return;
     switchControls(key);
   }
@@ -650,7 +661,7 @@ function Editor({ lookId, lookAuto=false, onLookSaved, project, profile, telegra
   }
   return <div className="editor page" data-typing={typing?'true':undefined} data-video={video?'true':undefined} data-sheet={sheet ?? undefined} data-panel={activePanel ?? undefined} data-free={settings.device==='flat'?'true':undefined} data-shadow-wheel={activePanel==='shadow'&&shadowWheel?'true':undefined}>
     <div className="preview" style={{'--canvas-ratio':{portrait:.8,story:.5625,wide:16/9}[visibleScene.settings.ratio]??1,'--canvas-cap':'100dvh'}} data-page-swipe={swipeEnabled?true:undefined} {...pageSwipe}>
-      <Artboard key={currentPage?.id??'single'} onEmptyAdd={()=>chooseSource()} touchRecorder={liveTouches?{source:scene.source[targetObject.index],index:visibleScene.settings.pageObjects.findIndex(o=>o.id===targetObject.id),now:()=>currentRef.current,count:recordedCount,onTouch:touch=>{recorded.current.push(touch);setRecordedCount(recorded.current.length);}}:null} scene={visibleScene} mediaError={sequence.error} onRetryMedia={sequence.retry} ready={ready} time={video ? progress : 0} onAdd={()=>setAddOpen(true)} busy={busy||assetBusy} video={video} textEditing={sheet==='text'} onTextTyping={setTyping} typingHost={typingHost} onCrop={()=>switchControls('crop')} pickPhoto={pickPhoto} onBackgroundDuplicate={()=>{if(photo)mutateProject(prior=>appendItems(ensurePages(prior),[{id:itemId(),source:photo,settings:{...defaults,device:'flat',fit:'contain',cleanup:'off'}}],{overlay:true}));}} updateText={update} onSelectText={selectText} textFocus={textFocus} onSelectImage={selectImage} onImageEdges={openImageEdges} blurSession={activePanel==='blur'?blurSession:null} setBlurSession={setBlurSession} changeBlur={changeBlur} blurPreview={blurPreview} setBlurPreview={setBlurPreview} blurAdjusting={blurAdjusting} objectActions={objectActions} showcaseEditing={!!video&&!playing&&activePanel==='showcase'} showcasePlaying={!!video&&playing} showcaseEditor={timeline&&activePanel==='showcase'&&!playing&&placementMoment&&targetObject?{source:scene.source[targetObject.index],media:visibleScene.source,index:visibleScene.settings.pageObjects.findIndex(o=>o.id===targetObject.id),moment:placementMoment,onAdd:point=>addSequenceEffect('tap',point),onPatch:patchPlacement,disabled:false}:null}/>
+      <Artboard key={currentPage?.id??'single'} effectLoop={effectLoop} onEmptyAdd={()=>chooseSource()} touchRecorder={liveTouches?{source:scene.source[targetObject.index],index:visibleScene.settings.pageObjects.findIndex(o=>o.id===targetObject.id),now:()=>currentRef.current,count:recordedCount,onTouch:touch=>{recorded.current.push(touch);setRecordedCount(recorded.current.length);}}:null} scene={visibleScene} mediaError={sequence.error} onRetryMedia={sequence.retry} ready={ready} time={video ? progress : 0} onAdd={()=>setAddOpen(true)} busy={busy||assetBusy} video={video} textEditing={sheet==='text'} onTextTyping={setTyping} typingHost={typingHost} onCrop={()=>switchControls('crop')} pickPhoto={pickPhoto} onBackgroundDuplicate={()=>{if(photo)mutateProject(prior=>appendItems(ensurePages(prior),[{id:itemId(),source:photo,settings:{...defaults,device:'flat',fit:'contain',cleanup:'off'}}],{overlay:true}));}} updateText={update} onSelectText={selectText} textFocus={textFocus} onSelectImage={selectImage} onImageEdges={openImageEdges} blurSession={activePanel==='blur'?blurSession:null} setBlurSession={setBlurSession} changeBlur={changeBlur} blurPreview={blurPreview} setBlurPreview={setBlurPreview} blurAdjusting={blurAdjusting} objectActions={objectActions} showcaseEditing={!!video&&!playing&&activePanel==='showcase'} showcasePlaying={!!video&&playing} showcaseEditor={timeline&&activePanel==='showcase'&&!playing&&placementMoment&&targetObject?{source:scene.source[targetObject.index],media:visibleScene.source,index:visibleScene.settings.pageObjects.findIndex(o=>o.id===targetObject.id),moment:placementMoment,onAdd:point=>addSequenceEffect('tap',point),onPatch:patchPlacement,disabled:false}:null}/>
       {!settings.imagePattern&&(!video||activePanel==='phone')&&(video?videoSettings:settings).device!=='flat'&&settings.pageObjects?.length>0&&<PreviewZoom settings={video?videoSettings:settings} update={video?updateVideo:update}/>}
       {count>1&&<EditorContextRow disabled={busy||!project.items.length} index={pageIndex} count={count} onPage={goToPage} onManage={()=>setSheet('merge')}/>}
       {timeline&&<VideoTimeline timeline={timeline} objects={baseSettings.pageObjects} sources={scene.source} current={current} duration={duration} playing={playing} selection={timelineTarget} editingEffects={activePanel==='showcase'}

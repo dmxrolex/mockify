@@ -1,3 +1,4 @@
+import {sceneHasMotion} from './motion-effects.js';
 import {recordingInScene} from './video-plan.js';
 import { createRenderer, loadWatermarkBadge, ratios } from './render.js';
 import { clipProgress } from './media.js';
@@ -94,10 +95,11 @@ export function prepareAudio() {
 
 export async function videoBlob(settings,sources,photo,mimeType,signal,progress,audio,quality='high'){
   try{
-    if(!recordingInScene(settings,sources))throw new Error('No recording on this canvas.');
-    if(!globalThis.VideoEncoder||!globalThis.VideoDecoder)throw new Error('Quality video export is unavailable in this browser. Update Telegram or open the app in a supported browser.');
-    const {offlineVideo}=await import('./offline-video.js');
-    const blob=await offlineVideo(settings,sources,photo,quality,signal,progress);
+    const recording=recordingInScene(settings,sources);
+    if(!recording&&!sceneHasMotion(settings))throw new Error('No recording on this canvas.');
+    if(!globalThis.VideoEncoder||(recording&&!globalThis.VideoDecoder))throw new Error('Quality video export is unavailable in this browser. Update Telegram or open the app in a supported browser.');
+    const {offlineVideo,effectVideo}=await import('./offline-video.js');
+    const blob=recording?await offlineVideo(settings,sources,photo,quality,signal,progress):await effectVideo(settings,sources,photo,quality,signal,progress);
     if(!blob)throw new Error('Quality video export is unavailable for this recording in this browser. Update Telegram or try a supported browser.');
     return blob;
   }finally{if(audio&&audio.context.state!=='closed')await audio.context.close().catch(()=>{});}
