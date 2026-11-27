@@ -1,0 +1,100 @@
+/* Looks row: round previews of background + phone, saved looks first. */
+.looks-row { display:flex; gap:4px; padding:6px 12px 4px; overflow-x:auto; overscroll-behavior-inline:contain; scrollbar-width:none; scroll-snap-type:x proximity; scroll-padding-inline:12px; }
+.looks-row::-webkit-scrollbar { display:none; }
+.look-cell { position:relative; flex:none; }
+.look-tile { position:relative; display:grid; justify-items:center; gap:5px; inline-size:60px; min-block-size:70px; padding:2px 0 0; border:0; background:none; color:#a1a1a8; font:500 11px/1.15 -apple-system,BlinkMacSystemFont,system-ui,sans-serif; scroll-snap-align:start; -webkit-tap-highlight-color:transparent; -webkit-touch-callout:none; touch-action:manipulation; }
+.look-tile small { max-inline-size:58px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:inherit; }
+.look-face { position:relative; display:grid; place-items:center; inline-size:46px; block-size:46px; overflow:hidden; border-radius:50%; background:var(--look-bg,var(--glass-fill)),#1c1c1f; box-shadow:var(--glass-edge); transition:scale .24s var(--spring),box-shadow .2s; }
+.look-face i { inline-size:14px; block-size:24px; border-radius:4px; background:#1c1c1e; box-shadow:0 0 0 2px var(--look-finish),3px 4px 6px #0006; }
+.look-face[data-long] i { box-shadow:0 0 0 2px var(--look-finish),6px 7px 0 #0003; }
+.look-face svg { inline-size:22px; block-size:22px; color:#fff; stroke-width:2; }
+.look-save .look-face { background:var(--glass-fill),#1c1c1f; }
+.look-tile:active .look-face { scale:.9; }
+.look-tile[aria-pressed=true] { color:#fff; }
+.look-tile[aria-pressed=true] .look-face { box-shadow:0 0 0 2px #000,0 0 0 4px var(--select-ring); }
+.look-tile:focus-visible { outline:none; }
+.look-tile:focus-visible .look-face { box-shadow:0 0 0 2px #000,0 0 0 4px var(--accent); }
+.look-auto { position:absolute; inset:0 6px auto auto; display:grid; place-items:center; inline-size:17px; block-size:17px; border-radius:50%; background:var(--accent); color:#fff; font:700 10px/1 -apple-system,system-ui,sans-serif; box-shadow:0 0 0 2px #000; }
+.look-remove { position:absolute; z-index:2; inset:-2px auto auto 0; display:grid; place-items:center; inline-size:24px; block-size:24px; padding:0; border:0; border-radius:50%; background:#ff453a; color:#fff; box-shadow:0 0 0 2px #000; }
+.look-remove::before { content:''; position:absolute; inset:-10px; }
+.look-remove svg { inline-size:13px; block-size:13px; stroke-width:2.6; }
+
+/* Bottom tabs reuse the tool tile look; the tab for the tapped object glows softly. */
+.toolstrip.tool-tabs { justify-content:space-around; gap:0; overflow:visible; }
+.toolstrip.tool-tabs button { flex:1 1 0; min-inline-size:0; max-inline-size:84px; }
+.tool-tabs button[data-context] > span { box-shadow:var(--glass-edge),0 0 0 2px rgba(48,209,88,.55); }
+.tool-tabs button[data-context] { color:#fff; }
+
+/* Group panels: back + chips on one line, tool controls below. */
+.group-panel { display:grid; grid-template-columns:minmax(0,1fr); align-content:start; gap:4px; min-inline-size:0; padding:4px 0 10px; }
+.group-heading { display:flex; align-items:center; gap:6px; min-block-size:44px; padding-inline:12px; }
+.group-heading .controls-back { flex:none; margin:0; }
+/* Back is a bare arrow; the section name is small and quiet. */
+.group-heading .group-back { display:grid; place-items:center; inline-size:36px; block-size:44px; border-radius:12px; margin:0 -4px 0 -6px !important; padding:0; border:0; background:none !important; box-shadow:none !important; color:#f5f5f7; transition:scale .2s var(--spring),opacity .15s; }
+.group-heading .group-back svg { inline-size:22px; block-size:22px; stroke-width:2.2; }
+.group-heading .group-back:active { scale:.86; opacity:.7; }
+.group-title { color:#8e8e93; font:600 12px/1 -apple-system,BlinkMacSystemFont,system-ui,sans-serif; letter-spacing:.06em; text-transform:uppercase; }
+.group-chips { display:flex; gap:6px; min-inline-size:0; overflow-x:auto; scrollbar-width:none; overscroll-behavior-inline:contain; padding:4px 2px; }
+.group-chips::-webkit-scrollbar { display:none; }
+.group-chips button { flex:none; min-block-size:36px; padding:0 14px; border:0; border-radius:18px; background:var(--glass-fill),#1c1c1f; box-shadow:var(--glass-edge); color:#d1d1d6; font:600 13.5px/1 -apple-system,BlinkMacSystemFont,system-ui,sans-serif; white-space:nowrap; transition:background-color .2s,color .2s,scale .22s var(--spring); touch-action:manipulation; }
+.group-chips button[aria-pressed=true] { background:var(--select); color:var(--select-ink); box-shadow:var(--select-edge); }
+.group-chips button:disabled { opacity:.32; }
+.group-chips button:not(:disabled):active { scale:.93; }
+.group-chips button:focus-visible { outline:2px solid #fff; outline-offset:2px; }
+.group-body { min-inline-size:0; padding-inline:12px; overflow:hidden; }
+.group-body .preview-zoom-track { min-inline-size:0; }
+.group-body .preview-zoom { inline-size:100%; max-inline-size:100%; min-block-size:76px; margin:0 auto; gap:10px; }
+@media(prefers-reduced-motion:no-preference) { .group-body { animation:group-body-in .3s var(--ease-out); } @keyframes group-body-in { from { opacity:0; translate:0 6px; } } }
+
+.more-grid { display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:4px; padding:4px 8px; }
+.more-grid button { display:grid; justify-items:center; gap:6px; min-block-size:76px; padding:4px 0; border:0; background:none; color:#d1d1d6; font:500 11px/1.2 -apple-system,BlinkMacSystemFont,system-ui,sans-serif; touch-action:manipulation; }
+.more-grid span { display:grid; place-items:center; inline-size:50px; block-size:50px; border-radius:50%; background:var(--glass-fill),var(--glass-base); box-shadow:var(--glass-edge); transition:scale .22s var(--spring); }
+.more-grid svg { inline-size:24px; block-size:24px; stroke-width:1.6; }
+.more-grid button:not(:disabled):active span { scale:.9; }
+.more-grid button:disabled { opacity:.35; }
+
+/* One Add sheet for every kind of content. */
+.add-sheet { margin:auto auto max(10px,calc(var(--safe-bottom) + 10px)); inline-size:min(calc(100% - 20px),400px); padding:12px; border:0; border-radius:28px; color:#f5f5f7; background:var(--glass-fill),#1c1c1ff2; box-shadow:var(--glass-edge),0 18px 48px #000c; -webkit-backdrop-filter:var(--glass-blur); backdrop-filter:var(--glass-blur); font-family:-apple-system,BlinkMacSystemFont,system-ui,sans-serif; }
+.add-sheet::backdrop { background:#0000008c; -webkit-backdrop-filter:blur(4px); backdrop-filter:blur(4px); }
+.add-grid { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+.add-grid button { display:grid; grid-template-columns:auto 1fr; grid-template-rows:auto auto; column-gap:12px; align-items:center; min-block-size:64px; padding:10px 12px; border:0; border-radius:18px; background:#ffffff0f; color:#f5f5f7; text-align:start; transition:scale .22s var(--spring),background-color .15s; }
+.add-grid button:not(:disabled):active { scale:.96; background:#ffffff1a; }
+.add-grid button:disabled { opacity:.35; }
+.add-grid span { grid-row:span 2; display:grid; place-items:center; inline-size:40px; block-size:40px; border-radius:50%; background:var(--glass-fill),#2c2c2e; box-shadow:var(--glass-edge); }
+.add-grid svg { inline-size:21px; block-size:21px; stroke-width:1.7; }
+.add-grid strong { font-size:15px; font-weight:600; }
+.add-grid small { color:#8e8e93; font-size:12px; }
+.add-grid button:only-child,.add-grid button:last-child:nth-child(odd) { grid-column:1 / -1; }
+.add-grid button:focus-visible { outline:2px solid #fff; outline-offset:2px; }
+@media(prefers-reduced-motion:no-preference) { .add-sheet[open] { animation:add-in .36s var(--spring); } @keyframes add-in { from { opacity:0; transform:translateY(24px) scale(.94); } } }
+
+/* Root: Looks row above the tabs. Image editor sheet fits both without clipping. */
+.editor-root { display:grid; align-content:start; gap:2px; }
+.editor.page:not([data-video=true]):not([data-typing=true]):not([data-sheet]):not(.has-multiple) { grid-template-rows:minmax(0,1fr) 172px; }
+.editor:not([data-video=true]) > .control-sheet { padding-block-start:6px; }
+.editor:not([data-video=true]):not([data-typing=true]):not([data-sheet]) .control-stage { block-size:100%; overflow-y:auto; overscroll-behavior:contain; }
+
+/* Empty canvas: one obvious way to start. */
+.canvas-empty-add { position:absolute; inset:50% auto auto 50%; z-index:5; translate:-50% -50%; display:grid; justify-items:center; gap:10px; padding:16px 22px; border:0; border-radius:24px; background:var(--glass-fill),#1c1c1fb3; box-shadow:var(--glass-edge),0 12px 32px #0007; -webkit-backdrop-filter:var(--glass-blur); backdrop-filter:var(--glass-blur); color:#fff; font:600 15px/1.2 -apple-system,BlinkMacSystemFont,system-ui,sans-serif; white-space:nowrap; transition:scale .22s var(--spring); }
+.canvas-empty-add span { display:grid; place-items:center; inline-size:48px; block-size:48px; border-radius:50%; background:#fff; color:#000; }
+.canvas-empty-add svg { inline-size:24px; block-size:24px; stroke-width:2.2; }
+.canvas-empty-add:active { scale:.95; }
+
+/* The canvas row is exactly as tall as the canvas, so canvas and zoom ruler sit together,
+   centred, instead of leaving dead bands above and between them. */
+@supports (inline-size:1cqw) {
+  .editor:not([data-video=true]) .preview { container-type:inline-size; grid-template-rows:minmax(0,min(calc(100cqw / var(--canvas-ratio,1)),var(--canvas-cap,44dvh))) auto auto; align-content:center; row-gap:6px; }
+}
+
+/* Colour name while swiping a locked phone. */
+.colour-flash { position:absolute; z-index:6; translate:-50% 0; padding:6px 12px; border-radius:999px; background:var(--glass-fill),#1c1c1fd9; box-shadow:var(--glass-edge),0 6px 18px #0008; color:#fff; font:600 13px/1 -apple-system,BlinkMacSystemFont,system-ui,sans-serif; white-space:nowrap; pointer-events:none; -webkit-backdrop-filter:var(--glass-blur); backdrop-filter:var(--glass-blur); }
+@media(prefers-reduced-motion:no-preference) { .colour-flash { animation:colour-flash .35s var(--spring); } @keyframes colour-flash { from { opacity:0; scale:.85; } } }
+/* Six tabs fit long labels such as Background and Watermark without clipping. */
+.toolstrip.tool-tabs { padding-inline:6px; }
+.toolstrip.tool-tabs button { overflow:visible; white-space:nowrap; font-size:10.5px; letter-spacing:-.01em; }
+.colour-flash { translate:-50% -50%; }
+/* Editor messages float above the tools instead of covering them. */
+.app-shell.is-editor .toast { inset-block:calc(66px + var(--safe-top)) auto; }
+.editor[data-video=true] .toolstrip.tool-tabs button { font-size:10px; letter-spacing:-.02em; }
+/* Small phones (320–359px): slightly smaller discs and labels keep six tabs apart. */
+@media(max-width:359px) { .toolstrip.tool-tabs { padding-inline:2px; } .toolstrip.tool-tabs button > span { inline-size:44px; block-size:44px; } .toolstrip.tool-tabs button { font-size:9.5px; letter-spacing:-.025em; } }

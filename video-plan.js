@@ -1,5 +1,6 @@
 import {keptVideoSegments,playableVideoSeconds,sourceTimeForElapsed} from './video-edits.js';
 import {timelineFor,timelineDuration} from './timeline-model.js';
+import {EFFECT_SECONDS} from './motion-effects.js';
 const dimensions={square:[1080,1080],story:[1080,1920],wide:[1920,1080],portrait:[1080,1350]};
 export const videoPresets={standard:{shortEdge:720,videoBitsPerSecond:4_000_000},high:{shortEdge:1080,videoBitsPerSecond:8_000_000}};
 export const MAX_VIDEO_BYTES=48_000_000;
@@ -38,3 +39,9 @@ export function syncSecondaryClips(clips,primary,elapsed,playing,force=false){
     else video.pause();
   }
 }
+// A still mockup with an effect exports as a short video at the canvas format.
+export function effectPlan(settings,quality='high'){
+  const preset=videoPresets[quality]??videoPresets.high,[width,height]=dimensions[settings.ratio]??dimensions.square,scale=preset.shortEdge/Math.min(width,height),seconds=EFFECT_SECONDS;
+  return {width:Math.round(width*scale/2)*2,height:Math.round(height*scale/2)*2,fps:30,videoBitsPerSecond:preset.videoBitsPerSecond,seconds,estimatedBytes:Math.ceil(seconds*preset.videoBitsPerSecond/8*1.08)};
+}
+

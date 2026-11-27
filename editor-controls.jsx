@@ -1,8 +1,9 @@
 import { t } from './i18n.js';
 import React, { useEffect, useLayoutEffect, useId, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { soundEffectsEnabled } from './sound.js';
+import { hapticSelection } from './haptics.js';
 import { backdrops, zoomLevel } from './render.js';
+import { motionEffects, effectOf } from './motion-effects.js';
 
 function Glyph({name}) {
   const shapes={
@@ -66,10 +67,26 @@ export function Picker({anchor,label,onClose,className='',children,placement='ab
   return createPortal(<div ref={popup} id={id} popover={native?'auto':undefined} role={menu?undefined:'group'} aria-label={menu?undefined:label} data-placement={placement} className={'editor-picker '+className}>{menu?<div focusgroup="menu nomemory" aria-label={label}>{children}</div>:children}</div>,anchor.current?.closest('dialog')??document.body);
 }
 
-export function EffectsControls({settings,update,disabled=false}){
-  return <fieldset className="effect-options" disabled={disabled}><legend className="visually-hidden">{t('Effects')}</legend>{[['still','None'],['push','Push in'],['sway','Sway']].map(([value,label])=><label className="effect-choice" key={value}>
-    <input type="radio" name="video-effect" value={value} checked={(settings.motion??'still')===value} onChange={()=>update({motion:value})}/><span className={'effect-preview effect-'+value}><svg viewBox="0 0 48 48" aria-hidden="true">{value==='still'?<><circle cx="24" cy="24" r="14"/><path d="m14 34 20-20"/></>:<><rect className="effect-card-shape" x="15" y="8" width="18" height="32" rx="5"/>{value==='push'?<path d="m9 17-4-4m0 0v7m0-7h7m27 18 4 4m0 0v-7m0 7h-7"/>:<path d="M7 17c3-5 8-8 14-8m20 22c-3 5-8 8-14 8M7 12v5h5m29 19v-5h-5"/>}</>}</svg></span><span className="effect-label">{t(label)}</span>
-  </label>)}</fieldset>;
+// Automatic motion for the selected phone or image. The chosen effect's preview phone moves,
+// so each choice shows what it does without extra text.
+const effectMarks={
+  still:<><circle cx="12" cy="12" r="8"/><path d="m6.5 17.5 11-11"/></>,
+  spin:<path d="M19.5 12a7.5 7.5 0 1 1-2.2-5.3M19.5 4v3.5H16"/>,
+  float:<path d="M8 21.2h8" opacity=".6"/>,
+  sway:<path d="M4.5 9.5c-1 1.6-1 3.4 0 5M19.5 9.5c1 1.6 1 3.4 0 5"/>,
+  push:<path d="M4 8V4h4M20 16v4h-4"/>,
+};
+export function EffectsControls({settings,update,disabled=false,video=false}){
+  const current=effectOf(settings);
+  return <fieldset className="effect-options" disabled={disabled}><legend className="visually-hidden">{t('Effects')}</legend>
+    <div className="effect-row" role="radiogroup" aria-label={t('Effects')}>
+      {motionEffects.map(({id,label})=><button key={id} type="button" role="radio" aria-checked={current===id} className={'effect-choice effect-'+id} onClick={()=>{if(current===id)return;hapticSelection();update({motion:id});}}>
+        <span className="effect-symbol"><svg viewBox="0 0 24 24" aria-hidden="true">{id!=='still'&&<rect className="effect-phone" x="8.75" y="4.5" width="6.5" height="13.5" rx="2"/>}{effectMarks[id]}</svg></span>
+        <span className="effect-label">{t(label)}</span>
+      </button>)}
+    </div>
+    <p className="effect-note">{t(disabled?'Select a phone or image to add an effect':video?'Plays across your video':'Exports as a 4-second video')}</p>
+  </fieldset>;
 }
 
 export function SizeControls({settings,update}) {
@@ -145,25 +162,11 @@ export function BackgroundControls({settings,update,pickPhoto,photo}) {
   </div>;
 }
 
-function useMechanicalTicks() {
-  const audio=useRef(null),sample=useRef(null),last=useRef(0);
-  const unlock=()=>{
-    if(!soundEffectsEnabled())return;
-    const Audio=window.AudioContext||window.webkitAudioContext;
-    if(!audio.current&&Audio){const context=audio.current=new Audio(),buffer=context.createBuffer(1,Math.ceil(context.sampleRate*.024),context.sampleRate),data=buffer.getChannelData(0);for(let i=0;i<data.length;i++)data[i]=(Math.random()*2-1)*Math.exp(-i/(context.sampleRate*.003));sample.current=buffer;}
-    audio.current?.resume().catch(()=>{});
-  };
-  const tick=()=>{
-    const context=audio.current;if(!soundEffectsEnabled()||!context||context.state!=='running'||performance.now()-last.current<28)return;
-    last.current=performance.now();const source=context.createBufferSource(),filter=context.createBiquadFilter(),gain=context.createGain();
-    source.buffer=sample.current;filter.type='highpass';filter.frequency.value=900;gain.gain.value=.24;source.connect(filter);filter.connect(gain);gain.connect(context.destination);source.start();
-  };
-  useEffect(()=>()=>{audio.current?.close().catch(()=>{});},[]);
-  return{unlock,tick};
-}
+// Dial and wheel detents use native Telegram haptics.
+const detents={unlock(){},tick:hapticSelection};
 
 export function ShadowControls({settings,update,wheel,onWheelChange}) {
-  const sound=useMechanicalTicks(),previous=useRef(null),value=useRef(settings.shadowAngle);value.current=settings.shadowAngle;
+  const sound=detents,previous=useRef(null),value=useRef(settings.shadowAngle);value.current=settings.shadowAngle;
   const angleAt=event=>{const b=event.currentTarget.getBoundingClientRect();return Math.atan2(event.clientX-b.left-b.width/2,event.clientY-b.top-b.height/2)*180/Math.PI;};
   const move=event=>{
     if(previous.current===null)return;
@@ -199,11 +202,9 @@ function TimeWheel({label,options,initial,onChange,tick,unlock}) {
 }
 
 export function TimeControls({value,onDone}) {
-  const [initialHour,initialMinute]=value.split(':').map(Number),[hour,setHour]=useState(initialHour%12||12),[minute,setMinute]=useState(initialMinute),[period,setPeriod]=useState(initialHour>=12?1:0),[sound,setSound]=useState(true),audio=useRef(null),last=useRef(0);
-  const unlock=()=>{if(!soundEffectsEnabled())return;const Audio=window.AudioContext||window.webkitAudioContext;if(!audio.current&&Audio)audio.current=new Audio();audio.current?.resume().catch(()=>{});};
-  useEffect(()=>()=>{audio.current?.close().catch(()=>{});},[]);
-  const tick=()=>{const context=audio.current;if(!soundEffectsEnabled()||!sound||!context||context.state!=='running'||performance.now()-last.current<35)return;last.current=performance.now();const oscillator=context.createOscillator(),gain=context.createGain();oscillator.type='triangle';oscillator.frequency.setValueAtTime(1100,context.currentTime);gain.gain.setValueAtTime(.025,context.currentTime);gain.gain.exponentialRampToValueAtTime(.001,context.currentTime+.018);oscillator.connect(gain);gain.connect(context.destination);oscillator.start();oscillator.stop(context.currentTime+.02);};
+  const [initialHour,initialMinute]=value.split(':').map(Number),[hour,setHour]=useState(initialHour%12||12),[minute,setMinute]=useState(initialMinute),[period,setPeriod]=useState(initialHour>=12?1:0);
+  const unlock=()=>{},tick=hapticSelection;
   return <div className="time-picker-content"><div className="time-wheel-labels"><span>{t("Hour")}</span><span>{t("Minute")}</span><span>{t("Period")}</span></div><div className="time-wheel-group"><div className="time-selection-band" aria-hidden="true"/>
     <TimeWheel label={t("Hour")} options={Array.from({length:12},(_,index)=>index+1)} initial={(initialHour%12||12)-1} onChange={index=>setHour(index+1)} tick={tick} unlock={unlock}/><TimeWheel label={t("Minute")} options={Array.from({length:60},(_,index)=>String(index).padStart(2,'0'))} initial={initialMinute} onChange={setMinute} tick={tick} unlock={unlock}/><TimeWheel label={t("Period")} options={['AM','PM']} initial={initialHour>=12?1:0} onChange={setPeriod} tick={tick} unlock={unlock}/>
-    </div><div className="time-picker-footer"><button type="button" className="round-action" aria-label={sound?'Mute picker sound':'Enable picker sound'} onClick={()=>{unlock();setSound(!sound);}}><Glyph name={sound?'sound':'muted'}/></button><button type="button" className="time-confirm" onClick={()=>onDone(String(hour%12+period*12).padStart(2,'0')+':'+String(minute).padStart(2,'0'))}>{t("Done")}</button></div></div>;
+    </div><div className="time-picker-footer"><button type="button" className="time-confirm" onClick={()=>onDone(String(hour%12+period*12).padStart(2,'0')+':'+String(minute).padStart(2,'0'))}>{t("Done")}</button></div></div>;
 }

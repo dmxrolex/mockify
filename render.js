@@ -1,9 +1,11 @@
+import {drawMark} from './watermark.js';
 import {drawRecordedGesture} from './gesture-render.js';
 import {keptVideoSegments,containsVideoTime} from './video-edits.js';
 import {cleanStatusProfile} from './status-profile.js';
 import {cameraAt,anchoredZoom,orderedMoments,sourceSignature} from './showcase-model.js';
 import {evaluateTimeline,timelineDuration} from './timeline-model.js';
-import {assetShape,drawAssetFrame} from './asset-library.js';
+import {assetShape,drawAssetFrame,isAssetFrame} from './asset-library.js';
+import {motionAt,movedPose,turnedDirection} from './motion-effects.js';
 import {createAdjuster,adjustmentKey} from './adjustments.js';
 import { drawTextOverlay } from './text-model.js';
 import { imageGeometry, imageSettings, cropRect, backgroundGeometry } from './image-model.js';
@@ -145,8 +147,7 @@ export function mediaMapping(settings,media,width,height,index=0,count=1) {
     const {pose,bounds}=pageObjectPlacement(settings,item,width,height),mapping=mediaMapping(pose,media,bounds.width,bounds.height);
     return {to:p=>{const q=mapping.to(p);return{x:q.x+bounds.x,y:q.y+bounds.y};},from:p=>mapping.from({x:p.x-bounds.x,y:p.y-bounds.y})};
   }
-  const progress=settings.renderProgress??0,easing=(1-Math.cos(progress*Math.PI))/2;
-  settings={...settings,scale:settings.scale*(settings.motion==='push'?1+easing*.16:1),roll:(settings.roll??0)+(settings.motion==='sway'?Math.sin(progress*Math.PI*2)*7:0)};
+  const moved=movedPose(settings,settings.renderProgress??0);settings=moved.pose;
   const columns=count>1?Math.min(count,Math.max(2,Math.floor(Math.sqrt(count*width/height)))):1;
   const rows=Math.ceil(count/columns),cw=width/columns,ch=height/rows,row=Math.floor(index/columns);
   const remaining=Math.min(columns,count-row*columns),ox=(index%columns+(columns-remaining)/2)*cw,oy=row*ch;
@@ -160,7 +161,7 @@ export function mediaMapping(settings,media,width,height,index=0,count=1) {
     };
   }
   const art=deviceArt.iphone18,tw=art.width,th=art.height,[sx,sy,sw,sh]=art.screen;
-  let direction={front:0,left:-1,right:1}[settings.angle]??0;if(settings.motion==='sway')direction=Math.max(-1,Math.min(1,direction+Math.sin(progress*Math.PI*2)*.55));
+  const direction=turnedDirection(settings.angle,moved.turn);
   const strength=Math.abs(direction),fw=Math.round(tw*(1-strength*.105));
   const depth=strength?Math.max(1,Math.round(tw*strength*.046)):0,ph=strength?Math.ceil(th*(1+strength*.066))+2:th,pw=strength?fw+depth:tw;
   const level=count>1?0:zoomLevel(settings.zoom),base=Math.min(ch*.86/th,cw*.79/tw)*settings.scale/100,size=base*(1+Math.abs(level)*.0113);
@@ -179,13 +180,9 @@ export function pageObjectPlacement(settings,item,width,height){
   return {pose:{...base,...item.pose,imagePattern:item.pose.imagePattern??null,x:(item.pose.x??0)/slot.width,y:(item.pose.y??0)/slot.height},bounds:{x:slot.x*width,y:slot.y*height,width:slot.width*width,height:slot.height*height}};
 }
 export function pageObjectGeometry(settings,media,width,height,item){
-  const {pose,bounds:b}=pageObjectPlacement(settings,item,width,height);
-  const progress=settings.renderProgress??0,easing=(1-Math.cos(progress*Math.PI))/2;
-  if(pose.motion==='push')pose.scale*=1+easing*.16;
-  if(pose.motion==='sway')pose.roll+=Math.sin(progress*Math.PI*2)*7;
+  const placed=pageObjectPlacement(settings,item,width,height),b=placed.bounds,moved=movedPose(placed.pose,settings.renderProgress??0),pose=moved.pose;
   if(pose.device==='flat'){const shape=imageGeometry(pose,assetShape(pose,media),b.width,b.height);return {...shape,cx:shape.cx+b.x,cy:shape.cy+b.y};}
-  const art=deviceArt.iphone18;let direction={front:0,left:-1,right:1}[pose.angle]??0;
-  if(pose.motion==='sway')direction=Math.max(-1,Math.min(1,direction+Math.sin(progress*Math.PI*2)*.55));
+  const art=deviceArt.iphone18,direction=turnedDirection(pose.angle,moved.turn);
   const strength=Math.abs(direction);
   const pw=Math.round(art.width*(1-strength*.105))+(strength?Math.max(1,Math.round(art.width*strength*.046)):0),ph=strength?Math.ceil(art.height*(1+strength*.066))+2:art.height;
   const level=zoomLevel(pose.zoom),base=Math.min(b.height*.86/art.height,b.width*.79/art.width)*(pose.scale??89)/100,size=base*(1+Math.abs(level)*.0113);
@@ -561,9 +558,7 @@ export function createRenderer(canvas,{cacheScene=true}={}) {
     const { x, y, width, height } = bounds;
     const flat = settings.device === 'flat'||Boolean(settings.imagePattern);
     if(flat) {
-      const pose={...settings},easing=(1-Math.cos(progress*Math.PI))/2;
-      if(settings.motion==='push')pose.scale*=1+easing*.16;
-      if(settings.motion==='sway')pose.roll+=Math.sin(progress*Math.PI*2)*7;
+      const pose=movedPose(settings,progress).pose;
       const shapeMedia=assetShape(pose,media),crop=cropRect(shapeMedia,pose.imageCrop),box=imageGeometry(pose,shapeMedia,width,height);
       const resolution=Math.min(1,4096/Math.max(crop.width,crop.height));
       const tw=Math.max(1,Math.round(crop.width*resolution)),th=Math.max(1,Math.round(crop.height*resolution));
@@ -571,7 +566,7 @@ export function createRenderer(canvas,{cacheScene=true}={}) {
       if(flatMedia!==original||flatKey!==key){
         resize(texture,tw,th);textureContext.clearRect(0,0,tw,th);textureContext.save();
         rounded(textureContext,0,0,tw,th,Math.min(tw,th)*Math.max(0,Math.min(50,settings.imageEdges??4))/100);textureContext.clip();
-        if(settings.assetKind==='glass'||settings.assetKind==='box')drawAssetFrame(textureContext,settings,media,tw,th);else if(drawable(media))textureContext.drawImage(media.element,crop.x,crop.y,crop.width,crop.height,0,0,tw,th);textureContext.restore();flatMedia=original;flatKey=key;
+        if(isAssetFrame(settings)&&settings.assetKind!=='phone')drawAssetFrame(textureContext,settings,media,tw,th);else if(drawable(media))textureContext.drawImage(media.element,crop.x,crop.y,crop.width,crop.height,0,0,tw,th);textureContext.restore();flatMedia=original;flatKey=key;
       }
       if(settings.imagePattern){
         const pattern=settings.imagePattern;
@@ -614,15 +609,10 @@ export function createRenderer(canvas,{cacheScene=true}={}) {
     const previewHeight=Math.max(width,height)*Math.max(settings._timelineScale??1,1)*(original.kind==='video'?Math.max(2.5,1+Math.abs(zoomLevel(settings.zoom))*.018):interactivePreview?1:2);
     const textureScale=cacheScene?Math.min(1,previewHeight/shape.height):1;
     const textureHeight=Math.round(shape.height*textureScale);
-    const easing = (1 - Math.cos(progress * Math.PI)) / 2;
-    let size = Math.min(height * .86 / shape.height, width * .79 / shape.width) * settings.scale / 100;
-    let direction = flat ? 0 : { front: 0, left: -1, right: 1 }[settings.angle];
-    let roll = settings.roll;
-    if (settings.motion === 'push') size *= 1 + easing * .16;
-    if (settings.motion === 'sway') {
-      roll += Math.sin(progress * Math.PI * 2) * 7;
-      if (!flat) direction = Math.max(-1, Math.min(1, direction + Math.sin(progress * Math.PI * 2) * .55));
-    }
+    const motion = motionAt(settings, progress);
+    let size = Math.min(height * .86 / shape.height, width * .79 / shape.width) * settings.scale / 100 * motion.scale;
+    const direction = flat ? 0 : turnedDirection(settings.angle, motion.turn);
+    const roll = settings.roll + motion.roll;
     // Cache only page-object previews. Position, scale, signed zoom, rotation and
     // shadow remain live transforms of the same sharp projected artwork.
     const reusable=cacheScene&&reuseProjection;
@@ -655,7 +645,7 @@ export function createRenderer(canvas,{cacheScene=true}={}) {
     const deviceHeight = projection.height * size;
     const offsetY = height / 2 + Math.sign(level) * (deviceHeight - baseHeight) / 2;
     ctx.save();
-    ctx.translate(x + width * (.5 + settings.x / 100), y + offsetY + height * settings.y / 100);
+    ctx.translate(x + width * (.5 + (settings.x + motion.x) / 100), y + offsetY + height * (settings.y + motion.y) / 100);
     ctx.rotate(roll * Math.PI / 180);
     ctx.scale(size, size);
     const style = settings.shadowStyle;
@@ -790,7 +780,7 @@ export function createRenderer(canvas,{cacheScene=true}={}) {
       // Render from native media at the largest focus scale, not from an upscaled preview.
       const maximum=Math.max(1,...moments.filter(item=>item.focus).map(item=>Math.min(2.8,item.zoom||1))),density=Math.min(maximum,6144/Math.max(canvas.width,canvas.height),Math.sqrt((cacheScene?8_000_000:16_000_000)/(canvas.width*canvas.height)));
       showcaseCanvas??=document.createElement('canvas');resize(showcaseCanvas,Math.round(canvas.width*density),Math.round(canvas.height*density));showcaseRenderer??=createRenderer(showcaseCanvas,{cacheScene:false});
-      showcaseRenderer({...settings,showcase:null},media,photo,progress);ctx.clearRect(0,0,canvas.width,canvas.height);ctx.save();ctx.translate(tx,ty);ctx.scale(camera.zoom,camera.zoom);ctx.drawImage(showcaseCanvas,0,0,canvas.width,canvas.height);ctx.restore();
+      showcaseRenderer({...settings,showcase:null,mark:null},media,photo,progress);ctx.clearRect(0,0,canvas.width,canvas.height);ctx.save();ctx.translate(tx,ty);ctx.scale(camera.zoom,camera.zoom);ctx.drawImage(showcaseCanvas,0,0,canvas.width,canvas.height);ctx.restore();
     }else{paintScene(settings,media,photo,progress);designBlur(ctx,settings.blurEffects?.design,++blurRevision);}
     // Map the contact point through the camera while keeping the ring light at every zoom.
     const projectGesture=gesture=>{
@@ -801,7 +791,9 @@ export function createRenderer(canvas,{cacheScene=true}={}) {
     for(const moment of moments)drawRecordedGesture(ctx,moment,time,projectGesture,unit);
     return true;
   }
-  const paint=(settings,media,photo,progress=0,interactive=false)=>{
+  // The watermark is drawn last, above camera zoom, blur and touches, on previews and exports alike.
+  const paint=(settings,...rest)=>{paintFrame(settings,...rest);drawMark(ctx,settings,canvas.width,canvas.height);};
+  const paintFrame=(settings,media,photo,progress=0,interactive=false)=>{
     interactivePreview=cacheScene&&interactive;
     if(settings.timeline?.version===2&&!settings._timelineEvaluated){
       const time=settings._timelineTime??progress*timelineDuration(settings.timeline);

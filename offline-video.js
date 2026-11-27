@@ -2,7 +2,8 @@ import {keptVideoSegments} from './video-edits.js';
 import {Input,ALL_FORMATS,BlobSource,Output,Mp4OutputFormat,BufferTarget,CanvasSource,VideoSampleSink,AudioBufferSink,AudioBufferSource,Quality,canEncodeVideo,canEncodeAudio} from 'mediabunny';
 import {createRenderer,loadWatermarkBadge} from './render.js';
 import {loadTextFonts} from './text-fonts.js';
-import {recordingsInScene,recordingInScene,videoPlan,clipTime,MAX_VIDEO_BYTES,timelineMediaSchedule} from './video-plan.js';
+import {loadMarkAssets} from './watermark.js';
+import {recordingsInScene,recordingInScene,videoPlan,effectPlan,clipTime,MAX_VIDEO_BYTES,timelineMediaSchedule} from './video-plan.js';
 import {evaluateTimeline,timelineFor} from './timeline-model.js';
 
 export async function offlineVideo(settings,sources,photo,quality,signal,report){
@@ -17,7 +18,7 @@ export async function offlineVideo(settings,sources,photo,quality,signal,report)
   signal.addEventListener('abort',abort,{once:true});
   const check=()=>{if(signal.aborted)throw new DOMException('Export canceled','AbortError');};
   try{
-    check();if(plan.estimatedBytes>MAX_VIDEO_BYTES)throw new Error(quality==='high'?'Choose Standard quality for this recording.':'This recording is too long to send in one file.');
+    check();if(plan.estimatedBytes>MAX_VIDEO_BYTES)throw new Error(quality==='high'?'Choose HD 720p for this recording.':'This recording is too long to send in one file.');
     let fps=30;
     for(const clip of recordingsInScene(settings,sources)){
       const input=new Input({formats:ALL_FORMATS,source:new BlobSource(clip.source.blob)});inputs.push(input);
@@ -30,7 +31,7 @@ export async function offlineVideo(settings,sources,photo,quality,signal,report)
     if(states.some(state=>state.audio)&&!await canEncodeAudio('aac',{sampleRate:48000,numberOfChannels:2}))return null;
     const count=Math.ceil(plan.seconds*fps-1e-7),canvas=document.createElement('canvas');canvas.width=plan.width;canvas.height=plan.height;
     // Export never uses the interactive low-resolution texture path.
-    paint=createRenderer(canvas,{cacheScene:false});await Promise.all([loadTextFonts(settings),loadWatermarkBadge(settings.watermarkBadge)]);
+    paint=createRenderer(canvas,{cacheScene:false});await Promise.all([loadTextFonts(settings),loadWatermarkBadge(settings.watermarkBadge),loadMarkAssets(settings.mark)]);
     const target=new BufferTarget();output=new Output({format:new Mp4OutputFormat({fastStart:'in-memory'}),target});
     videoSource=new CanvasSource(canvas,{codec:'avc',quality:new Quality({bitrate:plan.videoBitsPerSecond}),latencyMode:'quality',bitrateMode:'constant',keyFrameInterval:2,contentHint:'detail'});output.addVideoTrack(videoSource,{frameRate:fps});
     const audioStates=states.filter(state=>state.audio);
@@ -102,7 +103,7 @@ export async function offlineVideo(settings,sources,photo,quality,signal,report)
       await videoSource.add(i/fps,Math.min(1/fps,plan.seconds-i/fps));await writeAudio(Math.min(plan.seconds,(i+1)/fps));report(.95*(i+1)/count);
       if(performance.now()-lastYield>25){await(globalThis.scheduler?.yield?.()??new Promise(resolve=>setTimeout(resolve,0)));lastYield=performance.now();}
     }
-    videoSource.close();audioSource?.close();check();await output.finalize();check();const blob=new Blob([target.buffer],{type:'video/mp4'});if(blob.size>MAX_VIDEO_BYTES)throw new Error('This file is too large. Choose Standard quality.');report(1);return blob;
+    videoSource.close();audioSource?.close();check();await output.finalize();check();const blob=new Blob([target.buffer],{type:'video/mp4'});if(blob.size>MAX_VIDEO_BYTES)throw new Error('This file is too large. Choose HD 720p.');report(1);return blob;
   }catch(error){if(signal.aborted)throw new DOMException('Export canceled','AbortError');throw error;}finally{
     signal.removeEventListener('abort',abort);
     if(output&&output.state!=='finalized')await output.cancel().catch(()=>{});
@@ -127,7 +128,7 @@ async function offlineTimelineVideo(settings,sources,photo,quality,signal,report
   signal.addEventListener('abort',abort,{once:true});
   try{
     check();
-    if(plan.estimatedBytes>MAX_VIDEO_BYTES)throw new Error(quality==='high'?'Choose Standard quality for this recording.':'This recording is too long to send in one file.');
+    if(plan.estimatedBytes>MAX_VIDEO_BYTES)throw new Error(quality==='high'?'Choose HD 720p for this recording.':'This recording is too long to send in one file.');
     let fps=primary.source.frameRate??30,foundPrimary=false;
     // Decode each uploaded file once for metadata; per-instance sinks below
     // still provide independent frame positions for simultaneous overlays.
@@ -156,7 +157,7 @@ async function offlineTimelineVideo(settings,sources,photo,quality,signal,report
     const count=Math.ceil(plan.seconds*fps-1e-7);
     canvas=document.createElement('canvas');canvas.width=plan.width;canvas.height=plan.height;
     paint=createRenderer(canvas,{cacheScene:false});
-    await Promise.all([loadTextFonts(settings),loadWatermarkBadge(settings.watermarkBadge)]);
+    await Promise.all([loadTextFonts(settings),loadWatermarkBadge(settings.watermarkBadge),loadMarkAssets(settings.mark)]);
     const target=new BufferTarget();
     output=new Output({format:new Mp4OutputFormat({fastStart:'in-memory'}),target});
     videoSource=new CanvasSource(canvas,{codec:'avc',quality:new Quality({bitrate:plan.videoBitsPerSecond}),latencyMode:'quality',bitrateMode:'constant',keyFrameInterval:2,contentHint:'detail'});
@@ -233,7 +234,7 @@ async function offlineTimelineVideo(settings,sources,photo,quality,signal,report
       if(performance.now()-lastYield>25){await(globalThis.scheduler?.yield?.()??new Promise(resolve=>setTimeout(resolve,0)));lastYield=performance.now();}
     }
     videoSource.close();audioSource?.close();check();await output.finalize();check();
-    const blob=new Blob([target.buffer],{type:'video/mp4'});if(blob.size>MAX_VIDEO_BYTES)throw new Error('This file is too large. Choose Standard quality.');report(1);return blob;
+    const blob=new Blob([target.buffer],{type:'video/mp4'});if(blob.size>MAX_VIDEO_BYTES)throw new Error('This file is too large. Choose HD 720p.');report(1);return blob;
   }catch(error){if(signal.aborted)throw new DOMException('Export canceled','AbortError');throw error;}
   finally{
     signal.removeEventListener('abort',abort);
@@ -242,3 +243,35 @@ async function offlineTimelineVideo(settings,sources,photo,quality,signal,report
     disposeInputs();paint?.dispose();if(canvas)canvas.width=canvas.height=1;
   }
 }
+
+// Effects on a still mockup: render the effect's loop frame by frame (no source video), so the
+// exported MP4 matches the editor preview exactly and loops seamlessly.
+export async function effectVideo(settings,sources,photo,quality,signal,report){
+  const plan=effectPlan(settings,quality);
+  if(!await canEncodeVideo('avc',{width:plan.width,height:plan.height}))return null;
+  let output,paint,videoSource;
+  const abort=()=>{if(output&&output.state!=='finalized')void output.cancel().catch(()=>{});};
+  signal.addEventListener('abort',abort,{once:true});
+  const check=()=>{if(signal.aborted)throw new DOMException('Export canceled','AbortError');};
+  try{
+    check();
+    const fps=plan.fps,count=Math.round(plan.seconds*fps),canvas=document.createElement('canvas');canvas.width=plan.width;canvas.height=plan.height;
+    paint=createRenderer(canvas,{cacheScene:false});await Promise.all([loadTextFonts(settings),loadWatermarkBadge(settings.watermarkBadge),loadMarkAssets(settings.mark)]);
+    const target=new BufferTarget();output=new Output({format:new Mp4OutputFormat({fastStart:'in-memory'}),target});
+    videoSource=new CanvasSource(canvas,{codec:'avc',quality:new Quality({bitrate:plan.videoBitsPerSecond}),latencyMode:'quality',bitrateMode:'constant',keyFrameInterval:2,contentHint:'detail'});output.addVideoTrack(videoSource,{frameRate:fps});
+    await output.start();let lastYield=performance.now();
+    for(let i=0;i<count;i++){
+      check();paint(settings,sources,photo,i/count);
+      if(settings.background==='transparent'){const ctx=canvas.getContext('2d');ctx.globalCompositeOperation='destination-over';ctx.fillStyle='#000';ctx.fillRect(0,0,canvas.width,canvas.height);ctx.globalCompositeOperation='source-over';}
+      await videoSource.add(i/fps,1/fps);report(.95*(i+1)/count);
+      if(performance.now()-lastYield>25){await(globalThis.scheduler?.yield?.()??new Promise(resolve=>setTimeout(resolve,0)));lastYield=performance.now();}
+    }
+    videoSource.close();check();await output.finalize();check();
+    const blob=new Blob([target.buffer],{type:'video/mp4'});if(blob.size>MAX_VIDEO_BYTES)throw new Error('This file is too large. Choose HD 720p.');report(1);return blob;
+  }catch(error){if(signal.aborted)throw new DOMException('Export canceled','AbortError');throw error;}finally{
+    signal.removeEventListener('abort',abort);
+    if(output&&output.state!=='finalized')await output.cancel().catch(()=>{});
+    paint?.dispose();
+  }
+}
+

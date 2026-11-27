@@ -2,10 +2,12 @@
 .editor.page[data-panel="showcase"] .control-sheet { padding:0; overflow:visible; max-block-size:none; }
 .showcase-canvas { position:absolute; inset:0; z-index:4; overflow:hidden; touch-action:none; -webkit-user-select:none; user-select:none; cursor:crosshair; }
 .showcase-canvas[aria-disabled="true"] { pointer-events:none; }
-.showcase-focus-point { position:absolute; display:grid; place-items:center; inline-size:56px; block-size:56px; min-block-size:56px; translate:-50% -50%; border:5px solid #e2efffa6; border-radius:50%; background:transparent; color:#e7f3ff; padding:0; box-shadow:0 0 0 1px #192d4599,inset 0 0 0 1px #ffffff60,0 2px 8px #0003; touch-action:none; cursor:grab; }
+/* Matches the exported Telegram-style touch: grey glass disc, thin white rim, soft shadow. */
+.showcase-focus-point { position:absolute; display:grid; place-items:center; inline-size:52px; block-size:52px; min-block-size:52px; translate:-50% -50%; border:0; border-radius:50%; padding:0; color:#fff; background:radial-gradient(circle,transparent 38%,#327de633 48%,#327de659 62%,#327de633 76%,transparent 90%); box-shadow:inset 0 0 0 1.5px #ffffffd9,0 4px 14px #0005; touch-action:none; cursor:grab; transition:scale .2s cubic-bezier(.32,.72,.36,1.28); }
+.showcase-focus-point:active { scale:.92; }
 .animation-zoom-label { position:absolute; inset-block-start:calc(100% + 8px); inset-inline-start:50%; translate:-50% 0; color:#fff; white-space:nowrap; font:600 12px/1.2 system-ui; text-shadow:0 1px 3px #000; pointer-events:none; }
 .showcase-focus-point:active { cursor:grabbing; }
-.showcase-focus-point:focus-visible { outline:2px solid #66acff; outline-offset:-2px; }
+.showcase-focus-point:focus-visible { outline:2px solid #fff; outline-offset:3px; }
 @media(prefers-reduced-motion:no-preference) { .showcase-focus-point { animation:showcase-point-in .18s ease-out; } @keyframes showcase-point-in { from{opacity:0;scale:.8;}to{opacity:1;scale:1;} } }
 
 .animation-gestures { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:5px; padding:5px; background:#1c1c1e; border-radius:18px; }
@@ -13,12 +15,23 @@
 .animation-gestures button[aria-pressed=true] { background:#303034; color:#91c7ff; }
 .animation-gestures svg { width:22px; height:22px; flex-shrink:0; }
 .animation-gestures button:focus-visible { outline:2px solid #409cff; }
-.animation-magnifier { position:absolute; z-index:3; width:112px; height:112px; box-sizing:border-box; translate:-50% -50%; border-radius:50%; border:5px solid #c3cfdbb3; box-shadow:0 0 0 1px #ffffff50,inset 0 0 0 1px #ffffff60,0 5px 18px #0005; pointer-events:none; background:#111; }
-.animation-magnifier[hidden] { display:none; }
-.showcase-focus-point[data-endpoint=true] { color:#fff; background:transparent; border:5px solid #72b9ffc0; }
+/* Round magnifier while dragging; beats the artboard's own canvas rule. */
+.artboard canvas.animation-magnifier { position:absolute; z-index:3; inline-size:112px; block-size:112px; max-inline-size:none; max-block-size:none; aspect-ratio:1; box-sizing:border-box; translate:-50% -50%; border-radius:50%; border:3px solid #fff; box-shadow:0 10px 28px #000a,0 0 0 1px #0004; pointer-events:none; background:#111; }
+.artboard canvas.animation-magnifier[hidden] { display:none; }
+.showcase-focus-point[data-endpoint=true] { background:transparent; border:2px dashed #ffffffcc; -webkit-backdrop-filter:none; backdrop-filter:none; }
 @media(prefers-reduced-motion:no-preference) { .animation-gestures button { transition:background .16s,color .16s,scale .16s; } .animation-gestures button:active { scale:.96; } }
 
 .animation-swipe-guide { position:absolute; inset:0; width:100%; height:100%; pointer-events:none; overflow:visible; }
-.animation-swipe-guide path { fill:none; stroke:#99caff; stroke-width:2; stroke-dasharray:4 5; stroke-linecap:round; }
+.animation-swipe-guide path { fill:none; stroke:#ffffffb3; stroke-width:2; stroke-dasharray:2 6; stroke-linecap:round; }
 
 
+
+/* Live touch recording overlay. */
+.touch-recorder { position:absolute; inset:0; z-index:6; touch-action:none; -webkit-user-select:none; user-select:none; cursor:crosshair; }
+.touch-recorder-ring { position:absolute; inline-size:46px; block-size:46px; translate:-50% -50%; border-radius:50%; pointer-events:none; background:radial-gradient(circle,transparent 40%,#327de659 55%,#327de633 75%,transparent 88%); box-shadow:inset 0 0 0 1.5px #ffffffcc; }
+.touch-recorder-bar { position:absolute; inset:10px auto auto 50%; translate:-50% 0; display:flex; align-items:center; gap:8px; padding:8px 14px 8px 12px; pointer-events:none; border-radius:999px; background:var(--glass-fill),#1c1c1fe6; box-shadow:var(--glass-edge),0 8px 22px #0009; -webkit-backdrop-filter:var(--glass-blur); backdrop-filter:var(--glass-blur); color:#fff; font:600 13px/1 -apple-system,BlinkMacSystemFont,system-ui,sans-serif; white-space:nowrap; }
+.touch-recorder-dot { inline-size:9px; block-size:9px; border-radius:50%; background:#ff453a; }
+.touch-recorder-bar button { min-block-size:32px; padding:0 14px; border:0; border-radius:16px; background:#fff; color:#000; font:inherit; }
+.touch-recorder-bar button:active { scale:.94; }
+.touch-recorder-hint { position:absolute; inset:auto 12px 12px; margin:0; color:#fff; font:500 13px/1.3 -apple-system,BlinkMacSystemFont,system-ui,sans-serif; text-align:center; text-shadow:0 1px 6px #000; pointer-events:none; }
+@media(prefers-reduced-motion:no-preference) { .touch-recorder-dot { animation:recording-pulse 1.2s ease-in-out infinite; } .touch-recorder-ring { animation:recorder-ring .25s var(--spring); } @keyframes recording-pulse { 50% { opacity:.35; } } @keyframes recorder-ring { from { scale:1.3; opacity:0; } } }

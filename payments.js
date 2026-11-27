@@ -1,3 +1,4 @@
+import {frameReply,frameableMedia} from './chat-framing.js';
 import {creditPacks} from './credit-model.js';
 import {subscriptionOffers,extendMonths} from './subscription-model.js';
 import {startReply} from './bot-messages.js';
@@ -49,6 +50,7 @@ async function webhook(request,env){
     }
     const message=update.message,payment=message?.successful_payment;
     if(payment){const order=await orderFor(env,payment.invoice_payload);if(!matches(order,message.from?.id,payment)||typeof payment.telegram_payment_charge_id!=='string'){await support(env,{...message,text:'Unmatched payment: '+JSON.stringify(payment)});return json({ok:true});}await applyPayment(env,order,payment.telegram_payment_charge_id);}
+    else if(message?.from?.id&&message.chat?.type==='private'&&frameableMedia(message)){const reply=await frameReply(message,env);if(reply)await bot(env,'sendMessage',reply);}
     else if(message?.from?.id&&message.chat?.type==='private'&&typeof message.text==='string'){
       const start=/^\/start(?:@([a-z0-9_]+))?(?:\s|$)/i.exec(message.text);
       if(start&&(!start[1]||start[1].toLowerCase()===env.TELEGRAM_BOT_USERNAME?.toLowerCase()))await bot(env,'sendMessage',startReply(message,env.PAYMENTS_BASE_URL));

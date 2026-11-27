@@ -1,9 +1,11 @@
+import {sceneHasMotion} from './motion-effects.js';
 import {recordingInScene} from './video-plan.js';
 import { createRenderer, loadWatermarkBadge, ratios } from './render.js';
 import { clipProgress } from './media.js';
 import {exportPageIndices} from './page-model.js';
 import { sceneFor } from './project.js';
 import { loadTextFonts } from './text-fonts.js';
+import { loadMarkAssets } from './watermark.js';
 
 let nativeWebP;
 function canEncodeWebP(){
@@ -24,7 +26,7 @@ function makeArtboard(settings, scale) {
 export async function imageBlob(settings, media, photo, scale, mime, report=()=>{}, signal) {
   const check=()=>{if(signal?.aborted)throw new DOMException('Export canceled','AbortError');};
   check();report(.05);
-  await Promise.all([loadWatermarkBadge(settings.watermarkBadge),loadTextFonts(settings)]);
+  await Promise.all([loadWatermarkBadge(settings.watermarkBadge),loadMarkAssets(settings.mark),loadTextFonts(settings)]);
   check();report(.15);
   await new Promise(resolve=>requestAnimationFrame(resolve));
   const { canvas, paint } = makeArtboard(settings, scale);
@@ -45,7 +47,7 @@ export async function imageBlob(settings, media, photo, scale, mime, report=()=>
     if(mime==='image/webp'&&blob?.type!==mime){
       report(.6);const {encodeWebP}=await import('./webp-encoder.js');check();blob=await encodeWebP(canvas,signal);
     }
-    check();if(!blob||blob.type!==mime)throw new Error('Could not encode the image. Try Standard quality.');
+    check();if(!blob||blob.type!==mime)throw new Error('Could not encode the image. Try Full HD.');
     report(1);return blob;
   }finally{paint.dispose();canvas.width=canvas.height=1;}
 }
@@ -93,10 +95,11 @@ export function prepareAudio() {
 
 export async function videoBlob(settings,sources,photo,mimeType,signal,progress,audio,quality='high'){
   try{
-    if(!recordingInScene(settings,sources))throw new Error('No recording on this canvas.');
-    if(!globalThis.VideoEncoder||!globalThis.VideoDecoder)throw new Error('Quality video export is unavailable in this browser. Update Telegram or open the app in a supported browser.');
-    const {offlineVideo}=await import('./offline-video.js');
-    const blob=await offlineVideo(settings,sources,photo,quality,signal,progress);
+    const recording=recordingInScene(settings,sources);
+    if(!recording&&!sceneHasMotion(settings))throw new Error('No recording on this canvas.');
+    if(!globalThis.VideoEncoder||(recording&&!globalThis.VideoDecoder))throw new Error('Quality video export is unavailable in this browser. Update Telegram or open the app in a supported browser.');
+    const {offlineVideo,effectVideo}=await import('./offline-video.js');
+    const blob=recording?await offlineVideo(settings,sources,photo,quality,signal,progress):await effectVideo(settings,sources,photo,quality,signal,progress);
     if(!blob)throw new Error('Quality video export is unavailable for this recording in this browser. Update Telegram or try a supported browser.');
     return blob;
   }finally{if(audio&&audio.context.state!=='closed')await audio.context.close().catch(()=>{});}

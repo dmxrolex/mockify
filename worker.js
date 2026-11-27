@@ -1,3 +1,5 @@
+import { frameFile } from './chat-framing.js';
+import { shareOptions, savedFile } from './export-sharing.js';
 import {WELCOME_CREDITS,exportCreditCost,accountFromRow,premiumActive} from './credit-model.js';
 import {handlePayments} from './payments.js';
 const encoder = new TextEncoder();
@@ -145,6 +147,15 @@ export default {
         return await avatarResponse(image,/\.png$/i.test(file.file_path)?'image/png':'image/jpeg')??new Response(null,{status:204});
       }catch{return new Response(null,{status:204});}
     }
+    if(url.pathname==='/api/frame-file'){
+      if(request.method!=='POST')return json({error:'Method not allowed'},405);
+      if(request.headers.get('Origin')!==url.origin)return json({error:'Origin rejected'},403);
+      if(!env.TELEGRAM_BOT_TOKEN)return json({error:'Chat framing is unavailable.'},503);
+      let user;try{user=await verifyTelegram(request.headers.get('X-Telegram-Init-Data'),env.TELEGRAM_BOT_ID);}catch{return json({error:'Reopen the app in Telegram to continue.'},401);}
+      let body;try{body=await request.json();}catch{return json({error:'Invalid request'},400);}
+      try{const file=await frameFile(body?.token,user,env);return file??json({error:'This file is no longer available. Send it to the bot again.'},404);}
+      catch{return json({error:'Could not load the file from Telegram. Try again.'},502);}
+    }
     if(['/api/account','/api/welcome/claim'].includes(url.pathname)){
       if(request.method!=='POST')return json({error:'Method not allowed'},405);
       if(request.headers.get('Origin')!==url.origin)return json({error:'Origin rejected'},403);
@@ -166,11 +177,11 @@ export default {
       const id = request.headers.get('X-Export-ID');
       if (!/^[a-zA-Z0-9-]{16,80}$/.test(id ?? '')) return json({ error: 'Invalid export identifier' }, 400);
       const maxBytes = 49 * 1024 * 1024;
-      if (Number(request.headers.get('Content-Length')) > maxBytes + 16384) return json({ error: 'This file is too large. Choose Standard quality.' }, 413);
+      if (Number(request.headers.get('Content-Length')) > maxBytes + 16384) return json({ error: 'This file is too large. Choose the smaller size.' }, 413);
       let file;
       try {
         const form = await request.formData();file = form.get('file');
-        if (!(file instanceof File) || !file.size || file.size > maxBytes) return json({ error: 'This file is too large. Choose Standard quality.' }, 413);
+        if (!(file instanceof File) || !file.size || file.size > maxBytes) return json({ error: 'This file is too large. Choose the smaller size.' }, 413);
         if (!['image/png','image/jpeg','image/webp','video/mp4','video/webm','application/zip'].includes(file.type)) return json({ error: 'Unsupported export format' }, 400);
       } catch { return json({ error: 'Invalid file upload' }, 400); }
       const reservation = await env.DB.prepare('INSERT OR IGNORE INTO exports (id, user_id, status, created_at) VALUES (?, ?, ?, ?)').bind(id, user.id, 'sending', Date.now()).run();
@@ -194,7 +205,15 @@ export default {
       if(!delivered.ok){await refundExport(env,id,user.id);await env.DB.prepare('UPDATE exports SET status = ? WHERE id = ? AND user_id = ?').bind('failed',id,user.id).run();return json({error:delivered.error_code===403?'Open the bot chat and allow messages, then try again.':'The file could not be delivered. Please retry.'},502);}
       await env.DB.prepare('UPDATE exports SET status = ?, message_id = ? WHERE id = ? AND user_id = ?').bind('sent',String(delivered.result.message_id),id,user.id).run();
       await env.DB.prepare("UPDATE export_charges SET status='complete' WHERE id=? AND user_id=?").bind(id,user.id).run();
-      return json({delivered:true,messageId:delivered.result.message_id,account:await accountFor(env,user.id)});
+      // Share to any chat and save to the device are offered on top of the bot-chat copy.
+      const extras=await shareOptions(env,user,delivered.result,id,url.origin).catch(()=>({}));
+      return json({delivered:true,messageId:delivered.result.message_id,account:await accountFor(env,user.id),...extras});
+    }
+    // Opened by Telegram's native downloadFile popup, which cannot send initData: the signed,
+    // 30-minute token minted for the verified user after delivery is the authorization.
+    if (url.pathname === '/api/exports/save' && request.method === 'GET') {
+      try { const file = await savedFile(url.searchParams.get('token'), env); if (file) return file; } catch {}
+      return json({ error: 'This download link has expired. Your file is still in the bot chat.' }, 410);
     }
     if (url.pathname.startsWith('/api/')) return json({ error: 'Not found' }, 404);
     const response = await env.ASSETS.fetch(request);

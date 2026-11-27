@@ -2,7 +2,9 @@ import {useStarPayments} from './payments-client.js';
 import {WelcomeCredits,DraftLimitSheet,PurchaseSuccessSheet} from './credits-ui.jsx';
 import {FREE_DRAFT_LIMIT,premiumActive} from './credit-model.js';
 import VideoTimeline from './video-timeline.jsx';
-import {ShowcaseIcon,ShowcaseCanvas} from './showcase-editor.jsx';
+import { LooksRow, ToolTabs, GroupPanel, MorePanel, AddSheet } from './editor-tabs.jsx';
+import { applyLook, captureLook, savedLooks, findLook } from './looks.js';
+import {ShowcaseCanvas,TouchRecorder} from './showcase-editor.jsx';
 import TimelineInspector from './timeline-inspector.jsx';
 import {useSequencePlayback} from './use-sequence-playback.js';
 import {timelineFor,timelineDuration,placedClips,timelineOwner,effectTime,cameraValue,cameraFrames,timelineId,updateTimeline,removeTimelineItem,splitTimelineClip} from './timeline-model.js';
@@ -26,8 +28,9 @@ import BalancePage from './balance-page.jsx';
 import SubscriptionPage from './subscription-page.jsx';
 import { subscriptionInfo } from './subscription-model.js';
 import { HeaderCoin } from './coin-motion.jsx';
+import { sceneHasMotion, EFFECT_SECONDS } from './motion-effects.js';
 import { setLanguage, t } from './i18n.js';
-import { setSoundEffectsEnabled } from './sound.js';
+import { setHapticsEnabled } from './haptics.js';
 import { changeScene, itemId, loadProject, newProject, ownedMedia, saveProject, sceneFor } from './project.js';
 import { Picker, EffectsControls, EdgesControls, ImageControls, PreviewZoom, SizeControls, BackgroundControls, ShadowControls, StatusControls, TimeControls } from './editor-controls.jsx';
 import HomeScreen from './home.jsx';
@@ -47,16 +50,21 @@ import {objectKeys,defaultImagePattern,ensurePages,pageFor,pageCount,pageMediaCh
 import { BlurInspector, BlurCanvas } from './blur-editor.jsx';
 import { blurEffect, blurTargets, patchBlur } from './blur-model.js';
 import PatternInspector from './pattern-editor.jsx';
-import {makeProfileBadge} from './profile-badge.js';
+import {makeProfileBadge,loadBadgeAvatar} from './profile-badge.js';
+import {markOf,loadMarkAssets} from './watermark.js';
+import WatermarkSheet from './watermark-sheet.jsx';
 import { loadTextFonts } from './text-fonts.js';
 import './styles.css';
 import './navigation.css';
 import './text-editor.css';
 
 const loadFilesSticker=()=>import('./assets/files-duck.json');
+// New touches keep the ring style the user last chose.
+const ringOf=gesture=>gesture?.ring?{ring:gesture.ring}:{};
 
 const paths = {
-  showcase:<ShowcaseIcon/>,
+  // Animation: the touch disc used across the timeline, with motion sparks.
+  showcase:<><circle cx="11" cy="13" r="3" fill="currentColor" stroke="none"/><circle cx="11" cy="13" r="7"/><path d="M18.6 5.4 17.3 6.7M21 10h-1.8M15 3v1.8"/></>,
   adjust:<><circle cx="12" cy="12" r="8"/><path d="M12 4a8 8 0 0 1 0 16Z" fill="currentColor"/></>,
   tools:<><rect x="3" y="3" width="7" height="7" rx="1.5"/><circle cx="17.5" cy="6.5" r="3.5"/><path d="m3 21 4-8 4 8Z"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></>,
   person: <><circle cx="12" cy="8" r="3.5"/><path d="M5 21v-2a7 7 0 0 1 14 0v2"/></>,
@@ -73,7 +81,12 @@ const paths = {
   arrowback: <path d="M19 12H5m6-6-6 6 6 6"/>,
   next: <path d="m9 6 6 6-6 6"/>,
   save: <path d="M6 4h12a2 2 0 0 1 2 2v13l-8-5-8 5V6a2 2 0 0 1 2-2Z"/>,
-  undo: <path d="m8 4-5 5 5 5M3 9h10a7 7 0 0 1 0 14"/>,
+  undo: <path d="M9 14 4 9l5-5M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/>,
+  redo: <path d="m15 14 5-5-5-5M20 9H9.5a5.5 5.5 0 0 0 0 11H13"/>,
+  more: <>{[6,12,18].map(x=><circle key={x} cx={x} cy="12" r="1.6" fill="currentColor" stroke="none"/>)}</>,
+  pages: <><rect x="7" y="3" width="13" height="16" rx="2.5"/><path d="M4 7v11.5A2.5 2.5 0 0 0 6.5 21H15"/></>,
+  text: <path d="M5.5 7V5h13v2M12 5v14m-3.5 0h7"/>,
+  mark: <><rect x="3" y="7" width="18" height="10" rx="5"/><circle cx="8.5" cy="12" r="2.2"/><path d="M13 12h4.5"/></>,
   export: <path d="M12 3v13m-5-5 5 5 5-5m-12 6v4h14v-4"/>,
   device: <><rect x="7" y="3" width="10" height="18" rx="2.5"/><path d="M11 6h2"/></>,
   background: <><rect x="4" y="4" width="16" height="16" rx="3"/><path d="M4 16 16 4M7 20 20 7M13 20l7-7"/></>,
@@ -87,7 +100,7 @@ const paths = {
   swap: <path d="M5 8h13m-4-4 4 4-4 4m5 4H6m4-4-4 4 4 4"/>,
   size: <><rect x="4" y="4" width="16" height="16" rx="3"/><path d="m9 15 6-6m-4 0h4v4m-6-2v4h4"/></>,
   shadow: <><path d="M10 20h6a3 3 0 0 0 3-3V9"/><rect x="5" y="4" width="10" height="13" rx="2.5"/></>,
-  watermark: <path d="M5 5h14M12 5v15"/>,
+  watermark: <path d="M5.5 7V5h13v2M12 5v14m-3.5 0h7"/>,
   image: <><rect x="3" y="4" width="18" height="16" rx="3"/><path d="m3 15 5-5 5 5 3-3 5 5"/></>,
   edges: <path d="M8 3H6a3 3 0 0 0-3 3v2m13-5h2a3 3 0 0 1 3 3v2M3 16v2a3 3 0 0 0 3 3h2m8 0h2a3 3 0 0 0 3-3v-2"/>,
   layers: <><path d="m3 8 9-5 9 5-9 5ZM3 12l9 5 9-5M3 16l9 5 9-5"/></>,
@@ -123,11 +136,11 @@ function readPage() {
 
 function restorePreferences() {
   let stored;try{stored=JSON.parse(localStorage.getItem('styleit.preferences'));}catch{}
-  const result={haptics:true,...stored,cleanup:stored?.cleanup==='off'?'off':'auto',sound:stored?.sound!==false,language:stored?.language==='ru'?'ru':'en'};
-  setLanguage(result.language);setSoundEffectsEnabled(result.sound);return result;
+  const result={haptics:true,...stored,cleanup:stored?.cleanup==='off'?'off':'auto',language:stored?.language==='ru'?'ru':'en'};
+  setLanguage(result.language);setHapticsEnabled(result.haptics);return result;
 }
 
-function FrameCanvas({ settings, source = blank, photo, ready, thumbnail = false, time = 0, interactive=false }) {
+function FrameCanvas({ settings, source = blank, photo, ready, thumbnail = false, time = 0, interactive=false, loop = 0 }) {
   const canvas = useRef(null);
   const render = useRef(null);
   const frame = useRef(0);
@@ -138,6 +151,14 @@ function FrameCanvas({ settings, source = blank, photo, ready, thumbnail = false
   const videoKey=JSON.stringify(videos.map(media=>media.url));
   const snapshot=useRef(null);
   snapshot.current={settings,source,photo,time,interactive,videos};
+  // Effects preview: loop the effect on the canvas without re-rendering React every frame.
+  useEffect(()=>{
+    if(!loop)return;
+    let id=0;const start=performance.now();
+    const tick=now=>{snapshot.current={...snapshot.current,time:((now-start)/1000/loop)%1};paint();id=requestAnimationFrame(tick);};
+    id=requestAnimationFrame(tick);
+    return()=>{cancelAnimationFrame(id);snapshot.current={...snapshot.current,time};queuePaint();};
+  },[loop]);
   useEffect(()=>()=>{render.current?.dispose();render.current=null;},[]);
   useEffect(() => {
     const element = canvas.current;
@@ -211,7 +232,7 @@ function FrameCanvas({ settings, source = blank, photo, ready, thumbnail = false
   useLayoutEffect(queuePaint,[settings,source,photo,ready,time,scale,width,height,interactive]);
   useEffect(()=>{
     let alive=true;
-    Promise.allSettled([loadWatermarkBadge(settings.watermarkBadge),loadTextFonts(settings)]).then(()=>{if(alive)queuePaint();});
+    Promise.allSettled([loadWatermarkBadge(settings.watermarkBadge),loadMarkAssets(settings.mark),loadTextFonts(settings)]).then(()=>{if(alive)queuePaint();});
     return ()=>{alive=false;};
   },[settings]);
   return <canvas ref={canvas} width={Math.round(width * scale)} height={Math.round(height * scale)} aria-hidden={thumbnail ? true : undefined} role={thumbnail ? undefined : 'img'} aria-label={thumbnail ? undefined : 'Mockup preview'}/>;
@@ -276,9 +297,22 @@ function EditorControls({ panel, settings, update, source, photo, pickPhoto, rep
     case 'shadow': return <ShadowControls settings={settings} update={update} wheel={shadowWheel} onWheelChange={onShadowWheel}/>;
     case 'screen': return <StatusControls settings={settings} update={update} openTime={openTime}/>;
     case 'motion':
-      return <EffectsControls settings={settings} update={update}/>;
+      return <EffectsControls settings={settings} update={update} video={source?.kind==='video'}/>;
     default:return null;
   }
+}
+
+function ExitPrompt({ onChoice }) {
+  const dialog=useRef(null),choice=useRef('stay'),labelId=useId();
+  useLayoutEffect(()=>{dialog.current.showModal();dialog.current.querySelector('.exit-save')?.focus({preventScroll:true});},[]);
+  const pick=value=>{choice.current=value;dialog.current.close();};
+  return <dialog ref={dialog} className="exit-prompt" closedby="any" aria-labelledby={labelId} onClick={event=>dismissBackdrop(event,()=>dialog.current.close())} onClose={()=>onChoice(choice.current)}>
+    <p id={labelId}>{t('Save changes before leaving?')}</p>
+    <div className="exit-actions">
+      <button type="button" className="exit-discard" onClick={()=>pick('discard')}>{t("Don't save")}</button>
+      <button type="button" className="exit-save" onClick={()=>pick('save')}>{t('Save')}</button>
+    </div>
+  </dialog>;
 }
 
 function Sheet({ title, onClose, children, className = '', initialFocus }) {
@@ -300,7 +334,7 @@ function TimeSheet({ settings, update, onClose }) {
   </Sheet>;
 }
 
-function Artboard({ scene, ready, time, onAdd, busy, video, textEditing, updateText, onSelectText, textFocus, onSelectImage, onImageEdges, blurSession, setBlurSession, changeBlur, blurPreview, setBlurPreview, blurAdjusting, objectActions, showcaseEditor, showcaseEditing, showcasePlaying, onTextTyping, typingHost, onCrop, onBackgroundDuplicate, pickPhoto, mediaError, onRetryMedia }) {
+function Artboard({ effectLoop=0, onEmptyAdd, touchRecorder, scene, ready, time, onAdd, busy, video, textEditing, updateText, onSelectText, textFocus, onSelectImage, onImageEdges, blurSession, setBlurSession, changeBlur, blurPreview, setBlurPreview, blurAdjusting, objectActions, showcaseEditor, showcaseEditing, showcasePlaying, onTextTyping, typingHost, onCrop, onBackgroundDuplicate, pickPhoto, mediaError, onRetryMedia }) {
   const { settings, source, photo } = scene;
   const [blurView,setBlurView]=useState({scale:1,x:0,y:0});
   useEffect(()=>{setBlurView({scale:1,x:0,y:0});},[!!blurSession,blurSession?.target]);
@@ -308,12 +342,14 @@ function Artboard({ scene, ready, time, onAdd, busy, video, textEditing, updateT
     <div className="artboard-frame">
       <div className="artboard-content" style={blurSession?{transform:`translate(${blurView.x}px,${blurView.y}px) scale(${blurView.scale})`}:undefined}>
       {!blurSession&&settings.background==='photo'&&photo&&settings.selectedLayerId==='background'&&<ImageHandles background settings={{...settings,imagePattern:null,scale:100,x:0,y:0,roll:0,imageEdges:0,imageFlip:false,...settings.backgroundPose,locked:settings.backgroundPose?.locked??false,selectedLayerId:'device'}} media={photo} geometryFor={backgroundGeometry} update={patch=>{const {selectedLayerId,...pose}=patch;updateText({backgroundPose:{...settings.backgroundPose,...pose},...('selectedLayerId' in patch?{selectedLayerId:selectedLayerId===null?null:'background'}:{})});}} onSelect={()=>{}} onEdges={()=>{}} onDuplicate={onBackgroundDuplicate} onRemove={()=>updateText({background:'gradient',selectedLayerId:null})} onMore={[{label:'Crop',icon:'crop',action:()=>onCrop('background')},{label:'Replace image',icon:'fill',action:pickPhoto}]}/>}
-      <FrameCanvas settings={blurPreview&&blurSession?{...settings,...patchBlur(settings,blurSession.target,{regions:blurPreview})}:{...settings,_showcaseEditing:showcaseEditing}} source={source ?? blank} photo={photo} ready={ready} time={time} interactive={blurAdjusting||!!blurPreview}/>
-      {!blurSession&&!showcaseEditor&&!showcasePlaying&&settings.pageObjects&&objectActions&&<PageObjects settings={video?{...settings,renderProgress:time}:settings} sources={source} {...objectActions}/>}
+      <FrameCanvas settings={blurPreview&&blurSession?{...settings,...patchBlur(settings,blurSession.target,{regions:blurPreview})}:{...settings,_showcaseEditing:showcaseEditing}} source={source ?? blank} photo={photo} ready={ready} time={time} interactive={blurAdjusting||!!blurPreview} loop={effectLoop}/>
+      {!blurSession&&!showcaseEditor&&!showcasePlaying&&!effectLoop&&settings.pageObjects&&objectActions&&<PageObjects settings={video?{...settings,renderProgress:time}:settings} sources={source} {...objectActions}/>}
       {!blurSession&&!showcaseEditor&&!showcasePlaying&&updateText&&source&&!Array.isArray(source)&&settings.device==='flat'&&imageLayers(settings).map(layer=><ImageHandles key={layer.id} id={layer.id} settings={settings} media={source} update={updateText} onSelect={onSelectImage} onEdges={onImageEdges} onMore={[{label:'Crop',icon:'crop',action:()=>onCrop(layer.id)}]}/>)}
       {!blurSession&&!showcaseEditor&&!showcasePlaying&&updateText&&<TextHandles settings={settings} update={updateText} onSelect={onSelectText} focusRequest={textFocus} menuOpen={textEditing} onTyping={onTextTyping} typingHost={typingHost}/>}
       {blurSession&&blurEffect(settings,blurSession.target).mode==='area'&&<BlurCanvas key={blurSession.target} settings={video?{...settings,renderProgress:time}:settings} source={source} session={blurSession} setSession={setBlurSession} change={changeBlur} onPreview={setBlurPreview} view={blurView} onView={setBlurView}/>}
       {showcaseEditor&&<ShowcaseCanvas settings={settings} {...showcaseEditor}/>}
+      {touchRecorder&&<TouchRecorder settings={settings} {...touchRecorder}/>}
+      {onEmptyAdd&&!video&&Array.isArray(settings.pageObjects)&&!settings.pageObjects.length&&!(settings.layers??[]).some(layer=>layer.type==='text')&&<button type="button" className="canvas-empty-add" onClick={onEmptyAdd}><span><Icon name="plus"/></span>{t('Add photo or video')}</button>}
       </div>
       {settings._timelineWaiting&&<div className="sequence-media-state" role="status">{mediaError?<><span>{t('Could not load clip')}</span><button type="button" onClick={onRetryMedia}>{t('Retry')}</button></>:<><span className="sequence-loading-dot"/>{t('Loading clip…')}</>}</div>}
       {blurSession&&blurView.scale>1.01&&<button type="button" className="round-action blur-fit-view" aria-label={t('Reset canvas view')} onClick={()=>setBlurView({scale:1,x:0,y:0})}><Icon name="size"/></button>}
@@ -322,7 +358,7 @@ function Artboard({ scene, ready, time, onAdd, busy, video, textEditing, updateT
   </div>;
 }
 
-function Editor({ project, profile, telegram, ready, exporting=false, backHandler, update:saveUpdate, chooseSource, replaceSource, replaceVideoSource, removeSource, pickPhoto, notify, busy, undo, canUndo, mutateProject }) {
+function Editor({ lookId, lookAuto=false, onLookSaved, project, profile, telegram, ready, exporting=false, backHandler, update:saveUpdate, chooseSource, replaceSource, replaceVideoSource, removeSource, pickPhoto, notify, busy, undo, canUndo, mutateProject }) {
   project=ensurePages(project);
   const [panel, setPanel] = useState(null);
   const [timelineSelection,setTimelineSelection]=useState(null),[keyframeId,setKeyframeId]=useState(null);
@@ -372,26 +408,8 @@ function Editor({ project, profile, telegram, ready, exporting=false, backHandle
   const source = targetObject?scene.source[targetObject.index]:project.items[project.active]?.source;
   const multiple = project.items.length > 1;
   const collage = project.pages?scene.source.length>1:multiple&&project.layout==='collage';
-  const badgeRequest=useRef(null);
-  const [badgePending,setBadgePending]=useState(false);
-  useEffect(()=>()=>{badgeRequest.current=null;},[]);
   const fillMediaIds=fillTarget?new Set(pageMediaChoices(project).map(choice=>choice.itemId)):null;
   const currentPage=project.pages?pageFor(project):null,pageIndex=project.pages?project.pageIndex??0:project.active,count=project.pages?pageCount(project):project.items.length;
-  async function insertProfileBadge(){
-    if(!profile||badgeRequest.current)return;
-    const request={};badgeRequest.current=request;setBadgePending(true);
-    const pageId=currentPage?.id;
-    try{
-      const {text,badge}=await makeProfileBadge(profile,telegram);
-      if(badgeRequest.current!==request)return;
-      mutateProject(prior=>{
-        const index=prior.pages?.findIndex(page=>page.id===pageId)??-1;
-        if(index<0)return prior;
-        const page=prior.pages[index];
-        return {...prior,pages:prior.pages.with(index,{...page,settings:{...page.settings,...addText(page.settings,text,badge)}})};
-      });
-    }finally{if(badgeRequest.current===request){badgeRequest.current=null;setBadgePending(false);}}
-  }
   const objectActions={onPattern:(id,pattern)=>{
     mutateProject(prior=>{
       const object=pageFor(prior)?.objects.find(item=>item.id===id);
@@ -407,8 +425,9 @@ function Editor({ project, profile, telegram, ready, exporting=false, backHandle
   const videoSettings=settings;
   const duration=sequence.duration,progress=duration?current/duration:0;
   const hasSelectedObject=!!targetObject||!!settings.pageObjects?.some(item=>item.id===settings.selectedLayerId);
-  const toolPanels=video?[['showcase','Animation'],...panels.filter(([key])=>key!=='motion')]:panels.filter(([key])=>key!=='motion');
-  const activePanel=!video&&panel==='motion'?null:panel;
+  const activePanel=panel;
+  // While Effects is open on a still mockup, the canvas plays the effect as it will export.
+  const [reduceMotion]=useState(()=>matchMedia('(prefers-reduced-motion: reduce)').matches);
   function commitTimeline(next){mutateProject(prior=>changePage(ensurePages(prior),{timeline:next,showcase:null}));}
   function patchSequence(type,id,patch){commitTimeline(updateTimeline(timeline,type,id,patch));}
   function selectTimeline(type,id,{settings=false}={}){
@@ -417,7 +436,9 @@ function Editor({ project, profile, telegram, ready, exporting=false, backHandle
     const parent=type==='gesture'||type==='camera'?timelineOwner(timeline,entry?.clipId):timelineOwner(timeline,id);
     if(parent?.objectId)mutateProject(prior=>baseSettings.pageObjects.some(o=>o.id===parent.objectId)?selectObject(prior,parent.objectId):changePage(prior,{selectedLayerId:parent.objectId}));
     if(type==='gesture'||type==='camera'){sequence.seek(effectTime(timeline,entry));switchControls('showcase');}
-    else {if(parent&&(current<parent.start||current>=parent.start+parent.out-parent.in))sequence.seek(parent.start);const text=baseSettings.layers.some(l=>l.id===parent?.objectId&&l.type==='text');if(settings||text||activePanel==='showcase')switchControls(text||!settings?null:'showcase',text?'text':null);}
+    else {if(parent&&(current<parent.start||current>=parent.start+parent.out-parent.in))sequence.seek(parent.start);const text=baseSettings.layers.some(l=>l.id===parent?.objectId&&l.type==='text');
+      // Selecting a clip keeps the open panel; only text or an explicit Clip settings request switches it.
+      if(text)switchControls(null,'text');else if(settings)switchControls('showcase');}
   }
   function deleteTimeline(type=timelineTarget?.type,id=timelineTarget?.id){if(!id)return;const next=removeTimelineItem(timeline,type,id);if(next===timeline)return;mutateProject(prior=>{let p=changePage(ensurePages(prior),{timeline:next,showcase:null});const entry=({clip:timeline.main,overlay:timeline.overlays}[type]??[]).find(e=>e.id===id);if(entry&&![...next.main,...next.overlays].some(e=>e.objectId===entry.objectId)){const page=pageFor(p);p={...p,pages:p.pages.map(pg=>pg.id===page.id?{...pg,objects:pg.objects.filter(o=>o.id!==entry.objectId),settings:{...pg.settings,layers:pg.settings.layers.filter(l=>l.id!==entry.objectId)}}:pg)};}return p;});setTimelineSelection(null);setKeyframeId(null);}
   function splitVideo(){const clip=timelineTarget?.type==='overlay'?owner:activeMain;if(clip)commitTimeline(splitTimelineClip(timeline,clip.id,current));}
@@ -452,7 +473,7 @@ function Editor({ project, profile, telegram, ready, exporting=false, backHandle
       const camera={id,clipId:parent.id,time:sourceTime,duration:length,preset:true,keyframes:[key(sourceTime,1),key(sourceTime+ramp,1.65),key(holdEnd,1.65),key(sourceTime+length,1)]};
       commitTimeline({...timeline,gestures,cameras:[...cameras,camera]});setTimelineSelection({type:'camera',id});setKeyframeId(null);
     }else{
-      const gesture={id,clipId:parent.id,time:sourceTime,gesture:kind,duration:Math.min(kind==='tap'?.65:Math.min(4,Math.max(.3,savedDuration??1)),parent.out-sourceTime),...position,endX:previous?.endX??position.x,endY:previous?.endY??(position.y>.25?position.y-.25:position.y+.25)};
+      const gesture={id,clipId:parent.id,time:sourceTime,gesture:kind,duration:Math.min(kind==='tap'?.65:Math.min(4,Math.max(.3,savedDuration??1)),parent.out-sourceTime),...position,endX:previous?.endX??position.x,endY:previous?.endY??(position.y>.25?position.y-.25:position.y+.25),...ringOf(previous??gestures.at(-1))};
       commitTimeline({...timeline,cameras,gestures:[...gestures,gesture]});setTimelineSelection({type:'gesture',id});setKeyframeId(null);
     }
     sequence.seek(current);switchControls('showcase');return id;
@@ -507,7 +528,11 @@ function Editor({ project, profile, telegram, ready, exporting=false, backHandle
   }
   function createText() {const patch=addText(baseSettings,'Text');if(timeline){const id=patch.selectedLayerId;patch.timeline={...timeline,overlays:[...timeline.overlays,{id:timelineId(),objectId:id,start:current,in:0,out:Math.max(.1,duration-current),volume:0}]};}update(patch);sequence.seek(current);setTextFocus(value=>value+1);switchControls(null,'text');}
   function selectText() {sequence.seek(current);if(sheet!=='text')switchControls(null,'text');}
-  function selectImage(){if(settings.imagePattern&&!settings.locked){switchControls('pattern');return;}if(sheet||(panel&&panel!=='edges'))switchPanel(controlStage.current,()=>{setSheet(null);setPanel(null);});}
+  // Tapping the phone keeps tool groups open (and moves Background/More to Phone); other inspectors close.
+  function selectImage(){if(settings.imagePattern&&!settings.locked){switchControls('pattern');return;}
+    if(sheet){switchPanel(controlStage.current,()=>setSheet(null));return;}
+    if(panel==='canvas'||panel==='more'){switchControls('phone');return;}
+    if(panel&&panel!=='edges'&&panel!=='phone')switchPanel(controlStage.current,()=>{setPanel(null);setShadowWheel(false);});}
   function openImageEdges(id=settings.selectedLayerId??'device'){update({selectedLayerId:id});switchPanel(controlStage.current,()=>{setSheet(null);setPanel('edges');});}
   function dismissSelection(){
     if(settings.selectedLayerId!=null)update({selectedLayerId:null});
@@ -548,7 +573,7 @@ function Editor({ project, profile, telegram, ready, exporting=false, backHandle
   async function closeInspector() {
     document.activeElement?.blur();
     const changed=await switchPanel(controlStage.current,()=>setSheet(null));
-    if(changed)controlStage.current?.querySelector(`[data-tool="${sheet==='layers'?'layers':'watermark'}"]`)?.focus({preventScroll:true});
+    if(changed)controlStage.current?.querySelector(`[data-tool="${sheet==='layers'?'layers':sheet==='mark'?'mark':'watermark'}"]`)?.focus({preventScroll:true});
   }
 
   useLayoutEffect(()=>{
@@ -573,11 +598,72 @@ function Editor({ project, profile, telegram, ready, exporting=false, backHandle
   });
   function togglePlayback(){sequence.toggle();}
   const visibleScene=timeline?{...scene,settings:{...sequence.settings,_timelineWaiting:!sequence.ready,_showcaseEditing:activePanel==='showcase'&&!playing},source:sequence.sources}:scene;
+  const effectLoop=!video&&activePanel==='motion'&&!reduceMotion&&sceneHasMotion(visibleScene.settings)?EFFECT_SECONDS:0;
+  const [groupTool,setGroupTool]=useState({phone:'device',canvas:'background'}),[addOpen,setAddOpen]=useState(false);
+  // Animation panel open + video playing: tap, hold or slide on the screen where the finger went.
+  // Touches are kept while the video plays and added together when it pauses or the panel closes.
+  const [recordedCount,setRecordedCount]=useState(0),recorded=useRef([]),currentRef=useRef(current);
+  currentRef.current=current;
+  const liveTouches=activePanel==='showcase'&&playing&&!!targetObject;
+  function gestureFrom(track,touch){
+    const parent=placedClips(track).find(c=>touch.time>=c.start&&touch.time<c.end);if(!parent)return null;
+    const time=parent.in+touch.time-parent.start,room=Math.max(.001,parent.out-time);
+    return {id:timelineId(),clipId:parent.id,time,gesture:touch.kind,x:touch.x,y:touch.y,endX:touch.endX??touch.x,endY:touch.endY??touch.y,duration:touch.kind==='tap'?Math.min(.65,room):Math.min(room,4,Math.max(.3,touch.duration??1)),...ringOf(track.gestures.at(-1)),...(touch.auto?{auto:true}:{})};
+  }
+  function commitRecorded(){
+    const touches=recorded.current;recorded.current=[];setRecordedCount(0);if(!touches.length)return;
+    mutateProject(prior=>{const ready=ensurePages(prior),current=sceneFor(ready),track=timelineFor(current.settings,current.source);if(!track)return prior;
+      const gestures=touches.map(touch=>gestureFrom(track,touch)).filter(Boolean);
+      return changePage(ready,{timeline:{...track,gestures:[...track.gestures,...gestures]},showcase:null});});
+    notify(t('{count} touches added').replace('{count}',touches.length));
+  }
+  useEffect(()=>{if(!liveTouches&&recorded.current.length)commitRecorded();},[liveTouches]);
+  const framed=settings.device!=='flat',selectedText=!!baseSettings.layers?.some(l=>l.id===baseSettings.selectedLayerId&&l.type==='text');
+  const tabContext=sheet==='mark'?'mark':sheet==='text'||selectedText?'watermark':activePanel==='motion'?'motion':hasSelectedObject?'phone':null;
+  const phoneChips=[{key:framed?'device':'image',label:framed?'Phone':source?.kind==='video'?'Video':'Image'},{key:'edges',label:'Corners',disabled:framed},{key:'shadow',label:'Shadow'},{key:'screen',label:'Status bar',disabled:!framed}];
+  const canvasChips=[{key:'background',label:'Background'},{key:'size',label:'Format'}];
+  const firstPhoneTool=phoneChips[0].key,phoneTool=phoneChips.find(chip=>chip.key===groupTool.phone&&!chip.disabled)?.key??(groupTool.phone==='device'||groupTool.phone==='image'?firstPhoneTool:firstPhoneTool),canvasTool=groupTool.canvas;
+  const tabs=[{key:'phone',label:framed?'Phone':source?.kind==='video'?'Video':'Image',icon:<Icon name={framed?'device':source?.kind==='video'?'video':'image'}/>,disabled:!settings.pageObjects?.length},{key:'canvas',label:'Background',icon:<Icon name="background"/>},{key:'watermark',label:'Text',icon:<Icon name="text"/>},{key:'mark',label:'Watermark',icon:<Icon name="mark"/>},{key:'motion',label:'Effects',icon:<Icon name="motion"/>,disabled:!settings.pageObjects?.length},{key:'more',label:'More',icon:<Icon name="more"/>}];
+  const moreItems=[
+    {key:'adjust',label:'Adjust',icon:<Icon name="adjust"/>,disabled:!hasSelectedObject,action:()=>{mutateProject(prior=>ensurePages(prior));switchControls('adjust');}},
+    {key:'blur',label:'Blur',icon:<Icon name="blur"/>,action:openBlur},
+    {key:'layers',label:'Layers',icon:<Icon name="layers"/>,action:()=>switchControls(null,'layers')},
+    {key:'pages',label:'Pages',icon:<Icon name="pages"/>,action:()=>setSheet('merge')},
+    {key:'tools',label:'Assets',icon:<Icon name="tools"/>,action:()=>setSheet('tools')},
+  ];
+  const addItems=[
+    {key:'media',label:'Photo or video',caption:video?'On top of the video':'From your gallery',icon:<Icon name="image"/>,action:()=>timeline?addTimeline('overlay'):chooseSource()},
+    {key:'text',label:'Text',caption:'Title or caption',icon:<Icon name="text"/>,action:createText},
+    {key:'asset',label:'Sticker',caption:'Shapes and art',icon:<Icon name="tools"/>,action:()=>setSheet('tools')},
+    ...(timeline?[{key:'clip',label:'Video clip',caption:'Adds to the end',icon:<Icon name="video"/>,action:()=>addTimeline('clip')}]:[]),
+  ];
+  // The Telegram profile is ready before the Watermark sheet opens: one tap uses it.
+  const [profileMark,setProfileMark]=useState(null);
+  useEffect(()=>{
+    if(!profile)return;let alive=true;
+    makeProfileBadge(profile,telegram).then(async({text,badge})=>{if(badge.avatar)await loadBadgeAvatar(badge.avatar);if(alive)setProfileMark({name:[profile.firstName,profile.lastName].filter(Boolean).join(' ')||text,handle:text,avatar:badge.avatar??'',initials:badge.initials??''});}).catch(()=>{});
+    return()=>{alive=false;};
+  },[profile?.id]);
+  function openGroup(key){
+    if(key==='showcase')return openShowcase();
+    if(key==='watermark')return openText();
+    if(key==='mark'){sequence.seek(current);return switchControls(null,'mark');}
+    if((key==='phone'||key==='motion')&&!hasSelectedObject){const first=currentPage?.objects.find(object=>!object.pose.hideDevice&&!object.pose.assetKind);if(first)mutateProject(prior=>selectObject(prior,first.id));}
+    if(panel===key)return;
+    switchControls(key);
+  }
+  function applyChosenLook(look){if(timeline&&targetObject)update(look.settings);else mutateProject(prior=>applyLook(ensurePages(prior),look));}
+  function saveLook(){const count=savedLooks().length+1,look={id:'look-'+Date.now().toString(36),name:t('My look')+(count>1?' '+count:''),settings:captureLook(settings)};onLookSaved?.(look);notify(t('Look saved'));return look;}
+  function controlsFor(key){
+    const flat=!settings.pageObjects&&settings.device==='flat'&&['edges','image','shadow'].includes(key),locked=!hasSelectedObject&&['motion','device','image','edges','shadow','screen'].includes(key);
+    return <fieldset className="control-fields" disabled={locked} {...(locked?{inert:''}:{})}><EditorControls panel={key} settings={flat?imageSettings(settings):settings} update={patch=>update(flat&&imageLayers(settings).some(layer=>layer.id===settings.selectedLayerId)?patchImage(settings,settings.selectedLayerId,patch):patch)} source={source} photo={photo} pickPhoto={pickPhoto} replaceSource={source?.kind==='video'?replaceVideoSource:replaceSource}
+      removeSource={removeSource} openTime={() => setSheet('time')} collage={collage} removeFrame={project.pages&&settings.device!=='flat'?()=>mutateProject(prior=>toggleFrameAtCurrentSize(prior,pageFor(prior).selectedObjectId)):undefined} shadowWheel={shadowWheel} onShadowWheel={setShadowWheel}/></fieldset>;
+  }
   return <div className="editor page" data-typing={typing?'true':undefined} data-video={video?'true':undefined} data-sheet={sheet ?? undefined} data-panel={activePanel ?? undefined} data-free={settings.device==='flat'?'true':undefined} data-shadow-wheel={activePanel==='shadow'&&shadowWheel?'true':undefined}>
-    <div className="preview" data-page-swipe={swipeEnabled?true:undefined} {...pageSwipe}>
-      <Artboard key={currentPage?.id??'single'} scene={visibleScene} mediaError={sequence.error} onRetryMedia={sequence.retry} ready={ready} time={video ? progress : 0} onAdd={()=>timeline?addTimeline('overlay'):chooseSource()} busy={busy||assetBusy} video={video} textEditing={sheet==='text'} onTextTyping={setTyping} typingHost={typingHost} onCrop={()=>switchControls('crop')} pickPhoto={pickPhoto} onBackgroundDuplicate={()=>{if(photo)mutateProject(prior=>appendItems(ensurePages(prior),[{id:itemId(),source:photo,settings:{...defaults,device:'flat',fit:'contain',cleanup:'off'}}],{overlay:true}));}} updateText={update} onSelectText={selectText} textFocus={textFocus} onSelectImage={selectImage} onImageEdges={openImageEdges} blurSession={activePanel==='blur'?blurSession:null} setBlurSession={setBlurSession} changeBlur={changeBlur} blurPreview={blurPreview} setBlurPreview={setBlurPreview} blurAdjusting={blurAdjusting} objectActions={objectActions} showcaseEditing={!!video&&!playing&&activePanel==='showcase'} showcasePlaying={!!video&&playing} showcaseEditor={timeline&&activePanel==='showcase'&&!playing&&placementMoment&&targetObject?{source:scene.source[targetObject.index],media:visibleScene.source,index:visibleScene.settings.pageObjects.findIndex(o=>o.id===targetObject.id),moment:placementMoment,onAdd:point=>addSequenceEffect('tap',point),onPatch:patchPlacement,disabled:false}:null}/>
-      {(!video||count>1)&&<EditorContextRow disabled={busy||!project.items.length} index={pageIndex} count={count} onPage={goToPage} onManage={()=>setSheet('merge')}/>}
-      {!settings.imagePattern&&(!video||activePanel==='size')&&(video?videoSettings:settings).device!=='flat'&&(!settings.pageObjects||settings.pageObjects.length>0) && <PreviewZoom settings={video?videoSettings:settings} update={video?updateVideo:update}/>}
+    <div className="preview" style={{'--canvas-ratio':{portrait:.8,story:.5625,wide:16/9}[visibleScene.settings.ratio]??1,'--canvas-cap':'100dvh'}} data-page-swipe={swipeEnabled?true:undefined} {...pageSwipe}>
+      <Artboard key={currentPage?.id??'single'} effectLoop={effectLoop} onEmptyAdd={()=>chooseSource()} touchRecorder={liveTouches?{source:scene.source[targetObject.index],index:visibleScene.settings.pageObjects.findIndex(o=>o.id===targetObject.id),now:()=>currentRef.current,count:recordedCount,onTouch:touch=>{recorded.current.push(touch);setRecordedCount(recorded.current.length);}}:null} scene={visibleScene} mediaError={sequence.error} onRetryMedia={sequence.retry} ready={ready} time={video ? progress : 0} onAdd={()=>setAddOpen(true)} busy={busy||assetBusy} video={video} textEditing={sheet==='text'} onTextTyping={setTyping} typingHost={typingHost} onCrop={()=>switchControls('crop')} pickPhoto={pickPhoto} onBackgroundDuplicate={()=>{if(photo)mutateProject(prior=>appendItems(ensurePages(prior),[{id:itemId(),source:photo,settings:{...defaults,device:'flat',fit:'contain',cleanup:'off'}}],{overlay:true}));}} updateText={update} onSelectText={selectText} textFocus={textFocus} onSelectImage={selectImage} onImageEdges={openImageEdges} blurSession={activePanel==='blur'?blurSession:null} setBlurSession={setBlurSession} changeBlur={changeBlur} blurPreview={blurPreview} setBlurPreview={setBlurPreview} blurAdjusting={blurAdjusting} objectActions={objectActions} showcaseEditing={!!video&&!playing&&activePanel==='showcase'} showcasePlaying={!!video&&playing} showcaseEditor={timeline&&activePanel==='showcase'&&!playing&&placementMoment&&targetObject?{source:scene.source[targetObject.index],media:visibleScene.source,index:visibleScene.settings.pageObjects.findIndex(o=>o.id===targetObject.id),moment:placementMoment,onAdd:point=>addSequenceEffect('tap',point),onPatch:patchPlacement,disabled:false}:null}/>
+      {!settings.imagePattern&&(!video||activePanel==='phone')&&(video?videoSettings:settings).device!=='flat'&&settings.pageObjects?.length>0&&<PreviewZoom settings={video?videoSettings:settings} update={video?updateVideo:update}/>}
+      {count>1&&<EditorContextRow disabled={busy||!project.items.length} index={pageIndex} count={count} onPage={goToPage} onManage={()=>setSheet('merge')}/>}
       {timeline&&<VideoTimeline timeline={timeline} objects={baseSettings.pageObjects} sources={scene.source} current={current} duration={duration} playing={playing} selection={timelineTarget} editingEffects={activePanel==='showcase'}
         onPlay={togglePlayback} onSeek={sequence.seek} onSelect={selectTimeline} onPatch={patchSequence} onSplit={splitVideo} onDelete={deleteTimeline} onAdd={addTimeline}
         onReorder={(id,index)=>{const main=[...timeline.main],from=main.findIndex(c=>c.id===id);if(from<0)return;const [clip]=main.splice(from,1);main.splice(index,0,clip);commitTimeline({...timeline,main});}}/>}
@@ -585,7 +671,7 @@ function Editor({ project, profile, telegram, ready, exporting=false, backHandle
     <div className="control-sheet">
       <div className="text-typing-host" ref={typingHost}/>
       <div className="control-stage" ref={controlStage}>
-      {activePanel==='pattern'&&settings.imagePattern&&hasSelectedObject?<PatternInspector pattern={settings.imagePattern} onChange={imagePattern=>update({imagePattern})} onDone={()=>switchControls(null)}/>:activePanel==='crop'?<CropInspector edges={settings.selectedLayerId==='background'?settings.backgroundPose?.imageEdges:settings.imageEdges} onEdges={imageEdges=>update(settings.selectedLayerId==='background'?{backgroundPose:{...settings.backgroundPose,imageEdges}}:{imageEdges})} value={settings.selectedLayerId==='background'?settings.backgroundPose?.imageCrop:settings.imageCrop} onChange={imageCrop=>update(settings.selectedLayerId==='background'?{backgroundPose:{...settings.backgroundPose,imageCrop}}:{imageCrop})} onDone={()=>switchControls(null)}/>:activePanel==='showcase'&&timeline?<TimelineInspector timeline={timeline} selection={timelineTarget} current={current} mediaKind={targetObject?scene.source[targetObject.index]?.kind:undefined} keyframeId={keyframeId} onKeyframe={setKeyframeId} onSeek={sequence.seek} onAdd={kind=>addSequenceEffect(kind)} onKind={kind=>addSequenceEffect(kind,undefined,true)} onPatch={patchSequence} onDelete={deleteTimeline} onDone={()=>switchControls(null)}/>:activePanel==='adjust'?<AdjustInspector settings={settings} disabled={!!settings.pageObjects&&!settings.pageObjects.some(item=>item.id===settings.selectedLayerId)} update={update} onDone={()=>switchControls(null)}/>:sheet==='layers'?<Layers settings={settings} update={update} onEdit={kind=>kind==='image'?selectImage():switchControls(null,'text')} onDone={closeInspector}/>:sheet==='text' ? <TextInspector settings={settings} update={update} onAdd={createText} onProfile={profile?insertProfileBadge:null} profile={profile} badgePending={badgePending} onDone={closeInspector}/> : activePanel==='blur'?<BlurInspector settings={settings} source={scene.source} session={blurSession} setSession={setBlurSession} change={changeBlur} undo={undo} canUndo={canUndo} onDone={()=>switchControls(null)} onAdjusting={setBlurAdjusting}/>: activePanel ? <>
+      {activePanel==='pattern'&&settings.imagePattern&&hasSelectedObject?<PatternInspector pattern={settings.imagePattern} onChange={imagePattern=>update({imagePattern})} onDone={()=>switchControls(null)}/>:activePanel==='crop'?<CropInspector edges={settings.selectedLayerId==='background'?settings.backgroundPose?.imageEdges:settings.imageEdges} onEdges={imageEdges=>update(settings.selectedLayerId==='background'?{backgroundPose:{...settings.backgroundPose,imageEdges}}:{imageEdges})} value={settings.selectedLayerId==='background'?settings.backgroundPose?.imageCrop:settings.imageCrop} onChange={imageCrop=>update(settings.selectedLayerId==='background'?{backgroundPose:{...settings.backgroundPose,imageCrop}}:{imageCrop})} onDone={()=>switchControls(null)}/>:activePanel==='showcase'&&timeline?<TimelineInspector playing={playing} timeline={timeline} selection={timelineTarget} current={current} mediaKind={targetObject?scene.source[targetObject.index]?.kind:undefined} keyframeId={keyframeId} onKeyframe={setKeyframeId} onSeek={sequence.seek} onAdd={kind=>addSequenceEffect(kind)} onKind={kind=>addSequenceEffect(kind,undefined,true)} onPatch={patchSequence} onDelete={deleteTimeline} onDone={()=>switchControls(null)}/>:activePanel==='adjust'?<AdjustInspector settings={settings} disabled={!!settings.pageObjects&&!settings.pageObjects.some(item=>item.id===settings.selectedLayerId)} update={update} onDone={()=>switchControls(null)}/>:sheet==='mark'?<WatermarkSheet ratio={settings.ratio} mark={markOf(settings)} profile={profileMark} onChange={patch=>update({mark:{...markOf(settings),...patch}})} onDone={closeInspector}/>:sheet==='layers'?<Layers settings={settings} update={update} onEdit={kind=>kind==='image'?selectImage():switchControls(null,'text')} onDone={closeInspector}/>:sheet==='text' ? <TextInspector settings={settings} update={update} onAdd={createText} onProfile={null} profile={profile} onDone={closeInspector}/> : activePanel==='blur'?<BlurInspector settings={settings} source={scene.source} session={blurSession} setSession={setBlurSession} change={changeBlur} undo={undo} canUndo={canUndo} onDone={()=>switchControls(null)} onAdjusting={setBlurAdjusting}/>: activePanel==='phone'||activePanel==='canvas'?<GroupPanel label={activePanel==='phone'?'Phone':'Background'} chips={activePanel==='phone'?phoneChips:canvasChips} active={activePanel==='phone'?phoneTool:canvasTool} onChip={key=>setGroupTool(prior=>({...prior,[activePanel]:key}))} onBack={()=>shadowWheel?setShadowWheel(false):switchControls(null)}><div className="control-options">{controlsFor(activePanel==='phone'?phoneTool:canvasTool)}</div></GroupPanel>:activePanel==='more'?<MorePanel items={moreItems} onBack={()=>switchControls(null)}/>: activePanel ? <>
         
         <div className="controls" key={activePanel + ':' + project.active}>
           <button type="button" className="round-action controls-back" aria-label={shadowWheel?'Back to shadow options':'Back to editor controls'} onPointerDown={jellyPress} onClick={()=>shadowWheel?setShadowWheel(false):switchControls(null)}><Icon name="arrowback"/></button>
@@ -594,13 +680,13 @@ function Editor({ project, profile, telegram, ready, exporting=false, backHandle
             removeSource={removeSource} openTime={() => setSheet('time')} collage={collage} removeFrame={project.pages&&settings.device!=='flat'?()=>mutateProject(prior=>toggleFrameAtCurrentSize(prior,pageFor(prior).selectedObjectId)):undefined} shadowWheel={shadowWheel} onShadowWheel={setShadowWheel}/>
           </fieldset></div>
         </div>
-      </> : <ToolScroller position={toolPosition} suspended={!!sheet}>
-        {toolPanels.map(([key, label]) => <button key={key} data-tool={key} type="button" disabled={(!hasSelectedObject&&['motion','adjust','device','edges','shadow','screen'].includes(key))||(key==='adjust'&&settings.pageObjects&&!settings.pageObjects.some(item=>item.id===settings.selectedLayerId))||(settings.pageObjects&&!settings.pageObjects.length&&['device','shadow','screen','adjust'].includes(key))||(key==='edges'&&(settings.device!=='flat'||!(settings.pageObjects?settings.pageObjects.some(item=>item.id===settings.selectedLayerId):imageLayers(settings).some(layer=>layer.id===settings.selectedLayerId))||(!settings.pageObjects&&collage)))||(key==='screen'&&settings.device==='flat')} onClick={() => key==='showcase'?openShowcase():key==='tools'?setSheet('tools'):key==='adjust'?(mutateProject(prior=>ensurePages(prior)),switchControls('adjust')):key==='blur'?openBlur():key==='watermark' ? openText() : key==='layers'?switchControls(null,'layers'):key==='device'&&settings.device==='flat'?(settings.pageObjects?null:update({selectedLayerId:imageLayers(settings).find(layer=>layer.id===settings.selectedLayerId)?.id??imageLayers(settings)[0]?.id??'device'}),switchControls('image')):switchControls(key)}>
-          <span><Icon name={key==='device'&&settings.device==='flat'?(source?.kind==='video'?'video':'image'):key}/></span>{t(key==='device'&&settings.device==='flat'?(source?.kind==='video'?'Video':'Image'):label)}
-        </button>)}
-      </ToolScroller>}
+      </> : <div className="editor-root">
+        <LooksRow settings={settings} onApply={applyChosenLook} onSave={saveLook} autoId={lookAuto?lookId:null}/>
+        <ToolTabs tabs={tabs} context={tabContext} onOpen={openGroup}/>
+      </div>}
       </div>
     </div>
+    {addOpen&&<AddSheet items={addItems} onClose={()=>setAddOpen(false)}/>}
     {sheet==='tools'&&<ToolsSheet onClose={closeTools} onInsert={insertAsset} getCanvasRect={()=>controlStage.current?.closest('.editor')?.querySelector('.artboard-frame')?.getBoundingClientRect()}/>}
     <input ref={sequenceInput} type="file" accept="video/*" multiple hidden onChange={event=>{const files=[...event.target.files];event.target.value='';importSequence(files);}}/>
     <input ref={fillInput} type="file" accept="image/*" hidden onChange={event=>{const file=event.target.files[0];event.target.value='';fillUpload(file);}}/>
@@ -632,7 +718,9 @@ function ProfilePage({profile,authStatus,telegram,config,onRetry}) {
 
 
 function projectSettings(preferences, template) {
-  return { ...defaults, ...templates[template]?.settings, cleanup: preferences.cleanup };
+  // "Apply my look automatically": new screenshots open with the saved look.
+  const look=!template&&preferences.autoLook?findLook(preferences.lookId):null;
+  return { ...defaults, ...templates[template]?.settings, ...look?.settings, cleanup: preferences.cleanup };
 }
 
 function App({initialTelegram=null,initialProfile=null}) {
@@ -641,7 +729,7 @@ function App({initialTelegram=null,initialProfile=null}) {
   const subscriptionReturn=useRef('settings');
   const [ready, setReady] = useState(false);
   const [preferences, setPreferences] = useState(restorePreferences);
-  const {project,setProject,undo,canUndo,past}=useProjectHistory(newProject,page==='editor');
+  const {project,setProject,undo,redo,canUndo,canRedo,past}=useProjectHistory(newProject,page==='editor');
   const [draftList, setDraftList] = useState(null);
   const [busy, setBusy] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -685,6 +773,20 @@ function App({initialTelegram=null,initialProfile=null}) {
     history.replaceState(null,'',location.pathname+location.search+'#home');
   }
 
+  // Opened from the bot's "Frame it" button: load that chat file with the saved look.
+  const frameRequest=useRef(new URLSearchParams(location.search).get('frame')),chatLook=useRef(false);
+  async function openFramedFile(app){
+    const token=frameRequest.current;if(!token||!app?.initData)return;frameRequest.current=null;
+    try{const url=new URL(location.href);url.searchParams.delete('frame');history.replaceState(history.state,'',url.pathname+url.search+url.hash);}catch{}
+    notify(t('Opening your file…'));
+    try{
+      const response=await fetch('/api/frame-file',{method:'POST',headers:{'Content-Type':'application/json','X-Telegram-Init-Data':app.initData},body:JSON.stringify({token}),credentials:'same-origin'});
+      if(!response.ok){const data=await response.json().catch(()=>({}));throw new Error(data.error||'Could not open the file');}
+      const blob=await response.blob(),name=response.headers.get('X-Frame-Name')||'telegram.jpg';
+      chatLook.current=true;await importSource([new File([blob],name,{type:blob.type})],'new');
+    }catch(error){notify(t(error.message));}
+    finally{chatLook.current=false;}
+  }
   async function signIn(app) {
     setAuthStatus('Signing in...');
     try {
@@ -693,6 +795,7 @@ function App({initialTelegram=null,initialProfile=null}) {
       setProfile(user);
       setAuthStatus('');
       setDraftList(null);
+      openFramedFile(app);
     }catch(error){setAuthStatus(error.message);}
   }
 
@@ -742,20 +845,7 @@ function App({initialTelegram=null,initialProfile=null}) {
         if(choice==='save'&&await saveDraft()&&sameProjectContent(latestProject.current,project))leave();
       } finally {exitPending.current=false;}
     }
-    if(telegram?.isVersionAtLeast('6.2')&&telegram.showPopup){
-      try{
-        telegram.showPopup({
-          title:t('Save your draft?'),
-          message:t('Save your changes before leaving the editor.'),
-          buttons:[
-            {id:'save',type:'default',text:t('Save draft')},
-            {id:'discard',type:'destructive',text:t('Leave without saving')},
-            {id:'stay',type:'default',text:t('Keep editing')}
-          ]
-        },resolve);
-        return;
-      }catch{ /* The browser dialog covers clients without an available native popup. */ }
-    }
+    // One compact in-app prompt on every platform; dismissing it keeps editing.
     setExitPrompt(()=>resolve);
   }
 
@@ -832,7 +922,7 @@ function App({initialTelegram=null,initialProfile=null}) {
         if(token===request.current) notify('Could not open media');
         return;
       }
-      const imported=loaded.map(result=>({id:itemId(),source:result.value,settings:{...projectSettings(preferences),...presentationFor(result.value,preferences.cleanup)}}));
+      const imported=loaded.map(result=>({id:itemId(),source:result.value,settings:{...projectSettings(chatLook.current?{...preferences,autoLook:true}:preferences),...presentationFor(result.value,preferences.cleanup)}}));
       const source=imported[0].source;
       setProject(prior=>{
         if(intent==='new'){const next={...newProject(source.name.replace(/\.[^.]+$/,''),imported[0].settings),items:imported,layout:imported.length>1&&imported.some(item=>item.settings.device==='flat')?'individual':'matching'};return ensurePages(next);}
@@ -882,7 +972,7 @@ function App({initialTelegram=null,initialProfile=null}) {
     const token = request.current;
     try {
       const scene=sceneFor(project);
-      await Promise.all([loadTextFonts(scene.settings),loadWatermarkBadge(scene.settings.watermarkBadge)]);
+      await Promise.all([loadTextFonts(scene.settings),loadWatermarkBadge(scene.settings.watermarkBadge),loadMarkAssets(scene.settings.mark)]);
       const thumbnail=document.createElement('canvas');
       const [w,h]=ratios[scene.settings.ratio];
       thumbnail.width=384;thumbnail.height=Math.round(384*h/w);
@@ -934,7 +1024,7 @@ function App({initialTelegram=null,initialProfile=null}) {
 
   function updatePreferences(patch) {
     const result = { ...preferences, ...patch };
-    setLanguage(result.language);setSoundEffectsEnabled(result.sound);
+    setLanguage(result.language);setHapticsEnabled(result.haptics);
     setPreferences(result);
     try { localStorage.setItem('styleit.preferences', JSON.stringify(result)); }
     catch { notify('Could not store settings'); }
@@ -965,7 +1055,7 @@ function App({initialTelegram=null,initialProfile=null}) {
       {subscriptionPage||balancePage?<><button type="button" className="balance-back" aria-label={t('Back')} onClick={subscriptionPage?closeSubscription:closeBalance}><Icon name="arrowback"/></button>{subscriptionPage&&<><span className="store-title">{t('My subscription')}</span></>}</>:editing ? <>
         <button className="round-action editor-back" type="button" aria-label={t("Back to Home")} onPointerDown={jellyPress} onClick={() => requestEditorExit()}><Icon name="arrowback"/></button>
         <span className="editor-title" aria-hidden="true"/>
-        <button className="round-action editor-undo" type="button" aria-label={t('Undo')} disabled={!canUndo} onPointerDown={jellyPress} onClick={undo}><Icon name="undo"/></button>
+        <span className="history-pill"><button className="editor-undo" type="button" aria-label={t('Undo')} disabled={!canUndo} onPointerDown={jellyPress} onClick={undo}><Icon name="undo"/></button><button className="editor-redo" type="button" aria-label={t('Redo')} disabled={!canRedo} onPointerDown={jellyPress} onClick={redo}><Icon name="redo"/></button></span>
         <button className={'round-action draft-action'+(savedRevision===project?' is-saved':'')} type="button" aria-label={t("Save draft")} aria-pressed={savedRevision===project} title={savedRevision===project?'Remove saved draft':'Save draft'} aria-busy={saving} onPointerDown={jellyPress} disabled={saving || !project.items.length} onClick={toggleDraft}>
           <Icon name="save"/>
           {savedRevision===project&&saveBurst>0&&<span key={saveBurst} className="draft-sparkles" aria-hidden="true">{Array.from({length:6},(_,i)=><svg key={i} style={{'--spark':i}} viewBox="0 0 20 20"><path d="M10 0c1.2 7.1 2.9 8.8 10 10-7.1 1.2-8.8 2.9-10 10C8.8 12.9 7.1 11.2 0 10 7.1 8.8 8.8 7.1 10 0Z"/></svg>)}</span>}
@@ -973,7 +1063,8 @@ function App({initialTelegram=null,initialProfile=null}) {
         <span className="visually-hidden" role="status">{savedRevision===project?'Draft saved':''}</span>
         <button className="round-action export-action" type="button" aria-label={t("Export")} onPointerDown={jellyPress} onClick={() => { activeSource?.element?.pause?.(); setExporting(true); }} disabled={!activeSource || busy}><Icon name="export"/></button>
       </> : <>
-        <HeaderProfile profile={profile} onOpen={()=>switchPanel(main.current,()=>navigate('settings'))}/>
+        {/* Settings already shows the profile card, so its header carries the page title instead. */}
+        {page==='settings'?<h1 className="header-page-title">{t('Settings')}</h1>:<HeaderProfile profile={profile} onOpen={()=>switchPanel(main.current,()=>navigate('settings'))}/>}
         <button className="balance-pill" type="button" aria-label={t("My balance")} onClick={openBalance}>
           <HeaderCoin/><strong>{(profile?.credits??0).toLocaleString(document.documentElement.lang)}</strong><span className="balance-pill-plus"><Icon name="plus"/></span>
         </button>
@@ -982,11 +1073,11 @@ function App({initialTelegram=null,initialProfile=null}) {
     <main ref={main} className="content">
       {page === 'home' && <HomeScreen busy={busy} onPick={kind => pickSource('new',kind)} onDrop={files => importSource(files, 'new')} recent={draftList} onOpen={openDraft} onFiles={()=>navigate('files')}/>}
       {page === 'files' && <DraftPage list={draftList} onOpen={openDraft} onRemove={draft => drafts.remove(draft.id).then(refreshDrafts).catch(() => notify('Could not delete the draft'))}/>}
-      {page === 'settings' && <SettingsPage preferences={preferences} update={updatePreferences} onBalance={openBalance} onSubscription={openSubscription} subscriptionActive={subscriptionInfo(profile?.subscription).active} balance={profile?.credits??0} draftCount={draftList?.length??0}/>}
+      {page === 'settings' && <SettingsPage preferences={preferences} update={updatePreferences} onBalance={openBalance} onSubscription={openSubscription} profile={profile} botUsername={config?.botUsername} draftCount={draftList?.length??0}/>}
       {balancePage&&<BalancePage onSubscription={openSubscription} balance={profile?.credits??0} premium={premiumActive(profile)} payment={payment} onSelection={purchaseSelection}/>}
       {subscriptionPage&&<SubscriptionPage subscription={profile?.subscription} payment={payment} onSelection={purchaseSelection}/>}
       {page === 'profile' && <ProfilePage profile={profile} authStatus={authStatus} telegram={telegram} config={config} onRetry={()=>signIn(telegram)}/>}
-      {editing && <Editor backHandler={editorBack} exporting={exporting} project={project} profile={profile} telegram={telegram} mutateProject={setProject} ready={ready} notify={notify} busy={busy} undo={undo} canUndo={canUndo}
+      {editing && <Editor lookId={preferences.lookId} lookAuto={!!preferences.autoLook} onLookSaved={look=>updatePreferences({lookId:look.id})} backHandler={editorBack} exporting={exporting} project={project} profile={profile} telegram={telegram} mutateProject={setProject} ready={ready} notify={notify} busy={busy} undo={undo} canUndo={canUndo}
         update={patch => setProject(prior => changeScene(prior, patch))}
         removeSource={() => {
           ++photoRequest.current;
@@ -1005,12 +1096,7 @@ function App({initialTelegram=null,initialProfile=null}) {
     {welcomeOpen&&<WelcomeCredits telegram={telegram} onClaim={updateAccount}/>}
     {payment.success&&<PurchaseSuccessSheet purchase={payment.success} onClose={payment.dismissSuccess}/>}
     {draftLimitOpen&&<DraftLimitSheet onClose={()=>setDraftLimitOpen(false)} onPremium={()=>{setDraftLimitOpen(false);openSubscription();}} onManage={()=>{setDraftLimitOpen(false);navigate('files');}}/>}
-    {exitPrompt&&<Sheet title={t('Save your draft?')} onClose={()=>exitPrompt('stay')} className="editor-exit-sheet" initialFocus=".credit-dismiss">
-      <p>{t('Save your changes before leaving the editor.')}</p>
-      <button type="button" className="credit-primary" onClick={()=>exitPrompt('save')}>{t('Save draft')}</button>
-      <button type="button" className="credit-secondary" onClick={()=>exitPrompt('discard')}>{t('Leave without saving')}</button>
-      <button type="button" className="credit-dismiss" onClick={()=>exitPrompt('stay')}>{t('Keep editing')}</button>
-    </Sheet>}
+    {exitPrompt&&<ExitPrompt onChoice={exitPrompt}/>}
     {exporting && activeSource && <DownloadSheet project={project} telegram={telegram} account={profile} onAccount={updateAccount} onPremium={()=>{setExporting(false);openSubscription();}} onAbandon={abandonExport} onClose={choice=>{setExporting(false);if(choice==='home')requestEditorExit();}}/>}
   </div>;
 }

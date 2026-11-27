@@ -1,4 +1,5 @@
-import React, { useId } from 'react';
+import React, { useId, useState } from 'react';
+import TermsSheet from './terms-sheet.jsx';
 import { TelegramStar } from './brand-icons.jsx';
 import { t } from './i18n.js';
 import './purchase-ui.css';
@@ -34,6 +35,10 @@ export function PurchasePage({ className, label, children, payment, product, act
   const activityLabel = t(payment?.pending === 'confirming' ? 'Confirming…'
     : payment?.pending === 'telegram' ? 'In Telegram…' : 'Opening…');
   const message = pending ? '' : payment?.message;
+  const [terms,setTerms] = useState(false);
+  // "Terms of Service" inside the note opens the in-app Terms overlay.
+  const link = document.documentElement.lang==='ru' ? 'Условиями использования' : 'Terms of Service';
+  const [before,after=''] = t(note).split(link);
   return <section className={'page purchase-page '+className} aria-label={t(label)}>
     <div className="purchase-scroll"><div className="purchase-body">{children}</div></div>
     <footer className="purchase-footer">
@@ -46,7 +51,8 @@ export function PurchasePage({ className, label, children, payment, product, act
           </button>
           {pending&&<progress className="checkout-spinner" aria-label={activity}/>}
         </div>
-        <p>{t(note)}</p>
+        <button type="button" className="purchase-terms" onClick={()=>setTerms(true)}>{before}<u>{link}</u>{after}</button>
+        <TermsSheet open={terms} onClose={()=>setTerms(false)}/>
       </div>
     </footer>
   </section>;

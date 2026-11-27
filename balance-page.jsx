@@ -4,13 +4,13 @@ import { SubscriptionIcon } from './brand-icons.jsx';
 import { subscriptionOffers } from './subscription-model.js';
 import { creditPacks, exportCreditCost } from './credit-model.js';
 import { PurchasePage, PurchaseOptions, PlanIcon, StarPrice } from './purchase-ui.jsx';
-import { t } from './i18n.js';
+import { t, starCount } from './i18n.js';
 import './balance-page.css';
 
 const creditUses = [
   ['photo','Photo export',exportCreditCost('photo')],
   ['video','Video export',exportCreditCost('video')],
-  ['quality','High quality','+'+(exportCreditCost('photo','high')-exportCreditCost('photo'))],
+  ['quality','High quality',exportCreditCost('photo','high')-exportCreditCost('photo'),'+'],
 ];
 
 export default function BalancePage({ onSubscription, balance=0, premium=false, payment, onSelection }) {
@@ -29,9 +29,9 @@ export default function BalancePage({ onSubscription, balance=0, premium=false, 
     <section aria-labelledby="credit-uses">
       <h2 id="credit-uses" className="account-section-label">{t('Export costs')}</h2>
       <ul className="balance-features account-rows ios-settings-group">
-        {creditUses.map(([name,label,cost]) => <li key={name} className="ios-setting-row">
+        {creditUses.map(([name,label,cost,prefix='']) => <li key={name} className="ios-setting-row">
           <PlanIcon name={name}/><span>{t(label)}</span>
-          <span className="ios-setting-value">{t(premium?'Included':cost+' stars')}</span>
+          <span className="ios-setting-value">{premium?t('Included'):starCount(cost,prefix)}</span>
         </li>)}
       </ul>
     </section>

@@ -2,6 +2,8 @@ import { defineConfig } from 'vite';
 
 export default defineConfig({
   worker:{format:'es'},
+  // Pre-bundling moves the polyfill away from its stylesheet; serve it in place in development.
+  optimizeDeps:{exclude:['input-switch-polyfill']},
   plugins:[{
     name:'bundle-switch-stylesheet',enforce:'pre',
     transform(code,id){
