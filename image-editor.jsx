@@ -1,6 +1,8 @@
 import SelectionToolbar,{SelectionIcon} from './selection-toolbar.jsx';
 import {captureCanvasGesture,releaseCanvasGesture} from './canvas-gesture.js';
 import { t } from './i18n.js';
+import { finishes } from './render.js';
+import { hapticSelection } from './haptics.js';
 import React, { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import {flushSync} from 'react-dom';
 import {useAlignmentGuides} from './alignment-guides.jsx';
@@ -24,7 +26,8 @@ export default function ImageHandles({settings:scene,media,update:save,onSelect,
   const root=useRef(null),latest=useRef(settings);latest.current=settings;
   const alignment=useAlignmentGuides(root);
   const gesture=useRef(null),pointers=useRef(new Map()),frame=useRef(0),pending=useRef(null),moved=useRef(false);
-  const [bounds,setBounds]=useState({width:0,height:0}),[dragging,setDragging]=useState(false),[announcement,setAnnouncement]=useState('');
+  const [bounds,setBounds]=useState({width:0,height:0}),[dragging,setDragging]=useState(false),[announcement,setAnnouncement]=useState(''),[colourFlash,setColourFlash]=useState(null),flashTimer=useRef(0);
+  useEffect(()=>()=>clearTimeout(flashTimer.current),[]);
   const selected=scene.selectedLayerId===id,box=geometryFor(settings,media,bounds.width,bounds.height);
   useLayoutEffect(()=>{const parent=root.current.parentElement,observer=new ResizeObserver(()=>{const b=parent.getBoundingClientRect();setBounds({width:b.width,height:b.height});});observer.observe(parent);return()=>observer.disconnect();},[]);
   useLayoutEffect(()=>{
@@ -33,9 +36,24 @@ export default function ImageHandles({settings:scene,media,update:save,onSelect,
   },[]);
   useEffect(()=>{const surface=root.current.closest('.preview')??root.current.parentElement;const deselect=event=>{if(sceneRef.current.selectedLayerId===id&&!event.target.closest('.image-selection,.text-selection,.text-floating-toolbar,.text-other-handle,button,input,label'))save({selectedLayerId:null});};surface.addEventListener('pointerdown',deselect);return()=>surface.removeEventListener('pointerdown',deselect);},[id,save]);
   function flush(){cancelAnimationFrame(frame.current);frame.current=0;if(pending.current){const next=pending.current;pending.current=null;latest.current={...latest.current,...next};flushSync(()=>update(next));}}
+  // A locked phone does not move, so a sideways swipe on it steps through phone colours.
+  function colourSwipe(event){
+    const pointerId=event.pointerId,startX=event.clientX,startY=event.clientY,keys=Object.keys(finishes);let stepped=0;
+    const move=e=>{
+      if(e.pointerId!==pointerId)return;const dx=e.clientX-startX,dy=e.clientY-startY;
+      if(Math.abs(dx)<24||Math.abs(dx)<Math.abs(dy)*1.4)return;
+      const steps=Math.trunc(dx/56);if(steps===stepped)return;
+      const direction=steps<stepped?1:-1;stepped=steps;
+      const index=Math.max(0,keys.indexOf(latest.current.finish??keys[0])),next=keys[(index+direction+keys.length)%keys.length];
+      latest.current={...latest.current,finish:next};update({finish:next});hapticSelection();
+      setColourFlash(finishes[next].name);clearTimeout(flashTimer.current);flashTimer.current=setTimeout(()=>setColourFlash(null),900);
+    };
+    const end=e=>{if(e.pointerId!==pointerId)return;window.removeEventListener('pointermove',move);window.removeEventListener('pointerup',end);window.removeEventListener('pointercancel',end);};
+    window.addEventListener('pointermove',move);window.addEventListener('pointerup',end);window.addEventListener('pointercancel',end);
+  }
   function begin(event,type,edge){
     if(pointers.current.size&&(edge||gesture.current?.edge))return;
-    if(event.button!==0)return;event.stopPropagation();if(settings.locked||settings.imagePattern){save({selectedLayerId:id});onSelect();return;}if(!captureCanvasGesture(root.current,event,{move,end}))return;moved.current=false;setDragging(true);
+    if(event.button!==0)return;event.stopPropagation();if(settings.locked||settings.imagePattern){save({selectedLayerId:id});onSelect();if(settings.locked&&!settings.imagePattern&&settings.device&&settings.device!=='flat')colourSwipe(event);return;}if(!captureCanvasGesture(root.current,event,{move,end}))return;moved.current=false;setDragging(true);
     alignment.start();pointers.current.set(event.pointerId,{x:event.clientX,y:event.clientY});update({selectedLayerId:id});
     const rect=root.current.getBoundingClientRect(),current=latest.current,geometry=geometryFor(current,media,rect.width,rect.height),points=[...pointers.current.values()];
     const center={x:rect.left+geometry.cx,y:rect.top+geometry.cy};
@@ -124,6 +142,6 @@ export default function ImageHandles({settings:scene,media,update:save,onSelect,
       <button type="button" aria-label={t('Duplicate image')} disabled={frameSelected} onClick={()=>onDuplicate?onDuplicate():save(duplicateImage(sceneRef.current,id))}><SelectionIcon name="duplicate"/></button>
       <button type="button" aria-label={t(frameSelected?'Delete mockup frame':'Delete image')} className="text-delete-action" onClick={()=>onRemove?onRemove():save(removeImage(sceneRef.current,id))}><SelectionIcon name="trash"/></button>
     </SelectionToolbar>}
-    {alignment.overlay}<span className="visually-hidden" role="status">{announcement}</span>
+    {alignment.overlay}<span className="visually-hidden" role="status">{announcement}</span>{colourFlash&&<span className="colour-flash" style={{left:box.cx,top:box.cy}} aria-live="polite">{t(colourFlash)}</span>}
   </div>;
 }

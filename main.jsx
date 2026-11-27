@@ -2,7 +2,7 @@ import {useStarPayments} from './payments-client.js';
 import {WelcomeCredits,DraftLimitSheet,PurchaseSuccessSheet} from './credits-ui.jsx';
 import {FREE_DRAFT_LIMIT,premiumActive} from './credit-model.js';
 import VideoTimeline from './video-timeline.jsx';
-import { LooksRow, ToolTabs, GroupPanel, MorePanel, AddSheet } from './editor-tabs.jsx';
+import { LooksRow, ToolTabs, GroupPanel, MorePanel, AddSheet, WatermarkPanel } from './editor-tabs.jsx';
 import { applyLook, captureLook, savedLooks, findLook } from './looks.js';
 import {ShowcaseCanvas,TouchRecorder} from './showcase-editor.jsx';
 import {detectTouches,zoomClusters} from './auto-touches.js';
@@ -50,7 +50,8 @@ import {objectKeys,defaultImagePattern,ensurePages,pageFor,pageCount,pageMediaCh
 import { BlurInspector, BlurCanvas } from './blur-editor.jsx';
 import { blurEffect, blurTargets, patchBlur } from './blur-model.js';
 import PatternInspector from './pattern-editor.jsx';
-import {makeProfileBadge} from './profile-badge.js';
+import {makeProfileBadge,loadBadgeAvatar} from './profile-badge.js';
+import {markOf} from './watermark.js';
 import { loadTextFonts } from './text-fonts.js';
 import './styles.css';
 import './navigation.css';
@@ -82,6 +83,7 @@ const paths = {
   more: <>{[6,12,18].map(x=><circle key={x} cx={x} cy="12" r="1.6" fill="currentColor" stroke="none"/>)}</>,
   pages: <><rect x="7" y="3" width="13" height="16" rx="2.5"/><path d="M4 7v11.5A2.5 2.5 0 0 0 6.5 21H15"/></>,
   text: <path d="M5.5 7V5h13v2M12 5v14m-3.5 0h7"/>,
+  mark: <><rect x="3" y="7" width="18" height="10" rx="5"/><circle cx="8.5" cy="12" r="2.2"/><path d="M13 12h4.5"/></>,
   export: <path d="M12 3v13m-5-5 5 5 5-5m-12 6v4h14v-4"/>,
   device: <><rect x="7" y="3" width="10" height="18" rx="2.5"/><path d="M11 6h2"/></>,
   background: <><rect x="4" y="4" width="16" height="16" rx="3"/><path d="M4 16 16 4M7 20 20 7M13 20l7-7"/></>,
@@ -219,7 +221,7 @@ function FrameCanvas({ settings, source = blank, photo, ready, thumbnail = false
   useLayoutEffect(queuePaint,[settings,source,photo,ready,time,scale,width,height,interactive]);
   useEffect(()=>{
     let alive=true;
-    Promise.allSettled([loadWatermarkBadge(settings.watermarkBadge),loadTextFonts(settings)]).then(()=>{if(alive)queuePaint();});
+    Promise.allSettled([loadWatermarkBadge(settings.watermarkBadge),loadBadgeAvatar(settings.mark?.badge),loadTextFonts(settings)]).then(()=>{if(alive)queuePaint();});
     return ()=>{alive=false;};
   },[settings]);
   return <canvas ref={canvas} width={Math.round(width * scale)} height={Math.round(height * scale)} aria-hidden={thumbnail ? true : undefined} role={thumbnail ? undefined : 'img'} aria-label={thumbnail ? undefined : 'Mockup preview'}/>;
@@ -395,26 +397,8 @@ function Editor({ lookId, lookAuto=false, onLookSaved, project, profile, telegra
   const source = targetObject?scene.source[targetObject.index]:project.items[project.active]?.source;
   const multiple = project.items.length > 1;
   const collage = project.pages?scene.source.length>1:multiple&&project.layout==='collage';
-  const badgeRequest=useRef(null);
-  const [badgePending,setBadgePending]=useState(false);
-  useEffect(()=>()=>{badgeRequest.current=null;},[]);
   const fillMediaIds=fillTarget?new Set(pageMediaChoices(project).map(choice=>choice.itemId)):null;
   const currentPage=project.pages?pageFor(project):null,pageIndex=project.pages?project.pageIndex??0:project.active,count=project.pages?pageCount(project):project.items.length;
-  async function insertProfileBadge(){
-    if(!profile||badgeRequest.current)return;
-    const request={};badgeRequest.current=request;setBadgePending(true);
-    const pageId=currentPage?.id;
-    try{
-      const {text,badge}=await makeProfileBadge(profile,telegram);
-      if(badgeRequest.current!==request)return;
-      mutateProject(prior=>{
-        const index=prior.pages?.findIndex(page=>page.id===pageId)??-1;
-        if(index<0)return prior;
-        const page=prior.pages[index];
-        return {...prior,pages:prior.pages.with(index,{...page,settings:{...page.settings,...addText(page.settings,text,badge)}})};
-      });
-    }finally{if(badgeRequest.current===request){badgeRequest.current=null;setBadgePending(false);}}
-  }
   const objectActions={onPattern:(id,pattern)=>{
     mutateProject(prior=>{
       const object=pageFor(prior)?.objects.find(item=>item.id===id);
@@ -659,7 +643,7 @@ function Editor({ lookId, lookAuto=false, onLookSaved, project, profile, telegra
   const phoneChips=[{key:framed?'device':'image',label:framed?'Phone':source?.kind==='video'?'Video':'Image'},{key:'edges',label:'Corners',disabled:framed},{key:'shadow',label:'Shadow'},{key:'screen',label:'Status bar',disabled:!framed}];
   const canvasChips=[{key:'background',label:'Background'},{key:'size',label:'Format'}];
   const firstPhoneTool=phoneChips[0].key,phoneTool=phoneChips.find(chip=>chip.key===groupTool.phone&&!chip.disabled)?.key??(groupTool.phone==='device'||groupTool.phone==='image'?firstPhoneTool:firstPhoneTool),canvasTool=groupTool.canvas;
-  const tabs=[...(video?[{key:'showcase',label:'Animation',icon:<Icon name="showcase"/>}]:[]),{key:'phone',label:framed?'Phone':source?.kind==='video'?'Video':'Image',icon:<Icon name={framed?'device':source?.kind==='video'?'video':'image'}/>,disabled:!settings.pageObjects?.length},{key:'canvas',label:'Background',icon:<Icon name="background"/>},{key:'watermark',label:'Text',icon:<Icon name="text"/>},{key:'more',label:'More',icon:<Icon name="more"/>}];
+  const tabs=[...(video?[{key:'showcase',label:'Animation',icon:<Icon name="showcase"/>}]:[]),{key:'phone',label:framed?'Phone':source?.kind==='video'?'Video':'Image',icon:<Icon name={framed?'device':source?.kind==='video'?'video':'image'}/>,disabled:!settings.pageObjects?.length},{key:'canvas',label:'Background',icon:<Icon name="background"/>},{key:'watermark',label:'Text',icon:<Icon name="text"/>},{key:'mark',label:'Watermark',icon:<Icon name="mark"/>},{key:'more',label:'More',icon:<Icon name="more"/>}];
   const moreItems=[
     {key:'adjust',label:'Adjust',icon:<Icon name="adjust"/>,disabled:!hasSelectedObject,action:()=>{mutateProject(prior=>ensurePages(prior));switchControls('adjust');}},
     {key:'blur',label:'Blur',icon:<Icon name="blur"/>,action:openBlur},
@@ -673,6 +657,12 @@ function Editor({ lookId, lookAuto=false, onLookSaved, project, profile, telegra
     {key:'asset',label:'Sticker',caption:'Shapes and art',icon:<Icon name="tools"/>,action:()=>setSheet('tools')},
     ...(timeline?[{key:'clip',label:'Video clip',caption:'Adds to the end',icon:<Icon name="video"/>,action:()=>addTimeline('clip')}]:[]),
   ];
+  const [markPending,setMarkPending]=useState(false);
+  async function loadMarkName(){
+    if(!profile||markPending)return;setMarkPending(true);
+    try{const {text,badge}=await makeProfileBadge(profile,telegram);if(badge.avatar)await loadBadgeAvatar(badge.avatar);update({mark:{...markOf(settings),style:'name',name:text,badge:badge.avatar??'',initials:badge.initials??''}});}
+    finally{setMarkPending(false);}
+  }
   function openGroup(key){
     if(key==='showcase')return openShowcase();
     if(key==='watermark')return openText();
@@ -699,7 +689,7 @@ function Editor({ lookId, lookAuto=false, onLookSaved, project, profile, telegra
     <div className="control-sheet">
       <div className="text-typing-host" ref={typingHost}/>
       <div className="control-stage" ref={controlStage}>
-      {activePanel==='pattern'&&settings.imagePattern&&hasSelectedObject?<PatternInspector pattern={settings.imagePattern} onChange={imagePattern=>update({imagePattern})} onDone={()=>switchControls(null)}/>:activePanel==='crop'?<CropInspector edges={settings.selectedLayerId==='background'?settings.backgroundPose?.imageEdges:settings.imageEdges} onEdges={imageEdges=>update(settings.selectedLayerId==='background'?{backgroundPose:{...settings.backgroundPose,imageEdges}}:{imageEdges})} value={settings.selectedLayerId==='background'?settings.backgroundPose?.imageCrop:settings.imageCrop} onChange={imageCrop=>update(settings.selectedLayerId==='background'?{backgroundPose:{...settings.backgroundPose,imageCrop}}:{imageCrop})} onDone={()=>switchControls(null)}/>:activePanel==='showcase'&&timeline?<TimelineInspector onRecord={startRecording} recording={touchRecording} onAuto={autoAnimate} autoState={autoState} timeline={timeline} selection={timelineTarget} current={current} mediaKind={targetObject?scene.source[targetObject.index]?.kind:undefined} keyframeId={keyframeId} onKeyframe={setKeyframeId} onSeek={sequence.seek} onAdd={kind=>addSequenceEffect(kind)} onKind={kind=>addSequenceEffect(kind,undefined,true)} onPatch={patchSequence} onDelete={deleteTimeline} onDone={()=>switchControls(null)}/>:activePanel==='adjust'?<AdjustInspector settings={settings} disabled={!!settings.pageObjects&&!settings.pageObjects.some(item=>item.id===settings.selectedLayerId)} update={update} onDone={()=>switchControls(null)}/>:sheet==='layers'?<Layers settings={settings} update={update} onEdit={kind=>kind==='image'?selectImage():switchControls(null,'text')} onDone={closeInspector}/>:sheet==='text' ? <TextInspector settings={settings} update={update} onAdd={createText} onProfile={profile?insertProfileBadge:null} profile={profile} badgePending={badgePending} onDone={closeInspector}/> : activePanel==='blur'?<BlurInspector settings={settings} source={scene.source} session={blurSession} setSession={setBlurSession} change={changeBlur} undo={undo} canUndo={canUndo} onDone={()=>switchControls(null)} onAdjusting={setBlurAdjusting}/>: activePanel==='phone'||activePanel==='canvas'?<GroupPanel label={activePanel==='phone'?'Phone':'Background'} chips={activePanel==='phone'?phoneChips:canvasChips} active={activePanel==='phone'?phoneTool:canvasTool} onChip={key=>setGroupTool(prior=>({...prior,[activePanel]:key}))} onBack={()=>shadowWheel?setShadowWheel(false):switchControls(null)}><div className="control-options">{controlsFor(activePanel==='phone'?phoneTool:canvasTool)}</div></GroupPanel>:activePanel==='more'?<MorePanel items={moreItems} onBack={()=>switchControls(null)}/>: activePanel ? <>
+      {activePanel==='pattern'&&settings.imagePattern&&hasSelectedObject?<PatternInspector pattern={settings.imagePattern} onChange={imagePattern=>update({imagePattern})} onDone={()=>switchControls(null)}/>:activePanel==='crop'?<CropInspector edges={settings.selectedLayerId==='background'?settings.backgroundPose?.imageEdges:settings.imageEdges} onEdges={imageEdges=>update(settings.selectedLayerId==='background'?{backgroundPose:{...settings.backgroundPose,imageEdges}}:{imageEdges})} value={settings.selectedLayerId==='background'?settings.backgroundPose?.imageCrop:settings.imageCrop} onChange={imageCrop=>update(settings.selectedLayerId==='background'?{backgroundPose:{...settings.backgroundPose,imageCrop}}:{imageCrop})} onDone={()=>switchControls(null)}/>:activePanel==='showcase'&&timeline?<TimelineInspector onRecord={startRecording} recording={touchRecording} onAuto={autoAnimate} autoState={autoState} timeline={timeline} selection={timelineTarget} current={current} mediaKind={targetObject?scene.source[targetObject.index]?.kind:undefined} keyframeId={keyframeId} onKeyframe={setKeyframeId} onSeek={sequence.seek} onAdd={kind=>addSequenceEffect(kind)} onKind={kind=>addSequenceEffect(kind,undefined,true)} onPatch={patchSequence} onDelete={deleteTimeline} onDone={()=>switchControls(null)}/>:activePanel==='adjust'?<AdjustInspector settings={settings} disabled={!!settings.pageObjects&&!settings.pageObjects.some(item=>item.id===settings.selectedLayerId)} update={update} onDone={()=>switchControls(null)}/>:sheet==='layers'?<Layers settings={settings} update={update} onEdit={kind=>kind==='image'?selectImage():switchControls(null,'text')} onDone={closeInspector}/>:sheet==='text' ? <TextInspector settings={settings} update={update} onAdd={createText} onProfile={null} profile={profile} onDone={closeInspector}/> : activePanel==='blur'?<BlurInspector settings={settings} source={scene.source} session={blurSession} setSession={setBlurSession} change={changeBlur} undo={undo} canUndo={canUndo} onDone={()=>switchControls(null)} onAdjusting={setBlurAdjusting}/>: activePanel==='phone'||activePanel==='canvas'?<GroupPanel label={activePanel==='phone'?'Phone':'Background'} chips={activePanel==='phone'?phoneChips:canvasChips} active={activePanel==='phone'?phoneTool:canvasTool} onChip={key=>setGroupTool(prior=>({...prior,[activePanel]:key}))} onBack={()=>shadowWheel?setShadowWheel(false):switchControls(null)}><div className="control-options">{controlsFor(activePanel==='phone'?phoneTool:canvasTool)}</div></GroupPanel>:activePanel==='mark'?<WatermarkPanel mark={markOf(settings)} hasProfile={!!profile} namePending={markPending} onName={loadMarkName} onChange={patch=>update({mark:{...markOf(settings),...patch}})} onBack={()=>switchControls(null)}/>:activePanel==='more'?<MorePanel items={moreItems} onBack={()=>switchControls(null)}/>: activePanel ? <>
         
         <div className="controls" key={activePanel + ':' + project.active}>
           <button type="button" className="round-action controls-back" aria-label={shadowWheel?'Back to shadow options':'Back to editor controls'} onPointerDown={jellyPress} onClick={()=>shadowWheel?setShadowWheel(false):switchControls(null)}><Icon name="arrowback"/></button>
@@ -801,6 +791,20 @@ function App({initialTelegram=null,initialProfile=null}) {
     history.replaceState(null,'',location.pathname+location.search+'#home');
   }
 
+  // Opened from the bot's "Frame it" button: load that chat file with the saved look.
+  const frameRequest=useRef(new URLSearchParams(location.search).get('frame')),chatLook=useRef(false);
+  async function openFramedFile(app){
+    const token=frameRequest.current;if(!token||!app?.initData)return;frameRequest.current=null;
+    try{const url=new URL(location.href);url.searchParams.delete('frame');history.replaceState(history.state,'',url.pathname+url.search+url.hash);}catch{}
+    notify(t('Opening your file…'));
+    try{
+      const response=await fetch('/api/frame-file',{method:'POST',headers:{'Content-Type':'application/json','X-Telegram-Init-Data':app.initData},body:JSON.stringify({token}),credentials:'same-origin'});
+      if(!response.ok){const data=await response.json().catch(()=>({}));throw new Error(data.error||'Could not open the file');}
+      const blob=await response.blob(),name=response.headers.get('X-Frame-Name')||'telegram.jpg';
+      chatLook.current=true;await importSource([new File([blob],name,{type:blob.type})],'new');
+    }catch(error){notify(t(error.message));}
+    finally{chatLook.current=false;}
+  }
   async function signIn(app) {
     setAuthStatus('Signing in...');
     try {
@@ -809,6 +813,7 @@ function App({initialTelegram=null,initialProfile=null}) {
       setProfile(user);
       setAuthStatus('');
       setDraftList(null);
+      openFramedFile(app);
     }catch(error){setAuthStatus(error.message);}
   }
 
@@ -935,7 +940,7 @@ function App({initialTelegram=null,initialProfile=null}) {
         if(token===request.current) notify('Could not open media');
         return;
       }
-      const imported=loaded.map(result=>({id:itemId(),source:result.value,settings:{...projectSettings(preferences),...presentationFor(result.value,preferences.cleanup)}}));
+      const imported=loaded.map(result=>({id:itemId(),source:result.value,settings:{...projectSettings(chatLook.current?{...preferences,autoLook:true}:preferences),...presentationFor(result.value,preferences.cleanup)}}));
       const source=imported[0].source;
       setProject(prior=>{
         if(intent==='new'){const next={...newProject(source.name.replace(/\.[^.]+$/,''),imported[0].settings),items:imported,layout:imported.length>1&&imported.some(item=>item.settings.device==='flat')?'individual':'matching'};return ensurePages(next);}
@@ -985,7 +990,7 @@ function App({initialTelegram=null,initialProfile=null}) {
     const token = request.current;
     try {
       const scene=sceneFor(project);
-      await Promise.all([loadTextFonts(scene.settings),loadWatermarkBadge(scene.settings.watermarkBadge)]);
+      await Promise.all([loadTextFonts(scene.settings),loadWatermarkBadge(scene.settings.watermarkBadge),loadBadgeAvatar(scene.settings.mark?.badge)]);
       const thumbnail=document.createElement('canvas');
       const [w,h]=ratios[scene.settings.ratio];
       thumbnail.width=384;thumbnail.height=Math.round(384*h/w);

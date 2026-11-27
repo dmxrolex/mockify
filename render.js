@@ -1,3 +1,4 @@
+import {drawMark} from './watermark.js';
 import {drawRecordedGesture} from './gesture-render.js';
 import {keptVideoSegments,containsVideoTime} from './video-edits.js';
 import {cleanStatusProfile} from './status-profile.js';
@@ -790,7 +791,7 @@ export function createRenderer(canvas,{cacheScene=true}={}) {
       // Render from native media at the largest focus scale, not from an upscaled preview.
       const maximum=Math.max(1,...moments.filter(item=>item.focus).map(item=>Math.min(2.8,item.zoom||1))),density=Math.min(maximum,6144/Math.max(canvas.width,canvas.height),Math.sqrt((cacheScene?8_000_000:16_000_000)/(canvas.width*canvas.height)));
       showcaseCanvas??=document.createElement('canvas');resize(showcaseCanvas,Math.round(canvas.width*density),Math.round(canvas.height*density));showcaseRenderer??=createRenderer(showcaseCanvas,{cacheScene:false});
-      showcaseRenderer({...settings,showcase:null},media,photo,progress);ctx.clearRect(0,0,canvas.width,canvas.height);ctx.save();ctx.translate(tx,ty);ctx.scale(camera.zoom,camera.zoom);ctx.drawImage(showcaseCanvas,0,0,canvas.width,canvas.height);ctx.restore();
+      showcaseRenderer({...settings,showcase:null,mark:null},media,photo,progress);ctx.clearRect(0,0,canvas.width,canvas.height);ctx.save();ctx.translate(tx,ty);ctx.scale(camera.zoom,camera.zoom);ctx.drawImage(showcaseCanvas,0,0,canvas.width,canvas.height);ctx.restore();
     }else{paintScene(settings,media,photo,progress);designBlur(ctx,settings.blurEffects?.design,++blurRevision);}
     // Map the contact point through the camera while keeping the ring light at every zoom.
     const projectGesture=gesture=>{
@@ -801,7 +802,9 @@ export function createRenderer(canvas,{cacheScene=true}={}) {
     for(const moment of moments)drawRecordedGesture(ctx,moment,time,projectGesture,unit);
     return true;
   }
-  const paint=(settings,media,photo,progress=0,interactive=false)=>{
+  // The watermark is drawn last, above camera zoom, blur and touches, on previews and exports alike.
+  const paint=(settings,...rest)=>{paintFrame(settings,...rest);drawMark(ctx,settings,canvas.width,canvas.height);};
+  const paintFrame=(settings,media,photo,progress=0,interactive=false)=>{
     interactivePreview=cacheScene&&interactive;
     if(settings.timeline?.version===2&&!settings._timelineEvaluated){
       const time=settings._timelineTime??progress*timelineDuration(settings.timeline);

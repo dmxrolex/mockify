@@ -2,6 +2,7 @@ import {keptVideoSegments} from './video-edits.js';
 import {Input,ALL_FORMATS,BlobSource,Output,Mp4OutputFormat,BufferTarget,CanvasSource,VideoSampleSink,AudioBufferSink,AudioBufferSource,Quality,canEncodeVideo,canEncodeAudio} from 'mediabunny';
 import {createRenderer,loadWatermarkBadge} from './render.js';
 import {loadTextFonts} from './text-fonts.js';
+import {loadBadgeAvatar} from './profile-badge.js';
 import {recordingsInScene,recordingInScene,videoPlan,clipTime,MAX_VIDEO_BYTES,timelineMediaSchedule} from './video-plan.js';
 import {evaluateTimeline,timelineFor} from './timeline-model.js';
 
@@ -30,7 +31,7 @@ export async function offlineVideo(settings,sources,photo,quality,signal,report)
     if(states.some(state=>state.audio)&&!await canEncodeAudio('aac',{sampleRate:48000,numberOfChannels:2}))return null;
     const count=Math.ceil(plan.seconds*fps-1e-7),canvas=document.createElement('canvas');canvas.width=plan.width;canvas.height=plan.height;
     // Export never uses the interactive low-resolution texture path.
-    paint=createRenderer(canvas,{cacheScene:false});await Promise.all([loadTextFonts(settings),loadWatermarkBadge(settings.watermarkBadge)]);
+    paint=createRenderer(canvas,{cacheScene:false});await Promise.all([loadTextFonts(settings),loadWatermarkBadge(settings.watermarkBadge),loadBadgeAvatar(settings.mark?.badge)]);
     const target=new BufferTarget();output=new Output({format:new Mp4OutputFormat({fastStart:'in-memory'}),target});
     videoSource=new CanvasSource(canvas,{codec:'avc',quality:new Quality({bitrate:plan.videoBitsPerSecond}),latencyMode:'quality',bitrateMode:'constant',keyFrameInterval:2,contentHint:'detail'});output.addVideoTrack(videoSource,{frameRate:fps});
     const audioStates=states.filter(state=>state.audio);
@@ -156,7 +157,7 @@ async function offlineTimelineVideo(settings,sources,photo,quality,signal,report
     const count=Math.ceil(plan.seconds*fps-1e-7);
     canvas=document.createElement('canvas');canvas.width=plan.width;canvas.height=plan.height;
     paint=createRenderer(canvas,{cacheScene:false});
-    await Promise.all([loadTextFonts(settings),loadWatermarkBadge(settings.watermarkBadge)]);
+    await Promise.all([loadTextFonts(settings),loadWatermarkBadge(settings.watermarkBadge),loadBadgeAvatar(settings.mark?.badge)]);
     const target=new BufferTarget();
     output=new Output({format:new Mp4OutputFormat({fastStart:'in-memory'}),target});
     videoSource=new CanvasSource(canvas,{codec:'avc',quality:new Quality({bitrate:plan.videoBitsPerSecond}),latencyMode:'quality',bitrateMode:'constant',keyFrameInterval:2,contentHint:'detail'});

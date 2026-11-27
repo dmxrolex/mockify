@@ -1,3 +1,4 @@
+import { frameFile } from './chat-framing.js';
 import {WELCOME_CREDITS,exportCreditCost,accountFromRow,premiumActive} from './credit-model.js';
 import {handlePayments} from './payments.js';
 const encoder = new TextEncoder();
@@ -144,6 +145,15 @@ export default {
         const image=await fetch('https://api.telegram.org/file/bot'+env.TELEGRAM_BOT_TOKEN+'/'+file.file_path,{signal,redirect:'error'});
         return await avatarResponse(image,/\.png$/i.test(file.file_path)?'image/png':'image/jpeg')??new Response(null,{status:204});
       }catch{return new Response(null,{status:204});}
+    }
+    if(url.pathname==='/api/frame-file'){
+      if(request.method!=='POST')return json({error:'Method not allowed'},405);
+      if(request.headers.get('Origin')!==url.origin)return json({error:'Origin rejected'},403);
+      if(!env.TELEGRAM_BOT_TOKEN)return json({error:'Chat framing is unavailable.'},503);
+      let user;try{user=await verifyTelegram(request.headers.get('X-Telegram-Init-Data'),env.TELEGRAM_BOT_ID);}catch{return json({error:'Reopen the app in Telegram to continue.'},401);}
+      let body;try{body=await request.json();}catch{return json({error:'Invalid request'},400);}
+      try{const file=await frameFile(body?.token,user,env);return file??json({error:'This file is no longer available. Send it to the bot again.'},404);}
+      catch{return json({error:'Could not load the file from Telegram. Try again.'},502);}
     }
     if(['/api/account','/api/welcome/claim'].includes(url.pathname)){
       if(request.method!=='POST')return json({error:'Method not allowed'},405);

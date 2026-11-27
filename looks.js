@@ -2,7 +2,8 @@
 import {backdrops,finishes} from './render.js';
 import {changePage,pageFor} from './page-model.js';
 
-const pageKeys=['background','palette','color'];
+// Looks carry the whole style: background, format and watermark as well as the phone.
+const pageKeys=['background','palette','color','ratio','mark'];
 const framedKeys=['finish','shadowStyle','shadow','shadowAngle','cleanup','statusTone','statusStyle'];
 const flatKeys=['shadowStyle','shadow','shadowAngle','imageEdges'];
 export const lookKeys=[...new Set([...pageKeys,...framedKeys,...flatKeys])];
