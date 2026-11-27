@@ -79,3 +79,7 @@ button.settings-row:not(:disabled):active,a.settings-row:not([aria-disabled]):ac
 .settings-check svg { inline-size:15px; block-size:15px; stroke-width:2.6; }
 .settings-language-option[aria-checked=true] .settings-check { scale:1; }
 .settings-footnote { margin:0 14px; color:#8e8e93; font-size:13px; line-height:1.4; }
+
+.app-settings .setting-look { background:#bf5af2; }
+.settings-toggle[data-disabled] { cursor:default; }
+.settings-toggle[data-disabled] .settings-row-label,.settings-toggle[data-disabled] .ios-setting-icon,.settings-toggle[data-disabled] input { opacity:.45; }

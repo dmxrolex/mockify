@@ -237,7 +237,7 @@ export default function VideoTimeline({timeline={main:[],overlays:[],gestures:[]
         <div className="sequence-content" style={{width:visibleWidth,'--timeline-pad':pad+'px'}}>
           <div className="sequence-ruler" aria-hidden="true">{videoTicks(0,Math.max(duration,.1)).map(time=><span key={time} style={{left:pad+time*scale}}>{shortTime(time)}</span>)}</div>
           <div className="sequence-main sequence-row" role="group" aria-label={t('Main clips')}>
-            {placements.map((item,index)=>clipBlock(item,index))}<button type="button" className="sequence-append" aria-label={t('Add clip')} title={t('Add clip')} style={{left:pad+duration*scale+6}} onClick={()=>onAdd?.('clip')}><VideoIcon name="plus"/></button>
+            {placements.map((item,index)=>clipBlock(item,index))}
           </div>
           <div className="sequence-secondary">
             <div className="sequence-row sequence-gesture-row" role="group" aria-label={t('Gestures')}><span className="sequence-lane-icon" aria-hidden="true"><VideoIcon name="gestures"/></span><span className="sequence-lane-track" style={{width:duration*scale}}/>{effects(gestures,'gesture')}</div>
@@ -253,7 +253,6 @@ export default function VideoTimeline({timeline={main:[],overlays:[],gestures:[]
       <TimelineAction icon="trash" label="Delete clip" destructive disabled={menu.type==='clip'&&main.length<2} onClick={()=>{onDelete?.(menu.type,menu.id);setMenu(null);}}/>
     </div>}
     {menu==='selection'&&<div className="sequence-menu" style={menuStyle} role="group" aria-label={t('Timeline actions')}>
-      <div className="sequence-menu-add">{[['clip','video','Clip'],['overlay','overlay','Overlay'],['text','text','Text']].map(([kind,icon,label])=><button key={kind} type="button" onClick={()=>{setMenu(null);onAdd?.(kind);}}><span><VideoIcon name={icon}/></span>{t(label)}</button>)}</div>
       <button type="button" disabled={!selectionItem||!['clip','overlay'].includes(selection?.type)} onClick={()=>{onSelect?.(selection.type,selection.id,{settings:true});setMenu(null);}}><VideoIcon name="video"/>{t('Clip settings')}</button>
       <div className="sequence-menu-pair">
         <button type="button" aria-label={t('Zoom out timeline')} title={t('Zoom out timeline')} disabled={scale<=12} onClick={()=>changeZoom(scale/1.5)}><VideoIcon name="zoom-out"/></button>

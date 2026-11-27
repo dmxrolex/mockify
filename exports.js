@@ -45,7 +45,7 @@ export async function imageBlob(settings, media, photo, scale, mime, report=()=>
     if(mime==='image/webp'&&blob?.type!==mime){
       report(.6);const {encodeWebP}=await import('./webp-encoder.js');check();blob=await encodeWebP(canvas,signal);
     }
-    check();if(!blob||blob.type!==mime)throw new Error('Could not encode the image. Try Standard quality.');
+    check();if(!blob||blob.type!==mime)throw new Error('Could not encode the image. Try Full HD.');
     report(1);return blob;
   }finally{paint.dispose();canvas.width=canvas.height=1;}
 }

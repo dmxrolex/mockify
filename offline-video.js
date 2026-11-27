@@ -17,7 +17,7 @@ export async function offlineVideo(settings,sources,photo,quality,signal,report)
   signal.addEventListener('abort',abort,{once:true});
   const check=()=>{if(signal.aborted)throw new DOMException('Export canceled','AbortError');};
   try{
-    check();if(plan.estimatedBytes>MAX_VIDEO_BYTES)throw new Error(quality==='high'?'Choose Standard quality for this recording.':'This recording is too long to send in one file.');
+    check();if(plan.estimatedBytes>MAX_VIDEO_BYTES)throw new Error(quality==='high'?'Choose HD 720p for this recording.':'This recording is too long to send in one file.');
     let fps=30;
     for(const clip of recordingsInScene(settings,sources)){
       const input=new Input({formats:ALL_FORMATS,source:new BlobSource(clip.source.blob)});inputs.push(input);
@@ -102,7 +102,7 @@ export async function offlineVideo(settings,sources,photo,quality,signal,report)
       await videoSource.add(i/fps,Math.min(1/fps,plan.seconds-i/fps));await writeAudio(Math.min(plan.seconds,(i+1)/fps));report(.95*(i+1)/count);
       if(performance.now()-lastYield>25){await(globalThis.scheduler?.yield?.()??new Promise(resolve=>setTimeout(resolve,0)));lastYield=performance.now();}
     }
-    videoSource.close();audioSource?.close();check();await output.finalize();check();const blob=new Blob([target.buffer],{type:'video/mp4'});if(blob.size>MAX_VIDEO_BYTES)throw new Error('This file is too large. Choose Standard quality.');report(1);return blob;
+    videoSource.close();audioSource?.close();check();await output.finalize();check();const blob=new Blob([target.buffer],{type:'video/mp4'});if(blob.size>MAX_VIDEO_BYTES)throw new Error('This file is too large. Choose HD 720p.');report(1);return blob;
   }catch(error){if(signal.aborted)throw new DOMException('Export canceled','AbortError');throw error;}finally{
     signal.removeEventListener('abort',abort);
     if(output&&output.state!=='finalized')await output.cancel().catch(()=>{});
@@ -127,7 +127,7 @@ async function offlineTimelineVideo(settings,sources,photo,quality,signal,report
   signal.addEventListener('abort',abort,{once:true});
   try{
     check();
-    if(plan.estimatedBytes>MAX_VIDEO_BYTES)throw new Error(quality==='high'?'Choose Standard quality for this recording.':'This recording is too long to send in one file.');
+    if(plan.estimatedBytes>MAX_VIDEO_BYTES)throw new Error(quality==='high'?'Choose HD 720p for this recording.':'This recording is too long to send in one file.');
     let fps=primary.source.frameRate??30,foundPrimary=false;
     // Decode each uploaded file once for metadata; per-instance sinks below
     // still provide independent frame positions for simultaneous overlays.
@@ -233,7 +233,7 @@ async function offlineTimelineVideo(settings,sources,photo,quality,signal,report
       if(performance.now()-lastYield>25){await(globalThis.scheduler?.yield?.()??new Promise(resolve=>setTimeout(resolve,0)));lastYield=performance.now();}
     }
     videoSource.close();audioSource?.close();check();await output.finalize();check();
-    const blob=new Blob([target.buffer],{type:'video/mp4'});if(blob.size>MAX_VIDEO_BYTES)throw new Error('This file is too large. Choose Standard quality.');report(1);return blob;
+    const blob=new Blob([target.buffer],{type:'video/mp4'});if(blob.size>MAX_VIDEO_BYTES)throw new Error('This file is too large. Choose HD 720p.');report(1);return blob;
   }catch(error){if(signal.aborted)throw new DOMException('Export canceled','AbortError');throw error;}
   finally{
     signal.removeEventListener('abort',abort);

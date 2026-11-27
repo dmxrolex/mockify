@@ -7,12 +7,14 @@ import { subscriptionInfo, subscriptionDate } from './subscription-model.js';
 import { switchPanel } from './ui-motion.js';
 import { hapticSelection } from './haptics.js';
 import TermsSheet from './terms-sheet.jsx';
+import { findLook } from './looks.js';
 import './settings-page.css';
 
 const paths={
   language:'M3 5h12M9 3v2M5 5c0 5 4 9 9 11M13 5c0 5-4 9-9 11m10 5 4-10 4 10m-6.5-3h5',
   haptics:'M8 4h8a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2ZM3 9v6M21 9v6',
   statusbar:'M4 4h16v16H4ZM4 9h16M7 6.5h3m6 0h1.5',
+  look:'M12 3a9 9 0 1 0 0 18c1.1 0 1.8-.8 1.8-1.8 0-.5-.2-.9-.5-1.2-.3-.3-.5-.7-.5-1.2 0-1 .8-1.8 1.8-1.8H17a4 4 0 0 0 4-4c0-4.4-4-8-9-8ZM7.5 11.5h.01M10 7.5h.01M15 7.5h.01',
   support:'M4 14v-3a8 8 0 0 1 16 0v3M4 11H2v7h5v-7Zm16 0h2v7h-5v-7Zm0 7v1a2 2 0 0 1-2 2h-5',
   share:'M12 15V3m0 0L8 7m4-4 4 4M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-7',
   terms:'M6 3h9l4 4v14H5V3Zm8 0v5h5M8 12h8m-8 4h6',
@@ -27,10 +29,10 @@ function Row({icon,label,value,onClick,href,disabled,children,className=''}){
   if(href)return <a className={'ios-setting-row settings-row '+className} href={href} onClick={onClick} aria-disabled={disabled||undefined}>{content}</a>;
   return <button type="button" className={'ios-setting-row settings-row '+className} onClick={onClick} disabled={disabled}>{content}</button>;
 }
-function Toggle({icon,label,caption,checked,onChange}){
-  return <label className="ios-setting-row settings-row settings-toggle"><span className={'ios-setting-icon setting-'+icon}><Glyph name={icon}/></span>
+function Toggle({icon,label,caption,checked,onChange,disabled=false}){
+  return <label className="ios-setting-row settings-row settings-toggle" data-disabled={disabled||undefined}><span className={'ios-setting-icon setting-'+icon}><Glyph name={icon}/></span>
     <span className="settings-row-label">{t(label)}{caption&&<small>{t(caption)}</small>}</span>
-    <input type="checkbox" switch="" role="switch" checked={checked} onChange={event=>{hapticSelection();onChange(event.target.checked);}}/></label>;
+    <input type="checkbox" switch="" role="switch" disabled={disabled} checked={checked} onChange={event=>{hapticSelection();onChange(event.target.checked);}}/></label>;
 }
 
 export default function SettingsPage({preferences,update,onBalance,onSubscription,profile,botUsername,draftCount=0}) {
@@ -83,6 +85,7 @@ export default function SettingsPage({preferences,update,onBalance,onSubscriptio
       <h2 className="account-section-label">{t('Preferences')}</h2>
       <div className="ios-settings-group settings-group">
         <Row icon="language" className="settings-language-link" label="Language" value={languages.find(([value])=>value===preferences.language)?.[1]} onClick={()=>go('language')}/>
+        <Toggle icon="look" label="Apply my look" caption={findLook(preferences.lookId)?'New screenshots open with your saved look':'Save a look in the editor first'} disabled={!findLook(preferences.lookId)} checked={!!preferences.autoLook&&!!findLook(preferences.lookId)} onChange={autoLook=>update({autoLook})}/>
         <Toggle icon="haptics" label="Haptic feedback" caption="Subtle taps on dials, wheels and choices" checked={preferences.haptics!==false} onChange={haptics=>update({haptics})}/>
         <Toggle icon="statusbar" label="Clean status bar" caption="New screenshots get a tidy iOS status bar" checked={preferences.cleanup!=='off'} onChange={on=>update({cleanup:on?'auto':'off'})}/>
       </div>

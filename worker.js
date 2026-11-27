@@ -166,11 +166,11 @@ export default {
       const id = request.headers.get('X-Export-ID');
       if (!/^[a-zA-Z0-9-]{16,80}$/.test(id ?? '')) return json({ error: 'Invalid export identifier' }, 400);
       const maxBytes = 49 * 1024 * 1024;
-      if (Number(request.headers.get('Content-Length')) > maxBytes + 16384) return json({ error: 'This file is too large. Choose Standard quality.' }, 413);
+      if (Number(request.headers.get('Content-Length')) > maxBytes + 16384) return json({ error: 'This file is too large. Choose the smaller size.' }, 413);
       let file;
       try {
         const form = await request.formData();file = form.get('file');
-        if (!(file instanceof File) || !file.size || file.size > maxBytes) return json({ error: 'This file is too large. Choose Standard quality.' }, 413);
+        if (!(file instanceof File) || !file.size || file.size > maxBytes) return json({ error: 'This file is too large. Choose the smaller size.' }, 413);
         if (!['image/png','image/jpeg','image/webp','video/mp4','video/webm','application/zip'].includes(file.type)) return json({ error: 'Unsupported export format' }, 400);
       } catch { return json({ error: 'Invalid file upload' }, 400); }
       const reservation = await env.DB.prepare('INSERT OR IGNORE INTO exports (id, user_id, status, created_at) VALUES (?, ?, ?, ?)').bind(id, user.id, 'sending', Date.now()).run();
