@@ -12,6 +12,10 @@ const RADIUS=.1907,THICKNESS=.1062,SIGMA=.0025,BLUR=.045; // fractions of the sc
 const GROW=13*FRAME,FADE_IN=7*FRAME,PRESS_AT=12.3*FRAME,PRESS=10*FRAME;
 const LEAD=PRESS_AT+PRESS;                             // ~372 ms from first frame to touch-down
 const TAP_HOLD=1.5*FRAME,RELEASE=16*FRAME,FADE_DELAY=5*FRAME;
+// Telegram's holds and drags (send-button hold, playlist reorder): the pressed ring settles at
+// 58% of its full size and stays there while held. A drag travels on a symmetric ease-in-out
+// and the finger lifts while it is still gliding, so the last ~100 ms of travel overlap release.
+const SQUEEZE=.42,GLIDE=6*FRAME;
 export const ringStyles=['clear','blue'];
 
 function bezier(x1,y1,x2,y2,t){
@@ -21,14 +25,13 @@ function bezier(x1,y1,x2,y2,t){
   return y((lo+hi)/2);
 }
 const unit=value=>value<0?0:value>1?1:value;
-const easeInOut=t=>t<.5?2*t*t:1-2*(1-t)*(1-t);
 
 // Ring size and opacity, `elapsed` in ms from the first visible frame.
 export function ringShape(elapsed,hold=TAP_HOLD){
   if(!(elapsed>=0)||elapsed>=LEAD+hold+RELEASE)return null;
   const grow=1-(1-unit(elapsed/GROW))**4;
   let radius=RADIUS*(.5+.5*grow),thickness=THICKNESS*grow;
-  const press=unit((elapsed-PRESS_AT)/PRESS),squeeze=1-.5*(.5-.5*Math.cos(Math.PI*press));
+  const press=unit((elapsed-PRESS_AT)/PRESS),squeeze=1-SQUEEZE*(.5-.5*Math.cos(Math.PI*press));
   radius*=squeeze;thickness*=squeeze;
   let opacity=1-(1-unit(elapsed/FADE_IN))**3;
   const up=LEAD+hold;
@@ -49,7 +52,7 @@ export function touchState(moment,time){
   if(!shape)return null;
   let x=moment.x,y=moment.y;
   if(kind==='swipe'){
-    const travel=easeInOut(unit(sinceTouch/holdMs));
+    const travel=bezier(.5,0,.58,1,unit(sinceTouch/(holdMs+GLIDE)));
     x=moment.x+((moment.endX??moment.x)-moment.x)*travel;
     y=moment.y+((moment.endY??Math.max(0,moment.y-.25))-moment.y)*travel;
   }
