@@ -1,61 +1,96 @@
 import {clamp,gestureKind} from './showcase-model.js';
 
-// Telegram-style touch indicator: a finger-sized translucent grey disc with a thin
-// white rim and a soft shadow. It settles onto the screen, presses in, swells slightly
-// while held, travels with the finger on a swipe, then lifts off and fades.
-const fullCircle=Math.PI*2;
-const ease=value=>{const t=clamp(value,0,1);return t*t*(3-2*t);};
-const smooth=value=>{const t=clamp(value,0,1);return t*t*t*(t*(t*6-15)+10);};
-const DESCEND=.12,PRESS=.1,LIFT=.28;
-// 22 pt radius on a ~393 pt wide phone screen.
-const RADIUS=22/393;
+// Telegram promo-video touch: a soft blurred blue ring sized to the phone screen.
+// It anticipates the touch, presses in exactly at touch-down, stays while held,
+// travels along a swipe, then opens up and fades after release.
+const FRAME=1000/60;
+const RADIUS=.1907,THICKNESS=.1062,SIGMA=.037;          // fractions of the screen's shorter side
+const GROW=13*FRAME,FADE_IN=7*FRAME,PRESS_AT=12.3*FRAME,PRESS=10*FRAME;
+const LEAD=PRESS_AT+PRESS;                             // ~372 ms from first frame to touch-down
+const TAP_HOLD=1.5*FRAME,RELEASE=16*FRAME,FADE_DELAY=5*FRAME;
+const LIGHT={rgb:[50,125,230],alpha:.2},DARK={rgb:[165,198,255],alpha:.4};
+
+function bezier(x1,y1,x2,y2,t){
+  if(t<=0)return 0;if(t>=1)return 1;
+  const x=s=>3*(1-s)*(1-s)*s*x1+3*(1-s)*s*s*x2+s*s*s,y=s=>3*(1-s)*(1-s)*s*y1+3*(1-s)*s*s*y2+s*s*s;
+  let lo=0,hi=1;for(let i=0;i<30;i++){const mid=(lo+hi)/2;if(x(mid)<t)lo=mid;else hi=mid;}
+  return y((lo+hi)/2);
+}
+const unit=value=>value<0?0:value>1?1:value;
+const easeInOut=t=>t<.5?2*t*t:1-2*(1-t)*(1-t);
+
+// Ring size and opacity, `elapsed` in ms from the first visible frame.
+export function ringShape(elapsed,hold=TAP_HOLD){
+  if(!(elapsed>=0)||elapsed>=LEAD+hold+RELEASE)return null;
+  const grow=1-(1-unit(elapsed/GROW))**4;
+  let radius=RADIUS*(.5+.5*grow),thickness=THICKNESS*grow;
+  const press=unit((elapsed-PRESS_AT)/PRESS),squeeze=1-.5*(.5-.5*Math.cos(Math.PI*press));
+  radius*=squeeze;thickness*=squeeze;
+  let opacity=1-(1-unit(elapsed/FADE_IN))**3;
+  const up=LEAD+hold;
+  if(elapsed>up){
+    const t=unit((elapsed-up)/RELEASE);
+    radius*=1+.9*bezier(.2,0,.75,.6,t);
+    thickness*=1-.7*bezier(.85,0,.85,1,t);
+    opacity*=1-unit((elapsed-up-FADE_DELAY)/(RELEASE-FADE_DELAY));
+  }
+  return opacity<=0?null:{outer:radius+thickness/2,inner:Math.max(0,radius-thickness/2),opacity};
+}
 
 export function touchState(moment,time){
   const kind=gestureKind(moment);
   if(kind==='none')return null;
-  const duration=kind==='tap'?.65:clamp(moment.duration??1,.3,4),age=time-moment.time;
-  if(age<0||age>duration)return null;
-  // A tap keeps the finger down briefly; longer gestures keep it down until the lift.
-  const down=DESCEND,up=kind==='tap'?Math.min(duration-LIFT,down+.12):Math.max(down,duration-LIFT);
-  let alpha=1,scale;
-  if(age<down){const a=ease(age/down);alpha=a;scale=1.18-.18*a;}
-  else if(age<=up){
-    const pressed=1-.06*ease((age-down)/PRESS);
-    scale=kind==='hold'?pressed+.1*ease((age-down)/Math.max(.01,up-down)):pressed;
-  }else{
-    const k=ease((age-up)/Math.max(.01,duration-up));
-    alpha=1-k;scale=(kind==='hold'?1.04:.94)+.12*k;
-  }
+  const holdMs=kind==='tap'?TAP_HOLD:clamp(moment.duration??1,.3,4)*1000;
+  const sinceTouch=(time-moment.time)*1000,shape=ringShape(sinceTouch+LEAD,holdMs);
+  if(!shape)return null;
   let x=moment.x,y=moment.y;
   if(kind==='swipe'){
-    const travel=smooth((age-down)/Math.max(.01,up-down));
+    const travel=easeInOut(unit(sinceTouch/holdMs));
     x=moment.x+((moment.endX??moment.x)-moment.x)*travel;
     y=moment.y+((moment.endY??Math.max(0,moment.y-.25))-moment.y)*travel;
   }
-  return {kind,x,y,alpha:clamp(alpha,0,1),scale};
+  return {kind,x,y,...shape};
 }
 
-export function drawRecordedGesture(ctx,moment,time,project,unit){
+// Gaussian-blurred annulus drawn as a radial gradient: works in every WebView,
+// including those without CanvasRenderingContext2D.filter.
+function erf(x){const s=Math.sign(x),a=Math.abs(x),t=1/(1+.3275911*a);return s*(1-(((((1.061405429*t-1.453152027)*t)+1.421413741)*t-.284496736)*t+.254829592)*t*Math.exp(-a*a));}
+function softRing(ctx,cx,cy,inner,outer,sigma,colour,alpha){
+  const reach=outer+3*sigma;if(reach<=0||alpha<=0)return;
+  const gradient=ctx.createRadialGradient(cx,cy,0,cx,cy,reach),steps=40,k=Math.SQRT2*sigma;
+  for(let i=0;i<=steps;i++){
+    const r=reach*i/steps,a=.5*(erf((outer-r)/k)-erf((inner-r)/k));
+    gradient.addColorStop(i/steps,`rgba(${colour[0]},${colour[1]},${colour[2]},${(alpha*Math.max(0,a)).toFixed(4)})`);
+  }
+  ctx.fillStyle=gradient;ctx.beginPath();ctx.arc(cx,cy,reach,0,Math.PI*2);ctx.fill();
+}
+
+// Pick the light or dark ring once per touch from the pixels under the finger.
+const tone=new Map();
+function isDark(ctx,moment,point,radius){
+  const key=moment.id+':'+moment.x.toFixed(3)+':'+moment.y.toFixed(3);
+  if(tone.has(key))return tone.get(key);
+  let dark=moment.dark===true;
+  try{
+    const size=Math.max(4,Math.round(radius)),x=Math.round(point.x-size/2),y=Math.round(point.y-size/2);
+    const data=ctx.getImageData(Math.max(0,x),Math.max(0,y),size,size).data;let sum=0,count=0;
+    for(let i=0;i<data.length;i+=16){sum+=.2126*data[i]+.7152*data[i+1]+.0722*data[i+2];count++;}
+    if(count)dark=sum/count<110;
+  }catch{}
+  if(tone.size>500)tone.clear();
+  tone.set(key,dark);return dark;
+}
+
+export function drawRecordedGesture(ctx,moment,time,project,fallbackUnit){
   const state=touchState(moment,time);
-  if(!state||state.alpha<=0)return;
+  if(!state)return;
   const point=project(state);
-  // Size the disc from the projected screen so it matches the phone at every zoom.
+  // Measure the projected phone screen so the ring follows device size and camera zoom.
   const left=project({x:0,y:state.y}),right=project({x:1,y:state.y});
   const top=project({x:state.x,y:0}),bottom=project({x:state.x,y:1});
-  const screen=Math.min(Math.hypot(right.x-left.x,right.y-left.y),Math.hypot(bottom.x-top.x,bottom.y-top.y));
-  const radius=Math.max(unit*.012,(screen>0?screen:unit*.45)*RADIUS)*state.scale;
-  const a=state.alpha;
+  const screen=Math.min(Math.hypot(right.x-left.x,right.y-left.y),Math.hypot(bottom.x-top.x,bottom.y-top.y))||fallbackUnit*.45;
+  const style=isDark(ctx,moment,point,screen*RADIUS)?DARK:LIGHT;
   ctx.save();
-  ctx.beginPath();
-  ctx.arc(point.x,point.y,radius,0,fullCircle);
-  ctx.shadowColor=`rgba(0,0,0,${.28*a})`;
-  ctx.shadowBlur=radius*.45;
-  ctx.shadowOffsetY=radius*.08;
-  ctx.fillStyle=`rgba(70,70,78,${.37*a})`;
-  ctx.fill();
-  ctx.shadowColor='transparent';
-  ctx.lineWidth=Math.max(1,radius*.073);
-  ctx.strokeStyle=`rgba(255,255,255,${.78*a})`;
-  ctx.stroke();
+  softRing(ctx,point.x,point.y,state.inner*screen,state.outer*screen,SIGMA*screen,style.rgb,style.alpha*state.opacity);
   ctx.restore();
 }

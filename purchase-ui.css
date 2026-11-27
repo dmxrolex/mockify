@@ -79,13 +79,13 @@
 }
 .purchase-check svg { inline-size:12px; block-size:12px; stroke-width:2; }
 .purchase-option input:checked + .purchase-option-face .purchase-check { background:#fff; border-color:#fff; color:#000; }
-.purchase-footer { background:var(--glass-fill),#0d0d0fe6; box-shadow:inset 0 .5px 0 #ffffff24; -webkit-backdrop-filter:var(--glass-blur); backdrop-filter:var(--glass-blur); }
+.purchase-footer { background:var(--glass-fill),#0d0d0fe6; box-shadow:inset 0 1px 0 #ffffff24; -webkit-backdrop-filter:var(--glass-blur); backdrop-filter:var(--glass-blur); }
 .purchase-footer-inner { inline-size:min(100%,460px); margin-inline:auto; padding:10px 18px calc(10px + var(--safe-bottom)); }
 .purchase-action-row { position:relative; }
 .purchase-submit {
   display:flex; align-items:center; justify-content:space-between; gap:8px; text-align:start;
   inline-size:100%; min-block-size:50px; padding:10px 14px;
-  color:#fff; background:linear-gradient(180deg,#2b95ff,#0a74ec); box-shadow:inset 0 .5px 0 #ffffff80,0 8px 22px #0a84ff40; border:0; border-radius:18px;
+  color:#fff; background:linear-gradient(180deg,#2b95ff,#0a74ec); box-shadow:inset 0 1px 0 #ffffff33,0 8px 22px #0a84ff40; border:0; border-radius:18px;
   font-size:.9375rem; font-weight:650; line-height:1.25; touch-action:manipulation;
 }
 .purchase-submit .star-price { padding:4px 8px; border-radius:8px; background:#0002; }
@@ -128,7 +128,6 @@
 
 
 
-@supports (corner-shape:superellipse(1.3)) { .purchase-hero,.purchase-option-face,.purchase-submit,.unlimited-offer,.account-rows.ios-settings-group { corner-shape:superellipse(1.3); } }
 .purchase-option-amount,.purchase-option-unit,.purchase-option-face > .star-price { position:relative; z-index:1; }
 .purchase-check { z-index:2; }
 
