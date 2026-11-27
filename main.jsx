@@ -2,7 +2,7 @@ import {useStarPayments} from './payments-client.js';
 import {WelcomeCredits,DraftLimitSheet,PurchaseSuccessSheet} from './credits-ui.jsx';
 import {FREE_DRAFT_LIMIT,premiumActive} from './credit-model.js';
 import VideoTimeline from './video-timeline.jsx';
-import {ShowcaseIcon,ShowcaseCanvas} from './showcase-editor.jsx';
+import {ShowcaseCanvas} from './showcase-editor.jsx';
 import TimelineInspector from './timeline-inspector.jsx';
 import {useSequencePlayback} from './use-sequence-playback.js';
 import {timelineFor,timelineDuration,placedClips,timelineOwner,effectTime,cameraValue,cameraFrames,timelineId,updateTimeline,removeTimelineItem,splitTimelineClip} from './timeline-model.js';
@@ -56,7 +56,8 @@ import './text-editor.css';
 const loadFilesSticker=()=>import('./assets/files-duck.json');
 
 const paths = {
-  showcase:<ShowcaseIcon/>,
+  // Animation: the touch disc used across the timeline, with motion sparks.
+  showcase:<><circle cx="11" cy="13" r="3" fill="currentColor" stroke="none"/><circle cx="11" cy="13" r="7"/><path d="M18.6 5.4 17.3 6.7M21 10h-1.8M15 3v1.8"/></>,
   adjust:<><circle cx="12" cy="12" r="8"/><path d="M12 4a8 8 0 0 1 0 16Z" fill="currentColor"/></>,
   tools:<><rect x="3" y="3" width="7" height="7" rx="1.5"/><circle cx="17.5" cy="6.5" r="3.5"/><path d="m3 21 4-8 4 8Z"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></>,
   person: <><circle cx="12" cy="8" r="3.5"/><path d="M5 21v-2a7 7 0 0 1 14 0v2"/></>,
@@ -87,7 +88,7 @@ const paths = {
   swap: <path d="M5 8h13m-4-4 4 4-4 4m5 4H6m4-4-4 4 4 4"/>,
   size: <><rect x="4" y="4" width="16" height="16" rx="3"/><path d="m9 15 6-6m-4 0h4v4m-6-2v4h4"/></>,
   shadow: <><path d="M10 20h6a3 3 0 0 0 3-3V9"/><rect x="5" y="4" width="10" height="13" rx="2.5"/></>,
-  watermark: <path d="M5 5h14M12 5v15"/>,
+  watermark: <path d="M5.5 7V5h13v2M12 5v14m-3.5 0h7"/>,
   image: <><rect x="3" y="4" width="18" height="16" rx="3"/><path d="m3 15 5-5 5 5 3-3 5 5"/></>,
   edges: <path d="M8 3H6a3 3 0 0 0-3 3v2m13-5h2a3 3 0 0 1 3 3v2M3 16v2a3 3 0 0 0 3 3h2m8 0h2a3 3 0 0 0 3-3v-2"/>,
   layers: <><path d="m3 8 9-5 9 5-9 5ZM3 12l9 5 9-5M3 16l9 5 9-5"/></>,

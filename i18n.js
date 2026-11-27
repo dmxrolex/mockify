@@ -91,4 +91,10 @@ const ru={
   'Back to Text':'Назад к тексту','Quick text position':'Положение текста','Choose colour':'Выбрать цвет','Done choosing colour':'Подтвердить цвет','Select background image':'Выбрать фоновое изображение','Add screenshot or video':'Добавить фото или видео','Play video':'Воспроизвести видео','Pause video':'Приостановить видео','No motion':'Без движения','Push in':'Приближение','Sway':'Покачивание','Edit text on canvas':'Текст на холсте','Mute picker sound':'Выключить звук колёсика','Enable picker sound':'Включить звук колёсика','Loading font':'Загрузка шрифта',
   'Add animation at playhead':'Добавить анимацию в текущей позиции','Adjust duration':'Изменить длительность','Delete clip':'Удалить клип','Clip actions':'Действия с клипом','Clip settings':'Настройки клипа','Camera keyframes':'Ключевые кадры камеры',
 };
+// Correct singular/plural star counts in both languages ("1 star", "2,5 звезды").
+export function starCount(value,prefix=''){
+  const n=Number(value)||0,rule=new Intl.PluralRules(language).select(n);
+  const word=language==='ru'?({one:'звезда',few:'звезды',many:'звёзд'}[rule]??'звезды'):(rule==='one'?'star':'stars');
+  return prefix+n.toLocaleString(language)+' '+word;
+}
 export function t(value){return language==='ru'&&typeof value==='string'?(ru[value]??value):value;}

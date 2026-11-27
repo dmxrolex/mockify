@@ -1,7 +1,7 @@
 .editor[data-video=true]:not([data-typing=true]) > .control-sheet { block-size:204px; padding:0; overflow:hidden; }
 .editor[data-video=true]:not([data-typing=true]) .control-stage { block-size:100%; overflow:auto; }
 .editor[data-video=true]:not([data-typing=true]) .control-stage > .tool-navigation { padding-block-start:18px; }
-.sequence-inspector { --glass:linear-gradient(180deg,#ffffff24,#ffffff0d); --glass-edge:inset 0 .5px 0 #ffffff70,inset 0 0 0 .5px #ffffff1f,inset 0 -.5px 0 #ffffff14; --spring:cubic-bezier(.32,.72,.36,1.28); display:grid; align-content:start; gap:6px; block-size:100%; min-block-size:0; max-block-size:none; }
+.sequence-inspector { --glass:var(--glass-fill); display:grid; align-content:start; gap:6px; block-size:100%; min-block-size:0; max-block-size:none; }
 .sequence-inspector-heading { display:grid; grid-template-columns:44px 1fr auto; align-items:center; min-block-size:44px; }
 .sequence-inspector-heading h2 { margin:0; color:#f5f5f7; text-align:center; font:600 16px/1.2 -apple-system,BlinkMacSystemFont,system-ui,sans-serif; }
 .sequence-inspector-heading .ios-text-done { justify-self:end; }

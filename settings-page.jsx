@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { t } from './i18n.js';
+import { t, starCount } from './i18n.js';
 import { telegramStar, SubscriptionIcon } from './brand-icons.jsx';
 import { PlanIcon } from './purchase-ui.jsx';
 import { exportCreditCost, FREE_DRAFT_LIMIT } from './credit-model.js';
@@ -20,9 +20,9 @@ export default function SettingsPage({preferences,update,onBalance,onSubscriptio
     }
   }
   const plan = [
-    ['photo','Photo export',exportCreditCost('photo')+' stars'],
-    ['video','Video export',exportCreditCost('video')+' stars'],
-    ['quality','High quality','+'+(exportCreditCost('photo','high')-exportCreditCost('photo'))+' stars'],
+    ['photo','Photo export',starCount(exportCreditCost('photo'))],
+    ['video','Video export',starCount(exportCreditCost('video'))],
+    ['quality','High quality',starCount(exportCreditCost('photo','high')-exportCreditCost('photo'),'+')],
     ['drafts','Saved drafts',draftCount+' / '+FREE_DRAFT_LIMIT],
   ];
   const item=(icon,label,value)=><button type="button" onClick={icon==='balance'?onBalance:onSubscription} className="ios-setting-row account-setting"><span className={'ios-setting-icon setting-'+icon}>{icon==='balance'?<img src={telegramStar} width="33" height="33" alt=""/>:icon==='subscription'?<SubscriptionIcon/>:<Glyph name={icon}/>}</span><span>{t(label)}</span>{value&&<span className="ios-setting-value">{value}</span>}<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 5 7 7-7 7"/></svg></button>;

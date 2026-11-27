@@ -103,9 +103,11 @@
 .text-rotate-handle svg { inline-size:22px; block-size:22px; padding:3px; border:1px solid #ccc; border-radius:50%; background:#fff; color:#404047; }
 .text-selection button:focus-visible { outline:2px solid #a4bcff; outline-offset:2px; }
 
-.text-floating-toolbar { position:absolute; z-index:3000; display:flex; align-items:center; padding:2px 5px; translate:-50% 0; border:0; border-radius:999px; background:#29292c; box-shadow:0 3px 14px #0005; pointer-events:auto; }
+.text-floating-toolbar { position:absolute; z-index:3000; display:flex; align-items:center; padding:2px 5px; translate:-50% 0; border:0; border-radius:999px; background:var(--glass-fill),#232326e6; box-shadow:var(--glass-edge),0 8px 24px #0008; -webkit-backdrop-filter:var(--glass-blur); backdrop-filter:var(--glass-blur); pointer-events:auto; }
 .text-floating-toolbar button { display:grid; place-items:center; inline-size:44px; min-block-size:44px; padding:0; border:0; background:none; color:#f5f5f7; touch-action:manipulation; }
 .text-floating-toolbar button { border-radius:50%; }.text-floating-toolbar button:not(:disabled):active { background:#ffffff12; }.text-floating-toolbar svg { inline-size:21px; block-size:21px; }.text-floating-toolbar .text-delete-action { color:#ff6961; }
 .text-floating-toolbar .selection-lock[aria-pressed="true"] { color:#ffd45e; }
 @media(prefers-reduced-motion:no-preference) { .text-switch-track i { transition:translate .18s; } }
 @media(max-width:350px) { .text-inspector,.layers-panel { padding-inline:12px; } }
+
+@media(prefers-reduced-motion:no-preference) { .text-floating-toolbar { animation:floating-toolbar-in .3s var(--spring) both; transform-origin:50% 100%; } @keyframes floating-toolbar-in { from { opacity:0; scale:.85; filter:blur(3px); } } }
