@@ -1052,7 +1052,8 @@ function App({initialTelegram=null,initialProfile=null}) {
         <span className="visually-hidden" role="status">{savedRevision===project?'Draft saved':''}</span>
         <button className="round-action export-action" type="button" aria-label={t("Export")} onPointerDown={jellyPress} onClick={() => { activeSource?.element?.pause?.(); setExporting(true); }} disabled={!activeSource || busy}><Icon name="export"/></button>
       </> : <>
-        <HeaderProfile profile={profile} onOpen={()=>switchPanel(main.current,()=>navigate('settings'))}/>
+        {/* Settings already shows the profile card, so its header carries the page title instead. */}
+        {page==='settings'?<h1 className="header-page-title">{t('Settings')}</h1>:<HeaderProfile profile={profile} onOpen={()=>switchPanel(main.current,()=>navigate('settings'))}/>}
         <button className="balance-pill" type="button" aria-label={t("My balance")} onClick={openBalance}>
           <HeaderCoin/><strong>{(profile?.credits??0).toLocaleString(document.documentElement.lang)}</strong><span className="balance-pill-plus"><Icon name="plus"/></span>
         </button>

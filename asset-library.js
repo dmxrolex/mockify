@@ -1,12 +1,32 @@
 import {loadMedia} from './media.js';
+// Categories follow Keynote's shape library: pick a group at the top, then tap or drag a tile.
+export const assetGroups=[['frames','Frames'],['arrows','Arrows'],['marks','Marks'],['callouts','Callouts']];
 export const assetLibrary=[
-  {id:'phone',name:'iPhone mockup',frame:true,width:1206,height:2622},
-  {id:'glass',name:'Glass card',frame:true,width:900,height:650},
-  {id:'box',name:'Rounded box',frame:true,width:800,height:800},
-  {id:'arrow',name:'Arrow',width:900,height:320},
-  {id:'curve',name:'Curved arrow',width:700,height:600},
-  {id:'circle',name:'Circle outline',width:700,height:700},
+  {id:'phone',group:'frames',name:'iPhone',frame:true,width:1206,height:2622},
+  {id:'browser',group:'frames',name:'Browser',frame:true,width:1200,height:860},
+  {id:'glass',group:'frames',name:'Glass card',frame:true,width:900,height:650},
+  {id:'box',group:'frames',name:'Rounded box',frame:true,width:800,height:800},
+  {id:'arrow',group:'arrows',name:'Arrow',width:900,height:320},
+  {id:'curve',group:'arrows',name:'Curved arrow',width:700,height:600},
+  {id:'loop',group:'arrows',name:'Loop arrow',width:840,height:720,view:'0 0 140 120'},
+  {id:'bend',group:'arrows',name:'Bent arrow',width:720,height:600,view:'0 0 120 100'},
+  {id:'double',group:'arrows',name:'Double arrow',width:900,height:320,view:'0 0 180 64'},
+  {id:'circle',group:'marks',name:'Circle outline',width:700,height:700},
+  {id:'scribble',group:'marks',name:'Scribble',width:900,height:600,view:'0 0 150 100'},
+  {id:'underline',group:'marks',name:'Underline',width:900,height:200,view:'0 0 180 40'},
+  {id:'highlight',group:'marks',name:'Highlighter',width:900,height:240,view:'0 0 180 48'},
+  {id:'sparkle',group:'marks',name:'Sparkle',width:600,height:600},
+  {id:'burst',group:'marks',name:'Starburst',width:700,height:700},
+  {id:'bubble',group:'callouts',name:'Speech bubble',width:910,height:700,view:'0 0 130 100'},
+  {id:'notification',group:'callouts',name:'Notification',width:1000,height:300,view:'0 0 200 60'},
+  {id:'rating',group:'callouts',name:'Five stars',width:1000,height:200,view:'0 0 250 50'},
+  {id:'check',group:'callouts',name:'Checkmark',width:600,height:600},
+  {id:'heart',group:'callouts',name:'Heart',width:600,height:600},
+  {id:'cursor',group:'callouts',name:'Cursor',width:500,height:600,view:'0 0 100 120'},
 ];
+const star=(cx,cy,r)=>Array.from({length:10},(_,i)=>{const a=-Math.PI/2+i*Math.PI/5,d=i%2?r*.45:r;return (cx+Math.cos(a)*d).toFixed(2)+','+(cy+Math.sin(a)*d).toFixed(2);}).join(' ');
+const burst=Array.from({length:32},(_,i)=>{const a=-Math.PI/2+i*Math.PI/16,d=i%2?38:47;return (50+Math.cos(a)*d).toFixed(2)+','+(50+Math.sin(a)*d).toFixed(2);}).join(' ');
+const line='fill="none" stroke="#f7f7fa" stroke-linecap="round" stroke-linejoin="round"';
 export const assetFor=kind=>assetLibrary.find(asset=>asset.id===kind);
 export const isAssetFrame=pose=>!!assetFor(pose?.assetKind)?.frame;
 export const assetShape=(pose,media)=>{const asset=assetFor(pose.assetKind);return asset?.frame?{width:asset.width,height:asset.height}:media;};
@@ -19,8 +39,25 @@ export function assetSVG(kind,preview=false){
     arrow:'<path d="M10 50h77m-22-22 22 22-22 22" fill="none" stroke="#f7f7fa" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>',
     curve:'<path d="M17 83c-8-39 24-61 65-48M64 15l20 21-22 15" fill="none" stroke="#f7f7fa" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>',
     circle:'<circle cx="50" cy="50" r="37" fill="none" stroke="#f7f7fa" stroke-width="5"/>',
+    browser:'<rect x="6" y="14" width="88" height="72" rx="8" fill="#1f2024" stroke="#5b5d64" stroke-width="1.2"/><path d="M6 27h88" stroke="#3a3b40" stroke-width="1"/><circle cx="14" cy="20.5" r="2.2" fill="#ff5f57"/><circle cx="21" cy="20.5" r="2.2" fill="#febc2e"/><circle cx="28" cy="20.5" r="2.2" fill="#28c840"/><rect x="36" y="17.5" width="46" height="6" rx="3" fill="#33343a"/><rect x="10" y="31" width="80" height="51" rx="3" fill="url(#screen)"/>',
+    loop:`<path d="M12 98C26 66 62 44 80 62c14 15-6 34-20 22-14-13 8-50 58-52" ${line} stroke-width="7"/><path d="m104 18 16 14-16 15" ${line} stroke-width="7"/>`,
+    bend:`<path d="M18 14v44a16 16 0 0 0 16 16h66" ${line} stroke-width="7"/><path d="m86 56 18 18-18 18" ${line} stroke-width="7"/>`,
+    double:`<path d="M14 32h152M38 10 14 32l24 22M142 10l24 22-24 22" ${line} stroke-width="7"/>`,
+    scribble:`<path d="M126 30C110 9 40 7 18 35 2 57 29 89 81 88c49-1 69-29 47-53C116 21 89 14 60 18" ${line} stroke-width="4.5"/>`,
+    underline:`<path d="M8 24c44-11 104-12 164-3" ${line} stroke-width="8"/><path d="M34 33c40-6 88-6 124-2" ${line} stroke-width="3.5" opacity=".75"/>`,
+    highlight:'<path d="M6 14Q90 4 174 11l-2 27Q90 46 8 37Z" fill="#ffd60a" fill-opacity=".55"/>',
+    sparkle:'<path d="M46 10c4 30 14 40 44 44-30 4-40 14-44 44-4-30-14-40-44-44 30-4 40-14 44-44Z" fill="#f7f7fa"/><path d="M82 8c1.6 7.5 3.8 9.7 11 11-7.2 1.3-9.4 3.5-11 11-1.6-7.5-3.8-9.7-11-11 7.2-1.3 9.4-3.5 11-11Z" fill="#f7f7fa" opacity=".8"/>',
+    burst:`<polygon points="${burst}" fill="#ffcc00"/><circle cx="50" cy="50" r="29" fill="none" stroke="#fff6c7" stroke-width="2" opacity=".8"/>`,
+    bubble:'<path d="M20 8h90a14 14 0 0 1 14 14v40a14 14 0 0 1-14 14H54L31 94l4-18H20A14 14 0 0 1 6 62V22A14 14 0 0 1 20 8Z" fill="#f7f7fa"/>',
+    notification:'<rect x="3" y="3" width="194" height="54" rx="15" fill="#f2f2f5" fill-opacity=".92"/><rect x="12" y="13" width="34" height="34" rx="8" fill="url(#app)"/><rect x="56" y="17" width="72" height="8" rx="4" fill="#1c1c1e"/><rect x="56" y="33" width="118" height="7" rx="3.5" fill="#8e8e93"/><rect x="160" y="16" width="26" height="6" rx="3" fill="#aeaeb2"/>',
+    rating:[0,1,2,3,4].map(i=>`<polygon points="${star(25+i*50,26,22)}" fill="#ffcc00"/>`).join(''),
+    check:'<circle cx="50" cy="50" r="44" fill="#30d158"/><path d="m29 51 14 14 29-31" fill="none" stroke="#fff" stroke-linecap="round" stroke-linejoin="round" stroke-width="9"/>',
+    heart:'<path d="M50 86C20 64 8 46 14 30c6-16 28-18 36-2 8-16 30-14 36 2 6 16-6 34-36 56Z" fill="#ff375f"/>',
+    cursor:'<path d="M20 8v86l22-20 16 36 14-6-16-35h30Z" fill="#111" stroke="#fff" stroke-width="5" stroke-linejoin="round"/>',
   };
-  return `<svg xmlns="http://www.w3.org/2000/svg" width="${preview?100:asset.width}" height="${preview?100:asset.height}" viewBox="0 0 100 100" preserveAspectRatio="none"><defs><linearGradient id="screen" x2="1" y2="1"><stop stop-color="#7e91c8"/><stop offset="1" stop-color="#b6abd0"/></linearGradient><linearGradient id="glass" x2="1" y2="1"><stop stop-color="#cde6ff" stop-opacity=".3"/><stop offset="1" stop-color="#7c93bd" stop-opacity=".08"/></linearGradient></defs>${shapes[kind]}</svg>`;
+  const view=asset.view??'0 0 100 100';
+  // Shapes with their own viewBox keep their proportions; the legacy 100×100 ones stretch to fit.
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="${preview?100:asset.width}" height="${preview?100:asset.height}" viewBox="${view}" preserveAspectRatio="${asset.view&&preview?'xMidYMid meet':'none'}"><defs><linearGradient id="app" x2="1" y2="1"><stop stop-color="#5ac8fa"/><stop offset="1" stop-color="#0a84ff"/></linearGradient><linearGradient id="screen" x2="1" y2="1"><stop stop-color="#7e91c8"/><stop offset="1" stop-color="#b6abd0"/></linearGradient><linearGradient id="glass" x2="1" y2="1"><stop stop-color="#cde6ff" stop-opacity=".3"/><stop offset="1" stop-color="#7c93bd" stop-opacity=".08"/></linearGradient></defs>${shapes[kind]}</svg>`;
 }
 export const assetPreview=kind=>'data:image/svg+xml;charset=utf-8,'+encodeURIComponent(assetSVG(kind,true));
 export function loadAsset(kind){return loadMedia({kind:'image',name:assetFor(kind).name+'.svg',blob:new Blob([assetSVG(kind)],{type:'image/svg+xml'})});}
@@ -28,6 +65,7 @@ export function loadAsset(kind){return loadMedia({kind:'image',name:assetFor(kin
 // These shapes stay vector paths at every preview/export size. Image content is
 // clipped into a fixed frame, so fitting never changes the object's geometry.
 export function drawAssetFrame(ctx,pose,media,width,height){
+  if(pose.assetKind==='browser')return drawBrowserFrame(ctx,pose,media,width,height);
   const glass=pose.assetKind==='glass',pad=glass?width*.035:width*.025,radius=Math.min(width,height)*(glass?.075:.1);
   ctx.save();ctx.beginPath();ctx.roundRect(0,0,width,height,radius);ctx.clip();
   const fill=ctx.createLinearGradient(0,0,width,height);fill.addColorStop(0,glass?'rgba(212,233,255,.28)':'#434750');fill.addColorStop(1,glass?'rgba(92,116,157,.1)':'#181b21');ctx.fillStyle=fill;ctx.fillRect(0,0,width,height);
@@ -36,3 +74,21 @@ export function drawAssetFrame(ctx,pose,media,width,height){
   else {ctx.strokeStyle=glass?'#d5e2ef99':'#c1c8d080';ctx.lineWidth=width*.007;ctx.lineCap='round';ctx.lineJoin='round';const x=width*.35,y=height*.32,w=width*.3,h=height*.36;ctx.beginPath();ctx.roundRect(x,y,w,h,width*.025);ctx.stroke();ctx.beginPath();ctx.moveTo(x,y+h*.8);ctx.lineTo(x+w*.38,y+h*.4);ctx.lineTo(x+w*.65,y+h*.7);ctx.lineTo(x+w*.8,y+h*.55);ctx.lineTo(x+w,y+h*.78);ctx.stroke();}
   ctx.restore();ctx.beginPath();ctx.roundRect(width*.0015,height*.0015,width*.997,height*.997,radius);ctx.strokeStyle=glass?'#e9f5ff80':'#c4ccd040';ctx.lineWidth=Math.max(1,width*.003);ctx.stroke();ctx.restore();
 }
+
+// A neutral desktop window: title bar with traffic lights and an address pill, content below.
+function drawBrowserFrame(ctx,pose,media,width,height){
+  const radius=Math.min(width,height)*.045,bar=Math.max(height*.085,width*.05),dot=bar*.16;
+  ctx.save();ctx.beginPath();ctx.roundRect(0,0,width,height,radius);ctx.clip();
+  ctx.fillStyle='#1f2024';ctx.fillRect(0,0,width,height);
+  ctx.fillStyle='#2a2b30';ctx.fillRect(0,0,width,bar);
+  ['#ff5f57','#febc2e','#28c840'].forEach((colour,i)=>{ctx.fillStyle=colour;ctx.beginPath();ctx.arc(bar*.55+i*dot*3.1,bar/2,dot,0,Math.PI*2);ctx.fill();});
+  ctx.fillStyle='#3a3b41';ctx.beginPath();ctx.roundRect(width*.3,bar*.27,width*.4,bar*.46,bar*.23);ctx.fill();
+  const top=bar,inner=height-bar;
+  ctx.save();ctx.beginPath();ctx.rect(0,top,width,inner);ctx.clip();
+  if(!pose.assetEmpty&&media?.element){const scale=Math.max(width/media.width,inner/media.height),w=media.width*scale,h=media.height*scale;ctx.drawImage(media.element,(width-w)/2,top+(inner-h)/2,w,h);}
+  else {const fill=ctx.createLinearGradient(0,top,width,height);fill.addColorStop(0,'#2b2e36');fill.addColorStop(1,'#1a1c22');ctx.fillStyle=fill;ctx.fillRect(0,top,width,inner);
+    ctx.strokeStyle='#c1c8d080';ctx.lineWidth=width*.006;ctx.lineCap='round';ctx.lineJoin='round';const x=width*.4,y=top+inner*.33,w=width*.2,h=inner*.34;ctx.beginPath();ctx.roundRect(x,y,w,h,width*.02);ctx.moveTo(x+w*.12,y+h*.82);ctx.lineTo(x+w*.42,y+h*.45);ctx.lineTo(x+w*.62,y+h*.68);ctx.lineTo(x+w*.75,y+h*.55);ctx.lineTo(x+w*.9,y+h*.82);ctx.stroke();}
+  ctx.restore();
+  ctx.beginPath();ctx.roundRect(width*.0015,height*.0015,width*.997,height*.997,radius);ctx.strokeStyle='#ffffff26';ctx.lineWidth=Math.max(1,width*.003);ctx.stroke();ctx.restore();
+}
+

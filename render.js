@@ -4,7 +4,7 @@ import {keptVideoSegments,containsVideoTime} from './video-edits.js';
 import {cleanStatusProfile} from './status-profile.js';
 import {cameraAt,anchoredZoom,orderedMoments,sourceSignature} from './showcase-model.js';
 import {evaluateTimeline,timelineDuration} from './timeline-model.js';
-import {assetShape,drawAssetFrame} from './asset-library.js';
+import {assetShape,drawAssetFrame,isAssetFrame} from './asset-library.js';
 import {createAdjuster,adjustmentKey} from './adjustments.js';
 import { drawTextOverlay } from './text-model.js';
 import { imageGeometry, imageSettings, cropRect, backgroundGeometry } from './image-model.js';
@@ -572,7 +572,7 @@ export function createRenderer(canvas,{cacheScene=true}={}) {
       if(flatMedia!==original||flatKey!==key){
         resize(texture,tw,th);textureContext.clearRect(0,0,tw,th);textureContext.save();
         rounded(textureContext,0,0,tw,th,Math.min(tw,th)*Math.max(0,Math.min(50,settings.imageEdges??4))/100);textureContext.clip();
-        if(settings.assetKind==='glass'||settings.assetKind==='box')drawAssetFrame(textureContext,settings,media,tw,th);else if(drawable(media))textureContext.drawImage(media.element,crop.x,crop.y,crop.width,crop.height,0,0,tw,th);textureContext.restore();flatMedia=original;flatKey=key;
+        if(isAssetFrame(settings)&&settings.assetKind!=='phone')drawAssetFrame(textureContext,settings,media,tw,th);else if(drawable(media))textureContext.drawImage(media.element,crop.x,crop.y,crop.width,crop.height,0,0,tw,th);textureContext.restore();flatMedia=original;flatKey=key;
       }
       if(settings.imagePattern){
         const pattern=settings.imagePattern;

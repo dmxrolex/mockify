@@ -1,5 +1,4 @@
 .app-settings { display:grid; align-content:start; gap:10px; padding:8px 18px 24px; margin-inline:auto; inline-size:min(100%,460px); font-family:-apple-system,BlinkMacSystemFont,system-ui,sans-serif; }
-.settings-title { margin:0 0 4px 2px; font-size:30px; font-weight:750; line-height:1.1; letter-spacing:-.03em; }
 .app-settings .account-section-label { margin:12px 0 0 14px; color:#8e8e93; font-size:13px; font-weight:500; text-transform:none; }
 
 /* Profile and the two account cards. */
@@ -67,7 +66,6 @@ button.settings-row:not(:disabled):active,a.settings-row:not([aria-disabled]):ac
 .settings-costs > div { min-block-size:0; overflow:hidden; }
 .settings-cost { min-block-size:46px; font-size:15px; }
 .settings-cost .ios-setting-icon { inline-size:26px; block-size:26px; border-radius:8px; margin-inline-start:2px; }
-.settings-footer { margin-block-start:10px; color:#5a5a5f; font-size:12px; text-align:center; }
 
 /* Language sub-page. */
 .settings-subpage { display:grid; gap:12px; }

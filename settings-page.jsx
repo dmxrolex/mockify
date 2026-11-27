@@ -61,7 +61,6 @@ export default function SettingsPage({preferences,update,onBalance,onSubscriptio
       </div>
       <p className="settings-footnote">{t('The app, prices and Terms switch language instantly. Your designs are not changed.')}</p>
     </div>:<>
-      <h1 className="settings-title">{t('Settings')}</h1>
       <div className="settings-profile">
         <span className="settings-avatar">{profile?.photoUrl?<img src={profile.photoUrl} alt="" referrerPolicy="no-referrer"/>:<Glyph name="person"/>}</span>
         <div className="settings-identity"><strong>{name}</strong><span>{profile?.username?'@'+profile.username:t('Telegram account')}</span></div>
@@ -112,7 +111,6 @@ export default function SettingsPage({preferences,update,onBalance,onSubscriptio
         <Row icon="share" label="Share Mockify" href={shareHref} disabled={!shareHref} onClick={event=>{if(!shareHref){event.preventDefault();return;}openTelegram(event,shareHref);}}/>
         <Row icon="terms" label="Terms & Privacy" onClick={()=>setTerms(true)}/>
       </div>
-      <p className="settings-footer">{t('Mockify · a Telegram Mini App')}</p>
     </>}
     <TermsSheet open={terms} onClose={()=>setTerms(false)}/>
   </section>;
