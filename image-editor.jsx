@@ -92,7 +92,8 @@ export default function ImageHandles({settings:scene,media,update:save,onSelect,
   // Keep the floating actions clear of the canvas's top-right Add button,
   // while retaining an image-relative position as the image leaves the canvas.
   if(box.cx>bounds.width-126&&toolbarTop<56&&toolbarTop+44>0){
-    if(imageTop>=52)toolbarTop=imageTop+8;else toolbarX-=72;
+    // Slide left only while the whole toolbar stays on the canvas; otherwise drop below the Add button.
+    if(imageTop>=52)toolbarTop=imageTop+8;else if(toolbarX-72>=98)toolbarX-=72;else toolbarTop=Math.max(toolbarTop,54);
   }
   const cornerPoint=(x,y)=>({x:box.cx+x*Math.cos(box.angle)-y*Math.sin(box.angle),y:box.cy+x*Math.sin(box.angle)+y*Math.cos(box.angle)});
   const corners=[['nw',-1,-1],['ne',1,-1],['sw',-1,1],['se',1,1]].map(([name,x,y])=>({name,...cornerPoint(x*box.width/2,y*box.height/2)}));

@@ -282,6 +282,19 @@ function EditorControls({ panel, settings, update, source, photo, pickPhoto, rep
   }
 }
 
+function ExitPrompt({ onChoice }) {
+  const dialog=useRef(null),choice=useRef('stay'),labelId=useId();
+  useLayoutEffect(()=>{dialog.current.showModal();dialog.current.querySelector('.exit-save')?.focus({preventScroll:true});},[]);
+  const pick=value=>{choice.current=value;dialog.current.close();};
+  return <dialog ref={dialog} className="exit-prompt" closedby="any" aria-labelledby={labelId} onClick={event=>dismissBackdrop(event,()=>dialog.current.close())} onClose={()=>onChoice(choice.current)}>
+    <p id={labelId}>{t('Save changes before leaving?')}</p>
+    <div className="exit-actions">
+      <button type="button" className="exit-discard" onClick={()=>pick('discard')}>{t("Don't save")}</button>
+      <button type="button" className="exit-save" onClick={()=>pick('save')}>{t('Save')}</button>
+    </div>
+  </dialog>;
+}
+
 function Sheet({ title, onClose, children, className = '', initialFocus }) {
   const dialog = useRef(null);
   const labelId = useId();
@@ -743,20 +756,7 @@ function App({initialTelegram=null,initialProfile=null}) {
         if(choice==='save'&&await saveDraft()&&sameProjectContent(latestProject.current,project))leave();
       } finally {exitPending.current=false;}
     }
-    if(telegram?.isVersionAtLeast('6.2')&&telegram.showPopup){
-      try{
-        telegram.showPopup({
-          title:t('Save your draft?'),
-          message:t('Save your changes before leaving the editor.'),
-          buttons:[
-            {id:'save',type:'default',text:t('Save draft')},
-            {id:'discard',type:'destructive',text:t('Leave without saving')},
-            {id:'stay',type:'default',text:t('Keep editing')}
-          ]
-        },resolve);
-        return;
-      }catch{ /* The browser dialog covers clients without an available native popup. */ }
-    }
+    // One compact in-app prompt on every platform; dismissing it keeps editing.
     setExitPrompt(()=>resolve);
   }
 
@@ -1006,12 +1006,7 @@ function App({initialTelegram=null,initialProfile=null}) {
     {welcomeOpen&&<WelcomeCredits telegram={telegram} onClaim={updateAccount}/>}
     {payment.success&&<PurchaseSuccessSheet purchase={payment.success} onClose={payment.dismissSuccess}/>}
     {draftLimitOpen&&<DraftLimitSheet onClose={()=>setDraftLimitOpen(false)} onPremium={()=>{setDraftLimitOpen(false);openSubscription();}} onManage={()=>{setDraftLimitOpen(false);navigate('files');}}/>}
-    {exitPrompt&&<Sheet title={t('Save your draft?')} onClose={()=>exitPrompt('stay')} className="editor-exit-sheet" initialFocus=".credit-dismiss">
-      <p>{t('Save your changes before leaving the editor.')}</p>
-      <button type="button" className="credit-primary" onClick={()=>exitPrompt('save')}>{t('Save draft')}</button>
-      <button type="button" className="credit-secondary" onClick={()=>exitPrompt('discard')}>{t('Leave without saving')}</button>
-      <button type="button" className="credit-dismiss" onClick={()=>exitPrompt('stay')}>{t('Keep editing')}</button>
-    </Sheet>}
+    {exitPrompt&&<ExitPrompt onChoice={exitPrompt}/>}
     {exporting && activeSource && <DownloadSheet project={project} telegram={telegram} account={profile} onAccount={updateAccount} onPremium={()=>{setExporting(false);openSubscription();}} onAbandon={abandonExport} onClose={choice=>{setExporting(false);if(choice==='home')requestEditorExit();}}/>}
   </div>;
 }

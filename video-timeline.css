@@ -1,4 +1,6 @@
-.editor.page[data-video=true]:not([data-typing=true]) { grid-template-rows:minmax(140px,1fr) 204px; }
+.editor.page[data-video=true]:not([data-typing=true]) { grid-template-rows:minmax(120px,1fr) 204px; }
+/* Only the tool row is showing: give the canvas the inspector's spare height. */
+.editor.page[data-video=true]:not([data-typing=true]):not([data-panel]) { grid-template-rows:minmax(120px,1fr) 136px; }
 .editor[data-video="true"] .preview { grid-template-rows:minmax(0,1fr) auto auto auto; }
 .editor[data-video="true"] .preview > .preview-zoom { grid-row:3; }
 .editor[data-video="true"] .preview > .video-timeline { grid-row:4; }
@@ -28,7 +30,9 @@
 .sequence-action:focus-visible,.sequence-timeline button:focus-visible { outline:2px solid #fff; outline-offset:2px; }
 .sequence-timeline .destructive { color:#ff6961; }
 
-.sequence-track-window { position:relative; block-size:164px; overflow:hidden; }
+.sequence-track-window { position:relative; block-size:164px; overflow:hidden; transition:block-size .32s var(--ease-out); }
+/* Folded lanes are thin lines, so the track only needs ruler + clips + two lines. */
+.sequence-timeline:not([data-effects=true]):not([data-layers]) .sequence-track-window { block-size:104px; }
 .sequence-scroll { inline-size:100%; block-size:100%; overflow:auto; overscroll-behavior:contain; scrollbar-width:none; touch-action:pan-x pan-y; }
 .sequence-scroll::-webkit-scrollbar { display:none; }
 .sequence-content { min-block-size:100%; position:relative; }
@@ -123,8 +127,8 @@
   @keyframes sequence-select { from { scale:.82; } }
 }
 @media(prefers-reduced-motion:reduce) { .video-timeline * { transition:none !important; } }
-@media(max-height:600px) {
-  .sequence-track-window { block-size:150px; }
+@media(max-height:700px) {
+  .sequence-timeline:is([data-effects=true],[data-layers]) .sequence-track-window { block-size:146px; }
   .video-timeline-heading { min-block-size:48px; }
   .sequence-timeline[data-effects=true] :is(.sequence-gesture-row,.sequence-camera-row) { block-size:36px; }
 }

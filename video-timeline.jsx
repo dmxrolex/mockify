@@ -210,7 +210,7 @@ export default function VideoTimeline({timeline={main:[],overlays:[],gestures:[]
   const visibleWidth=duration*scale+viewport+44;
   const bounds=root.current?.getBoundingClientRect(),above=bounds?.top??0,below=typeof window==='undefined'?0:window.innerHeight-(bounds?.top??0)-48;
   const floatAbove=above>below,menuStyle={top:floatAbove?'auto':52,bottom:floatAbove?'calc(100% - 48px)':'auto',maxHeight:Math.max(88,Math.min(380,(floatAbove?above:below)-12))};
-  return <section ref={root} className="video-timeline sequence-timeline" data-effects={editingEffects} data-playing={playing} aria-label={t('Video timeline')} onKeyDown={event=>{if(event.key==='Escape'){setMenu(null);setCluster(null);}}}>
+  return <section ref={root} className="video-timeline sequence-timeline" data-effects={editingEffects} data-layers={overlays.length?'true':undefined} data-playing={playing} aria-label={t('Video timeline')} onKeyDown={event=>{if(event.key==='Escape'){setMenu(null);setCluster(null);}}}>
     <div className="video-timeline-heading">
       <TimelineAction className="sequence-play" icon={playing?'pause':'play'} label={playing?'Pause video':'Play video'} onClick={onPlay}/>
       <output>{videoTime(value)}<span> / {shortTime(duration)}</span></output>
