@@ -1,5 +1,5 @@
 /* One fixed layout: opening panels, playing or scrubbing never resizes the editor. */
-.editor.page[data-video=true]:not([data-typing=true]) { grid-template-rows:minmax(120px,1fr) 184px; }
+.editor.page[data-video=true]:not([data-typing=true]) { grid-template-rows:minmax(120px,1fr) 172px; }
 .editor[data-video="true"] .preview { grid-template-rows:minmax(0,1fr) auto auto auto; }
 .editor[data-video="true"] .preview > .preview-zoom { grid-row:3; }
 .editor[data-video="true"] .preview > .video-timeline { grid-row:4; }
@@ -101,6 +101,14 @@
 .sequence-timeline:not([data-effects=true]) .sequence-cluster { inline-size:8px; block-size:8px; background:#fff; box-shadow:none; font-size:0; }
 .sequence-cluster::before { content:''; position:absolute; inset:-8px; }
 
+/* Add row: four pills that drop an item at the playhead. */
+.sequence-add-row { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:6px; padding-block:6px 2px; }
+.sequence-add-row button { position:relative; display:flex; align-items:center; justify-content:center; gap:6px; min-block-size:38px; padding:0 6px; border:0; border-radius:19px; background:var(--glass-fill),#1c1c1f; box-shadow:var(--glass-edge); color:#f5f5f7; font:600 13px/1 -apple-system,BlinkMacSystemFont,system-ui,sans-serif; transition:scale .22s var(--spring),background-color .15s; touch-action:manipulation; }
+.sequence-add-row button svg { inline-size:17px; block-size:17px; flex:none; }
+.sequence-add-row button i { position:absolute; inset:-3px -2px auto auto; display:grid; place-items:center; inline-size:15px; block-size:15px; border-radius:50%; background:#30d158; color:#05240f; font:800 11px/1 -apple-system,system-ui,sans-serif; font-style:normal; box-shadow:0 0 0 2px #000; }
+.sequence-add-row button:not(:disabled):active { scale:.93; background:var(--select); }
+.sequence-add-row button:disabled { opacity:.35; }
+.sequence-add-row button:focus-visible { outline:2px solid #fff; outline-offset:2px; }
 .sequence-seek { position:absolute; z-index:10; inset:auto 12px 4px; inline-size:calc(100% - 24px); opacity:0; pointer-events:none; }
 .sequence-seek:focus-visible { opacity:1; pointer-events:auto; accent-color:#fff; }
 

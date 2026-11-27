@@ -47,8 +47,6 @@ export default function VideoTimeline({timeline={main:[],overlays:[],gestures:[]
   const selectedIndex=main.findIndex(item=>selection?.type==='clip'&&item.id===selection.id);
   const underPlayhead=placements.find(item=>value>=item.start&&value<item.end)??placements.at(-1);
   const splitOwner=selection?.type==='overlay'?owners.get(selection.id):underPlayhead;
-  // The button above the playhead adds a touch here, or removes the one already here.
-  const touchHere=gestures.find(item=>{const owner=owners.get(item.clipId);if(!owner)return false;const from=owner.start+item.time-owner.in;return value>=from-.05&&value<from+Math.max(.2,effectDuration(item,'gesture'));});
   const canSplit=!!splitOwner&&value-splitOwner.start>=minimum&&(splitOwner.start+splitOwner.out-splitOwner.in)-value>=minimum;
   useLayoutEffect(()=>{const node=scroll.current;if(!node)return;const measure=()=>{setViewport(node.clientWidth);if(!fitted.current&&node.clientWidth>0&&duration>0){fitted.current=true;setScale(clamp(Math.max(36,(node.clientWidth-68)/duration),12,240));}};const observer=new ResizeObserver(measure);observer.observe(node);measure();return()=>observer.disconnect();},[]);
   useLayoutEffect(()=>{const node=scroll.current;if(!node||gesture.current||points.current.size)return;const target=value*scale;if(Math.abs(node.scrollLeft-target)>.7){ignoreScroll.current=target;node.scrollLeft=target;}},[value,scale,viewport]);
@@ -217,7 +215,6 @@ export default function VideoTimeline({timeline={main:[],overlays:[],gestures:[]
     <div className="video-timeline-heading">
       <TimelineAction className="sequence-play" icon={playing?'pause':'play'} label={playing?'Pause video':'Play video'} onClick={onPlay}/>
       <output>{videoTime(value)}<span> / {shortTime(duration)}</span></output>
-      <button type="button" className="sequence-action sequence-keyframe" aria-pressed={!!touchHere} aria-label={t(touchHere?'Remove the touch here':'Add a touch here')} title={t(touchHere?'Remove the touch here':'Add a touch here')} disabled={!underPlayhead} onClick={()=>{setMenu(null);if(touchHere){onDelete?.('gesture',touchHere.id);setAnnouncement(t('Timeline updated'));}else onAdd?.('tap');}}><VideoIcon name={touchHere?'remove-keyframe':'add-keyframe'}/></button>
       <div className="video-timeline-actions">
         <TimelineAction icon="split" label="Split at playhead" disabled={!canSplit} onClick={onSplit}/>
         <span className="sequence-menu-anchor"><TimelineAction icon="more" label="Timeline actions" pressed={menu==='selection'} onClick={()=>setMenu(menu==='selection'?null:'selection')}/></span>
@@ -249,6 +246,10 @@ export default function VideoTimeline({timeline={main:[],overlays:[],gestures:[]
         </div>
       </div>
       <div className="sequence-playhead" aria-hidden="true"/>
+    </div>
+    {/* Add an animation at the playhead; then drag it on the timeline and on the screen. */}
+    <div className="sequence-add-row" role="group" aria-label={t('Add animation')}>
+      {[['tap','Tap'],['hold','Hold'],['swipe','Swipe'],['zoom','Zoom']].map(([kind,label])=><button key={kind} type="button" data-kind={kind} disabled={!underPlayhead} onClick={()=>{setMenu(null);onAdd?.(kind);}}><VideoIcon name={kind}/><span>{t(label)}</span><i aria-hidden="true">+</i></button>)}
     </div>
     <input className="sequence-seek" type="range" aria-label={t('Video position')} aria-valuetext={videoTime(value)} min={0} max={full} step="any" value={value} onChange={event=>onSeek?.(event.target.valueAsNumber)}/>
     {typeof menu==='object'&&menu&&<div className="sequence-menu sequence-clip-menu" style={{left:menu.x,top:menu.y}} role="group" aria-label={t('Clip actions')}>

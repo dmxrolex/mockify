@@ -1,6 +1,11 @@
 let language='en';
 export function setLanguage(value){language=value==='ru'?'ru':'en';document.documentElement.lang=language;}
 const ru={
+  'Add Tap, Hold, Swipe or Zoom under the timeline':'Добавьте нажатие, удержание, свайп или масштаб под шкалой',
+  'Drag the point to where it zooms. Drag the end of its bar to zoom longer.':'Перетащите точку туда, где нужно приблизить. Потяните конец полосы, чтобы приближать дольше.',
+  'Drag the two rings to set where the swipe starts and ends.':'Перетащите два кольца: начало и конец свайпа.',
+  'Drag the ring to place it. Drag the end of its bar to hold longer.':'Перетащите кольцо. Потяните конец полосы, чтобы удерживать дольше.',
+  'Drag the ring on the screen to place it. Slide it on the timeline to change when.':'Перетащите кольцо на экране. Сдвиньте его на шкале, чтобы изменить время.',
   'Add a touch here':'Добавить касание здесь',
   'Remove the touch here':'Удалить касание здесь',
   'Press play, then tap the screen where your finger went':'Включите воспроизведение и нажимайте там, где был палец',

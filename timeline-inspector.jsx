@@ -6,6 +6,12 @@ import {t} from './i18n.js';
 import './timeline-inspector.css';
 
 const kinds=[['tap','Tap'],['hold','Hold'],['swipe','Swipe'],['zoom','Zoom']];
+const hints={
+  tap:'Drag the ring on the screen to place it. Slide it on the timeline to change when.',
+  hold:'Drag the ring to place it. Drag the end of its bar to hold longer.',
+  swipe:'Drag the two rings to set where the swipe starts and ends.',
+  zoom:'Drag the point to where it zooms. Drag the end of its bar to zoom longer.',
+};
 
 export default function TimelineInspector({timeline,selection,onPatch,onDelete,onDone,onAdd,onKind,mediaKind,playing=false}){
   const type=selection?.type,key={clip:'main',overlay:'overlays',gesture:'gestures',camera:'cameras'}[type];
@@ -28,8 +34,8 @@ export default function TimelineInspector({timeline,selection,onPatch,onDelete,o
       <h2>{t(kind?kinds.find(([value])=>value===kind)[1]:'Animation')}</h2>
       <button type="button" className="ios-text-done controls-back" onClick={onDone}>{t('Done')}</button>
     </header>
-    <p className="sequence-hint">{t(playing?'Tap, hold or slide on the screen as it plays':'Press play, then tap the screen where your finger went')}</p>
-    <div className="sequence-effect-choices" role="group" aria-label={t('Choose animation')}>{kinds.map(([value,label])=><button type="button" key={value} data-kind={value} aria-pressed={kind===value} onClick={()=>{if(kind!==value)(kind?onKind:onAdd)(value);}}><span className="sequence-choice-symbol"><VideoIcon name={value}/></span><span>{t(label)}</span></button>)}</div>
+    {/* What to do next for the selected item: everything else is direct manipulation. */}
+    <p className="sequence-hint">{t(kind?hints[kind]:playing?'Tap, hold or slide on the screen as it plays':'Add Tap, Hold, Swipe or Zoom under the timeline')}</p>
     {type==='camera'&&item?<Range label={t('Zoom')} min={110} max={280} value={Math.round(Math.max(1.1,peak)*100)} display={peak.toFixed(1)+'×'} onChange={v=>changeZoom(v/100)}/>
       :volume?<Range label={t('Volume')} min={0} max={100} value={Math.round((item.volume??(type==='clip'?1:0))*100)} display={Math.round((item.volume??(type==='clip'?1:0))*100)+'%'} onChange={v=>patch({volume:v/100})}/>:null}
   </section>;
