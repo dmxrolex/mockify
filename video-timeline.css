@@ -22,7 +22,7 @@
 /* Sits directly above the playhead: adds an animation at that exact moment. */
 .sequence-keyframe { position:absolute; inset-inline-start:50%; translate:-50% 0; }
 .sequence-keyframe svg { inline-size:23px; block-size:23px; }
-.sequence-keyframe:not(:disabled):active { background:#f5f5f7; color:#000; }
+.sequence-keyframe:not(:disabled):active { background:var(--select); color:var(--select-ink); }
 .video-timeline-actions { display:flex; align-items:center; border-radius:22px; padding:0 2px; }
 .video-timeline-actions .sequence-action { flex-basis:42px; inline-size:42px; }
 .video-timeline-actions .sequence-action[aria-expanded=true] { background:#ffffff1f; }
@@ -44,7 +44,7 @@
 .sequence-clip { position:absolute; inset-block-start:3px; block-size:46px; border-radius:10px; background:#1c1c1e; color:var(--ink); isolation:isolate; transition:opacity .2s,scale .22s var(--spring),box-shadow .22s; }
 .sequence-clip::after { content:''; position:absolute; inset:0; border-radius:inherit; box-shadow:inset 0 0 0 1px #ffffff2e; pointer-events:none; }
 .sequence-clip.selected { z-index:3; }
-.sequence-clip.selected::after { box-shadow:inset 0 0 0 2px #fff; }
+.sequence-clip.selected::after { box-shadow:inset 0 0 0 2px var(--select-ring); }
 .sequence-clip-body { position:absolute; inset:0; inline-size:100%; block-size:100%; overflow:hidden; border:0; border-radius:inherit; padding:0; background:none; color:inherit; text-align:start; touch-action:pan-x; cursor:grab; -webkit-tap-highlight-color:transparent; }
 .sequence-thumbnails { display:flex; position:absolute; inset:0; pointer-events:none; }
 .sequence-thumbnails > span { flex:1; min-inline-size:0; overflow:hidden; }
@@ -55,7 +55,7 @@
 .sequence-append { position:absolute; inset-block-start:7px; display:grid; place-items:center; inline-size:38px; block-size:38px; border:0; border-radius:50%; background:var(--glass); box-shadow:var(--glass-edge); color:var(--ink); }
 .sequence-append svg { inline-size:19px; block-size:19px; }
 .sequence-append:active { scale:.9; }
-.sequence-trim { position:absolute; z-index:5; inset-block:0; inline-size:44px; padding:0; border:0; background:transparent; color:#fff; touch-action:none; cursor:ew-resize; }
+.sequence-trim { position:absolute; z-index:5; inset-block:0; inline-size:44px; padding:0; border:0; background:transparent; color:var(--select-ring); touch-action:none; cursor:ew-resize; }
 .sequence-trim.in { inset-inline-start:-22px; }.sequence-trim.out { inset-inline-end:-22px; }
 .sequence-trim span { display:block; inline-size:7px; block-size:26px; margin:auto; border-radius:4px; background:currentColor; box-shadow:0 0 0 1.5px #000,0 2px 6px #0009; pointer-events:none; transition:scale .18s var(--spring); }
 .sequence-trim:active span { scale:1.15 1.2; }
@@ -87,7 +87,7 @@
 .sequence-timeline[data-effects=true] .sequence-effect-capsule { inset-inline-start:0; inline-size:calc(var(--effect-length) + 24px); block-size:24px; translate:0 -50%; display:flex; align-items:center; padding-inline-start:4px; border-radius:12px; background:var(--glass),#202023; box-shadow:var(--glass-edge),0 2px 8px #0007; transition:background-color .18s,box-shadow .18s,scale .22s var(--spring); }
 .sequence-timeline[data-effects=true] .sequence-effect-capsule svg { display:block; inline-size:15px; block-size:15px; flex:none; }
 .sequence-timeline[data-effects=true] .is-dot .sequence-effect-capsule { inline-size:24px; translate:0 -50%; border-radius:50%; }
-.sequence-effect.selected .sequence-effect-capsule { background:#f5f5f7; color:#000; box-shadow:0 4px 14px #000a; }
+.sequence-effect.selected .sequence-effect-capsule { background:rgba(48,209,88,.24),#1d2a20; color:var(--select-ink); box-shadow:var(--select-edge),0 4px 14px #000a; }
 .sequence-effect.is-moving .sequence-effect-capsule { scale:1.06; box-shadow:0 10px 22px #000d; }
 .sequence-effect-readout { position:absolute; inset-block-start:50%; inset-inline-start:calc(100% + 24px); translate:0 -50%; color:var(--ink); font:600 11px/1 -apple-system,BlinkMacSystemFont,system-ui,sans-serif; font-variant-numeric:tabular-nums; white-space:nowrap; pointer-events:none; text-shadow:0 1px 4px #000; }
 /* Only the end grows: the start stays pinned to its keyframe. */

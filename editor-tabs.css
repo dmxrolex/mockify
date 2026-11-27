@@ -11,7 +11,7 @@
 .look-save .look-face { background:var(--glass-fill),#1c1c1f; }
 .look-tile:active .look-face { scale:.9; }
 .look-tile[aria-pressed=true] { color:#fff; }
-.look-tile[aria-pressed=true] .look-face { box-shadow:0 0 0 2px #000,0 0 0 4px #fff; }
+.look-tile[aria-pressed=true] .look-face { box-shadow:0 0 0 2px #000,0 0 0 4px var(--select-ring); }
 .look-tile:focus-visible { outline:none; }
 .look-tile:focus-visible .look-face { box-shadow:0 0 0 2px #000,0 0 0 4px var(--accent); }
 .look-auto { position:absolute; inset:0 6px auto auto; display:grid; place-items:center; inline-size:17px; block-size:17px; border-radius:50%; background:var(--accent); color:#fff; font:700 10px/1 -apple-system,system-ui,sans-serif; box-shadow:0 0 0 2px #000; }
@@ -22,7 +22,7 @@
 /* Bottom tabs reuse the tool tile look; the tab for the tapped object glows softly. */
 .toolstrip.tool-tabs { justify-content:space-around; gap:0; overflow:visible; }
 .toolstrip.tool-tabs button { flex:1 1 0; min-inline-size:0; max-inline-size:84px; }
-.tool-tabs button[data-context] > span { box-shadow:var(--glass-edge),0 0 0 2px #ffffff59; }
+.tool-tabs button[data-context] > span { box-shadow:var(--glass-edge),0 0 0 2px rgba(48,209,88,.55); }
 .tool-tabs button[data-context] { color:#fff; }
 
 /* Group panels: back + chips on one line, tool controls below. */
@@ -37,7 +37,7 @@
 .group-chips { display:flex; gap:6px; min-inline-size:0; overflow-x:auto; scrollbar-width:none; overscroll-behavior-inline:contain; padding:4px 2px; }
 .group-chips::-webkit-scrollbar { display:none; }
 .group-chips button { flex:none; min-block-size:36px; padding:0 14px; border:0; border-radius:18px; background:var(--glass-fill),#1c1c1f; box-shadow:var(--glass-edge); color:#d1d1d6; font:600 13.5px/1 -apple-system,BlinkMacSystemFont,system-ui,sans-serif; white-space:nowrap; transition:background-color .2s,color .2s,scale .22s var(--spring); touch-action:manipulation; }
-.group-chips button[aria-pressed=true] { background:var(--select); color:var(--select-ink); box-shadow:none; }
+.group-chips button[aria-pressed=true] { background:var(--select); color:var(--select-ink); box-shadow:var(--select-edge); }
 .group-chips button:disabled { opacity:.32; }
 .group-chips button:not(:disabled):active { scale:.93; }
 .group-chips button:focus-visible { outline:2px solid #fff; outline-offset:2px; }

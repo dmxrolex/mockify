@@ -13,7 +13,7 @@ const placeLabel={'top-left':'Top left','top-right':'Top right',center:'Centre',
 const Svg=({children})=><svg viewBox="0 0 24 24" aria-hidden="true">{children}</svg>;
 
 // Half-screen watermark editor. The canvas stays visible above it and updates live.
-export default function WatermarkSheet({mark,onChange,onDone,profile}){
+export default function WatermarkSheet({mark,onChange,onDone,profile,ratio='square'}){
   const file=useRef(null),[busy,setBusy]=useState(false);
   useEffect(()=>{if(!('switch' in HTMLInputElement.prototype))import('input-switch-polyfill').catch(()=>{});},[]);
   const set=patch=>onChange({...patch,on:patch.on??true});
@@ -67,8 +67,14 @@ export default function WatermarkSheet({mark,onChange,onDone,profile}){
       </div>}
 
       <h3 className="mark-label">{t('Placement')}</h3>
-      <div className="mark-places" role="radiogroup" aria-label={t('Placement')}>
-        {Object.keys(place).map(key=><button key={key} type="button" role="radio" aria-checked={mark.placement===key} aria-label={t(placeLabel[key])} title={t(placeLabel[key])} onClick={()=>{hapticSelection();set({placement:key});}}><Svg>{place[key]}</Svg><small>{t(placeLabel[key])}</small></button>)}
+      {/* A small canvas: tap where the watermark goes, or tile it across the design. */}
+      <div className="mark-place-row">
+        <div className="mark-pad" role="radiogroup" aria-label={t('Placement')} data-tiled={mark.placement==='tiled'||undefined} style={{'--pad-ratio':{story:.5625,portrait:.8,wide:16/9}[ratio]??1}}>
+          {['top-left','top-right','center','bottom-left','bottom-right'].map(key=><button key={key} type="button" className="mark-spot" data-spot={key} role="radio" aria-checked={mark.placement===key} aria-label={t(placeLabel[key])} onClick={()=>{hapticSelection();set({placement:key});}}><i/></button>)}
+        </div>
+        <button type="button" className="mark-tiled" aria-pressed={mark.placement==='tiled'} onClick={()=>{hapticSelection();set({placement:mark.placement==='tiled'?'bottom-right':'tiled'});}}>
+          <Svg>{place.tiled}</Svg><span><strong>{t('Tiled')}</strong><small>{t('Repeat across the design')}</small></span>
+        </button>
       </div>
 
       <div className="mark-ranges">

@@ -35,7 +35,7 @@
 .terms-section h3 svg { inline-size:16px; block-size:16px; margin-inline-start:auto; color:#8e8e93; transition:rotate .3s var(--spring); }
 .terms-section[data-open=true] h3 svg { rotate:90deg; }
 .terms-index { display:grid; place-items:center; flex:none; inline-size:24px; block-size:24px; border-radius:50%; background:#ffffff14; color:#d1d1d6; font-size:12px; font-weight:650; font-variant-numeric:tabular-nums; }
-.terms-section[data-open=true] .terms-index { background:var(--select); color:var(--select-ink); }
+.terms-section[data-open=true] .terms-index { background:var(--select); color:var(--select-ink); box-shadow:var(--select-edge); }
 .terms-body { display:grid; grid-template-rows:0fr; transition:grid-template-rows .32s var(--ease-out); }
 .terms-section[data-open=true] .terms-body { grid-template-rows:1fr; }
 .terms-body > div { min-block-size:0; overflow:hidden; padding-inline:50px 16px; }

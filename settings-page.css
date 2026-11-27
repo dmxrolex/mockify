@@ -75,7 +75,7 @@ button.settings-row:not(:disabled):active,a.settings-row:not([aria-disabled]):ac
 .settings-subpage-heading h1 { font-size:24px; font-weight:750; letter-spacing:-.02em; }
 .settings-language-option { min-block-size:58px; }
 .settings-language-option .settings-row-label { font-size:17px; }
-.settings-check { display:grid; place-items:center; flex:none; inline-size:26px; block-size:26px; border-radius:50%; color:var(--select-ink); background:var(--select); scale:0; transition:scale .3s var(--spring); }
+.settings-check { display:grid; place-items:center; flex:none; inline-size:26px; block-size:26px; border-radius:50%; color:#05240f; background:var(--select-ring); scale:0; transition:scale .3s var(--spring); }
 .settings-check svg { inline-size:15px; block-size:15px; stroke-width:2.6; }
 .settings-language-option[aria-checked=true] .settings-check { scale:1; }
 .settings-footnote { margin:0 14px; color:#8e8e93; font-size:13px; line-height:1.4; }
