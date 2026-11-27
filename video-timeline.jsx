@@ -6,6 +6,8 @@ import {clamp} from './showcase-model.js';
 import {effectDuration,effectTiming} from './timeline-model.js';
 import './video-timeline.css';
 export const videoTime=value=>{const time=Math.max(0,Number(value)||0);return Math.floor(time/60)+':'+String(Math.floor(time%60)).padStart(2,'0')+'.'+Math.floor(time%1*10);};
+// Ruler and total length drop the tenths when they would only add noise.
+const shortTime=value=>{const time=Math.max(0,Number(value)||0),whole=Math.abs(time-Math.round(time))<.05;return whole?Math.floor(Math.round(time)/60)+':'+String(Math.round(time)%60).padStart(2,'0'):videoTime(time);};
 export function videoTicks(start,end){const duration=Math.max(0,end-start),step=[.1,.2,.5,1,2,5,10,15,30,60].find(value=>value>=duration/5)??Math.max(60,Math.ceil(duration/300)*60),ticks=[];for(let time=start;time<end;time+=step)ticks.push(time);if(ticks.length&&end-ticks.at(-1)<step*.6)ticks[ticks.length-1]=end;else ticks.push(end);return ticks;}
 const thumbnails=new WeakMap();
 async function makeThumbnails(source,signal,onFrame){
@@ -15,13 +17,13 @@ async function makeThumbnails(source,signal,onFrame){
   }finally{releaseMedia(media);}
 }
 
-function TimelineAction({icon,label,onClick,disabled=false,pressed,destructive=false}){
-  return <button type="button" className={'sequence-action'+(destructive?' destructive':'')} aria-label={t(label)} title={t(label)} aria-expanded={pressed} disabled={disabled} onClick={onClick}><VideoIcon name={icon}/></button>;
+function TimelineAction({icon,label,onClick,disabled=false,pressed,destructive=false,className=''}){
+  return <button type="button" className={'sequence-action '+className+(destructive?' destructive':'')} aria-label={t(label)} title={t(label)} aria-expanded={pressed} disabled={disabled} onClick={onClick}><VideoIcon name={icon}/></button>;
 }
 function ThumbStrip({source,inPoint=0,outPoint=1,pixels=100}){
   const [frames,setFrames]=useState(()=>source?thumbnails.get(source)??[]:[]);
   useEffect(()=>{if(!source||source.kind!=='video'){setFrames([]);return;}const task=new AbortController();setFrames(thumbnails.get(source)??[]);if(!thumbnails.has(source))makeThumbnails(source,task.signal,value=>{if(!task.signal.aborted)setFrames(value);}).then(value=>{if(!task.signal.aborted)setFrames(value);}).catch(()=>{});return()=>task.abort();},[source]);
-  const count=Math.min(32,Math.max(1,Math.ceil(pixels/48))),duration=source?.element?.duration??source?.duration??outPoint;
+  const count=Math.min(40,Math.max(1,Math.ceil(pixels/34))),duration=source?.element?.duration??source?.duration??outPoint;
   return <span className="sequence-thumbnails" aria-hidden="true">{Array.from({length:count},(_,i)=>{const time=inPoint+(i+.5)/count*(outPoint-inPoint),url=source?.kind==='image'?source.url:frames[Math.min(11,Math.max(0,Math.floor(time/Math.max(.001,duration)*12)))];return <span key={i}>{url&&<img src={url} alt="" draggable={false}/>}</span>;})}</span>;
 }
 const minimum=.1;
@@ -52,6 +54,7 @@ export default function VideoTimeline({timeline={main:[],overlays:[],gestures:[]
   useEffect(()=>()=>{clearTimeout(hold.current);cancelAnimationFrame(lastSeek.current);},[]);
   useEffect(()=>{if(menu||cluster)root.current?.querySelector('.sequence-menu button:not(:disabled),.sequence-cluster-menu button')?.focus({preventScroll:true});},[menu,cluster]);
   const seek=time=>{cancelAnimationFrame(lastSeek.current);lastSeek.current=requestAnimationFrame(()=>onSeek?.(clamp(time,0,full)));};
+  function settle(time){const target=clamp(time,0,full);seek(target);const node=scroll.current;if(node){ignoreScroll.current=target*scale;node.scrollLeft=ignoreScroll.current;}}
   function changeZoom(next){const nextScale=clamp(next,12,240);ignoreScroll.current=currentRef.current*nextScale;setScale(nextScale);if(scroll.current)scroll.current.scrollLeft=ignoreScroll.current;}
   function select(type,item,time){setMenu(null);setCluster(null);onSelect?.(type,item.id);if(Number.isFinite(time))seek(time);}
   function snapTime(time,event){if(event.altKey)return time;const options=[value,0,full,...placements.flatMap(item=>[item.start,item.end]),...[...gestures,...cameras].filter(item=>item.id!==gesture.current?.item.id).flatMap(item=>{const owner=owners.get(item.clipId);return owner?[owner.start+item.time-owner.in]:[];})];const target=options.reduce((best,candidate)=>Math.abs(candidate-time)<Math.abs(best-time)?candidate:best,Infinity);return Math.abs(target-time)*scale<=6?target:time;}
@@ -59,8 +62,16 @@ export default function VideoTimeline({timeline={main:[],overlays:[],gestures:[]
     if(event.button!==0||gesture.current)return;event.stopPropagation();dragMoved.current=false;setMenu(null);setCluster(null);
     const owner=type==='gesture'||type==='camera'?owners.get(item.clipId):null;
     if((type==='gesture'||type==='camera')&&!owner)return;
-    gesture.current={pointer:event.pointerId,type,item:{...item},owner,action,x:event.clientX,scale,scrollPosition:scroll.current?.scrollLeft??0,patch:null};
+    gesture.current={pointer:event.pointerId,type,item:{...item},owner,action,x:event.clientX,scale,scrollPosition:scroll.current?.scrollLeft??0,patch:null,origin:currentRef.current};
     event.currentTarget.setPointerCapture(event.pointerId);
+  }
+  // While dragging, the canvas shows the exact frame at the edge being edited.
+  function previewFrame(g,patch){
+    const item={...g.item,...patch};
+    if(g.type==='clip')return g.action==='out'?item.start+item.out-item.in-.001:item.start;
+    if(g.type==='overlay')return g.action==='out'?item.start+item.out-item.in-.001:item.start;
+    const owner=g.owner,start=owner.start+item.time-owner.in;
+    return g.action==='out'?start+effectDuration(item,g.type):start;
   }
   function move(event){
     const g=gesture.current;if(!g||g.pointer!==event.pointerId)return;event.stopPropagation();const dx=event.clientX-g.x;
@@ -88,12 +99,14 @@ export default function VideoTimeline({timeline={main:[],overlays:[],gestures:[]
       else if(g.action==='out')patch.out=clamp(item.out+delta,item.in+minimum,Math.min(sourceDuration(item),item.in+full-item.start));
       else patch.start=clamp(snapTime(item.start+delta,event),0,Math.max(0,full-Math.max(minimum,item.out-item.in)));
     }else{
+      // Effects only grow from their end; the whole block moves to start earlier.
       const owner=g.owner,start=owner.start+item.time-owner.in;
       patch=g.action==='out'
         ?effectTiming(owner,item,g.type,{duration:effectDuration(item,g.type)+delta})
         :effectTiming(owner,item,g.type,{time:owner.in+snapTime(start+delta,event)-owner.start});
     }
     g.patch=patch;setDraft({id:item.id,patch});
+    g.preview=previewFrame(g,patch);seek(g.preview);
   }
   function finish(event,cancel=false){
     const g=gesture.current;if(!g||g.pointer!==event.pointerId)return;gesture.current=null;setDraft(null);
@@ -101,10 +114,11 @@ export default function VideoTimeline({timeline={main:[],overlays:[],gestures:[]
       if(g.action==='reorder'){if(g.target!==undefined)onReorder?.(g.item.id,g.target);}
       else if(g.patch){
         onPatch?.(g.type,g.item.id,g.patch);
-        if(g.owner&&g.patch.time!==undefined)seek(g.owner.start+g.patch.time-g.owner.in);
+        // Keep the edited edge under the playhead so canvas and ruler agree.
+        if(g.preview!==undefined)settle(g.preview);
       }
       setAnnouncement(t('Timeline updated'));
-    }
+    }else if(g.moved&&g.action!=='scrub'&&g.action!=='reorder')settle(g.origin);
     if(event.currentTarget.hasPointerCapture?.(event.pointerId))event.currentTarget.releasePointerCapture(event.pointerId);
   }
   const events=(type,item,action)=>({onPointerDown:event=>start(event,type,item,action),onPointerMove:move,onPointerUp:event=>finish(event),onPointerCancel:event=>finish(event,true),onLostPointerCapture:event=>finish(event,true)});
@@ -121,14 +135,15 @@ export default function VideoTimeline({timeline={main:[],overlays:[],gestures:[]
     }
     onPatch?.(type,item.id,patch);
   }
-  function trim(type,item,edge){return <button key={edge} type="button" className={'sequence-trim '+edge} aria-label={t(edge==='in'?'Trim start':'Trim end')+' \u00b7 '+videoTime(item[edge==='in'?'in':'out']??item.time+(item.duration??.65))} title={t(edge==='in'?'Trim start':'Trim end')} {...events(type,item,edge)} onKeyDown={event=>keyEdit(event,type,item,edge)}><span/></button>;}
+  function trim(type,item,edge){return <button key={edge} type="button" className={'sequence-trim '+edge} aria-label={t(edge==='in'?'Trim start':'Trim end')+' · '+videoTime(item[edge==='in'?'in':'out']??item.time+(item.duration??.65))} title={t(edge==='in'?'Trim start':'Trim end')} {...events(type,item,edge)} onKeyDown={event=>keyEdit(event,type,item,edge)}><span/></button>;}
   function openClipMenu(target,type,item){
     const clip=target.getBoundingClientRect(),section=root.current.getBoundingClientRect();
     setCluster(null);
-    setMenu({type,id:item.id,x:clamp(clip.left+clip.width/2-section.left,56,section.width-56),y:clip.bottom-section.top+5});
+    setMenu({type,id:item.id,x:clamp(clip.left+clip.width/2-section.left,40,section.width-40),y:clip.bottom-section.top+8});
   }
   function clipBlock(item,index,type='clip'){
     const active=selected(type,item.id),length=Math.max(minimum,item.out-item.in),pixels=length*scale,source=sourceFor(item),title=t(type==='clip'?'Clip':'Overlay')+' '+(index+1);
+    const lifted=typeof menu==='object'&&menu?.id===item.id;
     const bodyEvents={
       onPointerDown:event=>{
         if(event.button!==0)return;
@@ -141,6 +156,7 @@ export default function VideoTimeline({timeline={main:[],overlays:[],gestures:[]
           if(!point||distance(point,{x:clientX,y:clientY})>5||!target.isConnected)return;
           if(type==='clip')start({button:0,pointerId,clientX,currentTarget:target,stopPropagation(){}},type,item,'reorder');
           openClipMenu(target,type,item);
+          navigator.vibrate?.(8);
           dragMoved.current=true;
         },420);
       },
@@ -155,9 +171,10 @@ export default function VideoTimeline({timeline={main:[],overlays:[],gestures:[]
       onPointerCancel:event=>{clearTimeout(hold.current);finish(event,true);},
       onLostPointerCapture:event=>finish(event,true)
     };
-    return <div key={item.id} className={'sequence-clip '+(type==='overlay'?'is-overlay':'')+(active?' selected':'')+(draft?.id===item.id&&draft.translate!==undefined?' is-reordering':'')} data-clip-id={item.id} data-kind={type} style={{left:pad+item.start*scale,width:Math.max(4,pixels),translate:draft?.id===item.id&&draft.translate!==undefined?draft.translate+'px 0':undefined}}>
-      <button type="button" className="sequence-clip-body" aria-label={title+' \u00b7 '+videoTime(item.start)} aria-pressed={active} title={source?.name??title} {...bodyEvents} onClick={event=>{if(event.detail===0||!dragMoved.current)select(type,item,event.detail===0?item.start:item.start+clamp((event.clientX-event.currentTarget.getBoundingClientRect().left)/scale,0,Math.max(0,item.out-item.in-.001)));}} onContextMenu={event=>{event.preventDefault();openClipMenu(event.currentTarget,type,item);}} onKeyDown={event=>{if(event.key==='ContextMenu'||event.shiftKey&&event.key==='F10'){event.preventDefault();openClipMenu(event.currentTarget,type,item);}else keyEdit(event,type,item);}}>
-        <ThumbStrip source={source} inPoint={item.in} outPoint={item.out} pixels={pixels}/><span className="sequence-clip-caption">{source?.kind==='image'?<VideoIcon name="image"/>:<VideoIcon name={source?'video':'text'}/>}<span>{source?.name??title}</span></span>
+    return <div key={item.id} className={'sequence-clip '+(type==='overlay'?'is-overlay':'')+(active?' selected':'')+(lifted?' is-lifted':'')+(draft?.id===item.id&&draft.translate!==undefined?' is-reordering':'')} data-clip-id={item.id} data-kind={type} style={{left:pad+item.start*scale,width:Math.max(4,pixels-2),translate:draft?.id===item.id&&draft.translate!==undefined?draft.translate+'px 0':undefined}}>
+      <button type="button" className="sequence-clip-body" aria-label={title+' · '+videoTime(item.start)} aria-pressed={active} title={source?.name??title} {...bodyEvents} onClick={event=>{if(event.detail===0||!dragMoved.current)select(type,item,event.detail===0?item.start:item.start+clamp((event.clientX-event.currentTarget.getBoundingClientRect().left)/scale,0,Math.max(0,item.out-item.in-.001)));}} onContextMenu={event=>{event.preventDefault();openClipMenu(event.currentTarget,type,item);}} onKeyDown={event=>{if(event.key==='ContextMenu'||event.shiftKey&&event.key==='F10'){event.preventDefault();openClipMenu(event.currentTarget,type,item);}else keyEdit(event,type,item);}}>
+        <ThumbStrip source={source} inPoint={item.in} outPoint={item.out} pixels={pixels}/>
+        {source?.kind!=='video'&&<span className="sequence-clip-badge"><VideoIcon name={source?.kind==='image'?'image':'text'}/></span>}
       </button>{active&&[trim(type,item,'in'),trim(type,item,'out')]}
     </div>;
   }
@@ -169,36 +186,37 @@ export default function VideoTimeline({timeline={main:[],overlays:[],gestures:[]
       length:Math.min(owner.out,item.time+effectDuration(item,type))-start};
   }
   function effectBlock({item,from,length},type){
-    const kind=type==='camera'?'camera':item.gesture??'tap',active=editingEffects&&selected(type,item.id),dot=kind==='tap';
-    const label=t(kindTitle[kind])+' · '+videoTime(from);
-    const pixels=dot?0:length*scale;
-    return <div key={item.id} className={'sequence-effect'+(active?' selected':'')+(dot?' is-dot':'')} data-kind={kind} style={{left:pad+from*scale,width:pixels,'--effect-length':pixels+'px','--effect-end-inset':Math.min(22,pixels/2)+'px'}}>
+    const kind=type==='camera'?'zoom':item.gesture??'tap',active=editingEffects&&selected(type,item.id),dot=kind==='tap';
+    const label=t(kindTitle[type==='camera'?'camera':kind])+' · '+videoTime(from);
+    const pixels=dot?0:length*scale,moving=draft?.id===item.id;
+    return <div key={item.id} className={'sequence-effect'+(active?' selected':'')+(dot?' is-dot':'')+(moving?' is-moving':'')} data-kind={kind} style={{left:pad+from*scale,width:pixels,'--effect-length':pixels+'px'}}>
       <button type="button" className="sequence-effect-body" aria-label={label} aria-pressed={active} title={label} {...events(type,item,'move')} onKeyDown={event=>keyEdit(event,type,item)} onClick={event=>{if(event.detail===0||!dragMoved.current)select(type,item,from);}}>
-        <span className="sequence-effect-line"/><span className="sequence-effect-origin"/>
+        <span className="sequence-effect-capsule"><VideoIcon name={kind}/></span>
       </button>
-      {active&&!dot&&<button type="button" className="sequence-duration" aria-label={t('Adjust duration')+' · '+length.toFixed(2)+'s'} title={t('Adjust duration')} {...events(type,item,'out')} onKeyDown={event=>keyEdit(event,type,item,'out')}><span/></button>}
+      {active&&!dot&&<button type="button" className="sequence-duration" aria-label={t('Adjust duration')+' · '+length.toFixed(1)+'s'} title={t('Adjust duration')} {...events(type,item,'out')} onKeyDown={event=>keyEdit(event,type,item,'out')}><span/></button>}
+      {moving&&!dot&&<span className="sequence-effect-readout" aria-hidden="true">{length.toFixed(1)}s</span>}
     </div>;
   }
   function effects(items,type){
     const positions=items.map(item=>effectPosition(item,type)).filter(Boolean).sort((a,b)=>a.originalFrom-b.originalFrom),groups=[];
+    const gap=editingEffects?28:10;
     for(const position of positions){
       const focus=selected(type,position.item.id),last=groups.at(-1);
-      if(!focus&&last&&!last.focus&&(position.originalFrom-last.from)*scale<24)last.items.push(position);
+      if(!focus&&last&&!last.focus&&(position.originalFrom-last.from)*scale<gap)last.items.push(position);
       else groups.push({focus,from:position.originalFrom,items:[position]});
     }
-    return groups.map(group=>group.items.length===1?effectBlock(group.items[0],type):<button type="button" key={group.items[0].item.id} className="sequence-cluster" style={{left:pad+group.from*scale-22}} aria-label={group.items.length+' '+t(type==='camera'?'Camera animations':'Gestures')} onClick={()=>setCluster({type,items:group.items})}><VideoIcon name={type==='camera'?'keyframe':'tap'}/><sup>{group.items.length}</sup></button>);
+    return groups.map(group=>group.items.length===1?effectBlock(group.items[0],type):<button type="button" key={group.items[0].item.id} className="sequence-cluster" style={{left:pad+group.from*scale}} aria-label={group.items.length+' '+t(type==='camera'?'Camera animations':'Gestures')} onClick={()=>setCluster({type,items:group.items})}><span>{group.items.length}</span></button>);
   }
   const visibleWidth=duration*scale+viewport+44;
   const bounds=root.current?.getBoundingClientRect(),above=bounds?.top??0,below=typeof window==='undefined'?0:window.innerHeight-(bounds?.top??0)-48;
-  const floatAbove=above>below,menuStyle={top:floatAbove?'auto':48,bottom:floatAbove?'calc(100% - 44px)':'auto',maxHeight:Math.max(88,Math.min(360,(floatAbove?above:below)-12))};
-  return <section ref={root} className="video-timeline sequence-timeline" data-effects={editingEffects} aria-label={t('Video timeline')} onKeyDown={event=>{if(event.key==='Escape'){setMenu(null);setCluster(null);}}}>
+  const floatAbove=above>below,menuStyle={top:floatAbove?'auto':52,bottom:floatAbove?'calc(100% - 48px)':'auto',maxHeight:Math.max(88,Math.min(380,(floatAbove?above:below)-12))};
+  return <section ref={root} className="video-timeline sequence-timeline" data-effects={editingEffects} data-playing={playing} aria-label={t('Video timeline')} onKeyDown={event=>{if(event.key==='Escape'){setMenu(null);setCluster(null);}}}>
     <div className="video-timeline-heading">
-      <TimelineAction icon={playing?'pause':'play'} label={playing?'Pause video':'Play video'} onClick={onPlay}/>
-      <output>{videoTime(value)}<span> / {videoTime(duration)}</span></output>
+      <TimelineAction className="sequence-play" icon={playing?'pause':'play'} label={playing?'Pause video':'Play video'} onClick={onPlay}/>
+      <output>{videoTime(value)}<span> / {shortTime(duration)}</span></output>
+      <TimelineAction className="sequence-keyframe" icon="add-keyframe" label="Add animation at playhead" disabled={!underPlayhead} onClick={()=>{setMenu(null);onAdd?.('tap');}}/>
       <div className="video-timeline-actions">
         <TimelineAction icon="split" label="Split at playhead" disabled={!canSplit} onClick={onSplit}/>
-        <TimelineAction icon="add-keyframe" label="Add animation at playhead" disabled={!underPlayhead} onClick={()=>{setMenu(null);onAdd?.('tap');}}/>
-        <span className="sequence-menu-anchor"><TimelineAction icon="plus" label="Add to timeline" pressed={menu==='add'} onClick={()=>setMenu(menu==='add'?null:'add')}/></span>
         <span className="sequence-menu-anchor"><TimelineAction icon="more" label="Timeline actions" pressed={menu==='selection'} onClick={()=>setMenu(menu==='selection'?null:'selection')}/></span>
       </div>
     </div>
@@ -216,13 +234,13 @@ export default function VideoTimeline({timeline={main:[],overlays:[],gestures:[]
         if(points.current.size===2){event.preventDefault();event.stopPropagation();const [a,b]=[...points.current.values()];changeZoom(points.current.scale*distance(a,b)/Math.max(1,points.current.distance));}
       }} onPointerUpCapture={event=>points.current.delete(event.pointerId)} onPointerCancelCapture={event=>{points.current.delete(event.pointerId);clearTimeout(hold.current);}}>
         <div className="sequence-content" style={{width:visibleWidth,'--timeline-pad':pad+'px'}}>
-          <div className="sequence-ruler" aria-hidden="true">{videoTicks(0,Math.max(duration,.1)).map(time=><span key={time} style={{left:pad+time*scale}}>{videoTime(time)}</span>)}</div>
+          <div className="sequence-ruler" aria-hidden="true">{videoTicks(0,Math.max(duration,.1)).map(time=><span key={time} style={{left:pad+time*scale}}>{shortTime(time)}</span>)}</div>
           <div className="sequence-main sequence-row" role="group" aria-label={t('Main clips')}>
-            {placements.map((item,index)=>clipBlock(item,index))}<button type="button" className="sequence-append" aria-label={t('Add clip')} title={t('Add clip')} style={{left:pad+duration*scale+8}} onClick={()=>onAdd?.('clip')}><VideoIcon name="plus"/></button>
+            {placements.map((item,index)=>clipBlock(item,index))}<button type="button" className="sequence-append" aria-label={t('Add clip')} title={t('Add clip')} style={{left:pad+duration*scale+6}} onClick={()=>onAdd?.('clip')}><VideoIcon name="plus"/></button>
           </div>
           <div className="sequence-secondary">
-            <div className="sequence-row sequence-gesture-row" role="group" aria-label={t('Gestures')}><span className="sequence-lane-track" style={{width:duration*scale}}/>{effects(gestures,'gesture')}</div>
-            <div className="sequence-row sequence-camera-row" role="group" aria-label={t('Camera animations')}><span className="sequence-lane-track" style={{width:duration*scale}}/>{effects(cameras,'camera')}</div>
+            <div className="sequence-row sequence-gesture-row" role="group" aria-label={t('Gestures')}><span className="sequence-lane-icon" aria-hidden="true"><VideoIcon name="gestures"/></span><span className="sequence-lane-track" style={{width:duration*scale}}/>{effects(gestures,'gesture')}</div>
+            <div className="sequence-row sequence-camera-row" role="group" aria-label={t('Camera animations')}><span className="sequence-lane-icon" aria-hidden="true"><VideoIcon name="zoom"/></span><span className="sequence-lane-track" style={{width:duration*scale}}/>{effects(cameras,'camera')}</div>
             {overlays.map((item,index)=><div key={item.id} className="sequence-row sequence-overlay-row" role="group" aria-label={t('Overlay')+' '+(index+1)}>{clipBlock(preview(item),index,'overlay')}</div>)}
           </div>
         </div>
@@ -233,17 +251,18 @@ export default function VideoTimeline({timeline={main:[],overlays:[],gestures:[]
     {typeof menu==='object'&&menu&&<div className="sequence-menu sequence-clip-menu" style={{left:menu.x,top:menu.y}} role="group" aria-label={t('Clip actions')}>
       <TimelineAction icon="trash" label="Delete clip" destructive disabled={menu.type==='clip'&&main.length<2} onClick={()=>{onDelete?.(menu.type,menu.id);setMenu(null);}}/>
     </div>}
-    {typeof menu==='string'&&<div className="sequence-menu" style={menuStyle} role="group" aria-label={t(menu==='add'?'Add to timeline':'Timeline actions')}>
-      {menu==='add'?<>{[['clip','video','Clip'],['overlay','overlay','Overlay'],['text','text','Text']].map(([kind,icon,label])=><button key={kind} type="button" onClick={()=>{setMenu(null);onAdd?.(kind);}}><VideoIcon name={icon}/><span>{t(label)}</span></button>)}</>:<>
-        <button type="button" disabled={!selectionItem||!['clip','overlay'].includes(selection?.type)} onClick={()=>{onSelect?.(selection.type,selection.id,{settings:true});setMenu(null);}}><VideoIcon name="video"/>{t('Clip settings')}</button>
-        <button type="button" disabled={scale>=240} onClick={()=>changeZoom(scale*1.5)}><VideoIcon name="zoom-in"/>{t('Zoom in timeline')}</button>
-        <button type="button" disabled={scale<=12} onClick={()=>changeZoom(scale/1.5)}><VideoIcon name="zoom-out"/>{t('Zoom out timeline')}</button>
-        <button type="button" disabled={selectedIndex<=0} onClick={()=>{onReorder?.(selection.id,selectedIndex-1);setMenu(null);}}><VideoIcon name="left"/>{t('Move earlier')}</button>
-        <button type="button" disabled={selectedIndex<0||selectedIndex>=main.length-1} onClick={()=>{onReorder?.(selection.id,selectedIndex+1);setMenu(null);}}><VideoIcon name="right"/>{t('Move later')}</button>
-        <button type="button" className="destructive" disabled={!selectionItem||(selection?.type==='clip'&&main.length<2)} onClick={()=>{onDelete?.(selection?.type,selection?.id);setMenu(null);}}><VideoIcon name="trash"/>{t('Delete')}</button>
-      </>}
+    {menu==='selection'&&<div className="sequence-menu" style={menuStyle} role="group" aria-label={t('Timeline actions')}>
+      <div className="sequence-menu-add">{[['clip','video','Clip'],['overlay','overlay','Overlay'],['text','text','Text']].map(([kind,icon,label])=><button key={kind} type="button" onClick={()=>{setMenu(null);onAdd?.(kind);}}><span><VideoIcon name={icon}/></span>{t(label)}</button>)}</div>
+      <button type="button" disabled={!selectionItem||!['clip','overlay'].includes(selection?.type)} onClick={()=>{onSelect?.(selection.type,selection.id,{settings:true});setMenu(null);}}><VideoIcon name="video"/>{t('Clip settings')}</button>
+      <div className="sequence-menu-pair">
+        <button type="button" aria-label={t('Zoom out timeline')} title={t('Zoom out timeline')} disabled={scale<=12} onClick={()=>changeZoom(scale/1.5)}><VideoIcon name="zoom-out"/></button>
+        <button type="button" aria-label={t('Zoom in timeline')} title={t('Zoom in timeline')} disabled={scale>=240} onClick={()=>changeZoom(scale*1.5)}><VideoIcon name="zoom-in"/></button>
+        <button type="button" aria-label={t('Move earlier')} title={t('Move earlier')} disabled={selectedIndex<=0} onClick={()=>{onReorder?.(selection.id,selectedIndex-1);setMenu(null);}}><VideoIcon name="left"/></button>
+        <button type="button" aria-label={t('Move later')} title={t('Move later')} disabled={selectedIndex<0||selectedIndex>=main.length-1} onClick={()=>{onReorder?.(selection.id,selectedIndex+1);setMenu(null);}}><VideoIcon name="right"/></button>
+      </div>
+      <button type="button" className="destructive" disabled={!selectionItem||(selection?.type==='clip'&&main.length<2)} onClick={()=>{onDelete?.(selection?.type,selection?.id);setMenu(null);}}><VideoIcon name="trash"/>{t('Delete')}</button>
     </div>}
-    {cluster&&<div className="sequence-cluster-menu" style={menuStyle} role="group" aria-label={t('Choose animation')}>{cluster.items.map(({item,from})=><button key={item.id} type="button" onClick={()=>select(cluster.type,item,from)}><VideoIcon name={cluster.type==='camera'?'keyframe':item.gesture??'tap'}/><span>{t(kindTitle[cluster.type==='camera'?'camera':item.gesture??'tap'])}</span><time>{videoTime(from)}</time></button>)}</div>}
+    {cluster&&<div className="sequence-cluster-menu" style={menuStyle} role="group" aria-label={t('Choose animation')}>{cluster.items.map(({item,from})=><button key={item.id} type="button" onClick={()=>select(cluster.type,item,from)}><VideoIcon name={cluster.type==='camera'?'zoom':item.gesture??'tap'}/><span>{t(kindTitle[cluster.type==='camera'?'camera':item.gesture??'tap'])}</span><time>{videoTime(from)}</time></button>)}</div>}
     <span className="visually-hidden" role="status">{announcement}</span>
   </section>;
 }

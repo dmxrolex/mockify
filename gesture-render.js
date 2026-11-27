@@ -1,81 +1,61 @@
-import {clamp,gestureAt} from './showcase-model.js';
+import {clamp,gestureKind} from './showcase-model.js';
 
+// Telegram-style touch indicator: a finger-sized translucent grey disc with a thin
+// white rim and a soft shadow. It settles onto the screen, presses in, swells slightly
+// while held, travels with the finger on a swipe, then lifts off and fades.
 const fullCircle=Math.PI*2;
-const easeOut=value=>1-(1-value)**3;
+const ease=value=>{const t=clamp(value,0,1);return t*t*(3-2*t);};
+const smooth=value=>{const t=clamp(value,0,1);return t*t*t*(t*(t*6-15)+10);};
+const DESCEND=.12,PRESS=.1,LIFT=.28;
+// 22 pt radius on a ~393 pt wide phone screen.
+const RADIUS=22/393;
 
-function ring(ctx,point,radius,width,alpha,colour){
-  if(alpha<=0)return;
-  ctx.globalAlpha=alpha;
-  ctx.beginPath();
-  ctx.arc(point.x,point.y,radius,0,fullCircle);
-  ctx.lineWidth=width;
-  ctx.strokeStyle=colour;
-  ctx.stroke();
-}
-
-function contact(ctx,point,unit,alpha){
-  const size=unit*.011;
-  ctx.globalAlpha=alpha;
-  ctx.beginPath();
-  ctx.arc(point.x,point.y,size,0,fullCircle);
-  ctx.fillStyle='#f7f4ff';
-  ctx.fill();
-  ctx.lineWidth=unit*.002;
-  ctx.strokeStyle='#28213d';
-  ctx.stroke();
-}
-
-function swipeTrail(ctx,point,tail,unit,alpha){
-  const distance=Math.hypot(tail.x-point.x,tail.y-point.y);
-  if(distance<unit*.004)return;
-  const gradient=ctx.createLinearGradient(tail.x,tail.y,point.x,point.y);
-  gradient.addColorStop(0,'rgba(161,149,220,0)');
-  gradient.addColorStop(1,'rgba(204,192,255,.64)');
-  ctx.globalAlpha=alpha;
-  ctx.strokeStyle=gradient;
-  ctx.lineWidth=unit*.023;
-  ctx.beginPath();
-  ctx.moveTo(tail.x,tail.y);
-  ctx.lineTo(point.x,point.y);
-  ctx.stroke();
+export function touchState(moment,time){
+  const kind=gestureKind(moment);
+  if(kind==='none')return null;
+  const duration=kind==='tap'?.65:clamp(moment.duration??1,.3,4),age=time-moment.time;
+  if(age<0||age>duration)return null;
+  // A tap keeps the finger down briefly; longer gestures keep it down until the lift.
+  const down=DESCEND,up=kind==='tap'?Math.min(duration-LIFT,down+.12):Math.max(down,duration-LIFT);
+  let alpha=1,scale;
+  if(age<down){const a=ease(age/down);alpha=a;scale=1.18-.18*a;}
+  else if(age<=up){
+    const pressed=1-.06*ease((age-down)/PRESS);
+    scale=kind==='hold'?pressed+.1*ease((age-down)/Math.max(.01,up-down)):pressed;
+  }else{
+    const k=ease((age-up)/Math.max(.01,duration-up));
+    alpha=1-k;scale=(kind==='hold'?1.04:.94)+.12*k;
+  }
+  let x=moment.x,y=moment.y;
+  if(kind==='swipe'){
+    const travel=smooth((age-down)/Math.max(.01,up-down));
+    x=moment.x+((moment.endX??moment.x)-moment.x)*travel;
+    y=moment.y+((moment.endY??Math.max(0,moment.y-.25))-moment.y)*travel;
+  }
+  return {kind,x,y,alpha:clamp(alpha,0,1),scale};
 }
 
 export function drawRecordedGesture(ctx,moment,time,project,unit){
-  const action=gestureAt(moment,time);
-  if(!action)return;
-  const point=project(action);
-  const {phase,kind}=action;
-  const appear=easeOut(clamp(phase/.11,0,1));
-  const release=1-clamp((phase-.84)/.16,0,1);
-
+  const state=touchState(moment,time);
+  if(!state||state.alpha<=0)return;
+  const point=project(state);
+  // Size the disc from the projected screen so it matches the phone at every zoom.
+  const left=project({x:0,y:state.y}),right=project({x:1,y:state.y});
+  const top=project({x:state.x,y:0}),bottom=project({x:state.x,y:1});
+  const screen=Math.min(Math.hypot(right.x-left.x,right.y-left.y),Math.hypot(bottom.x-top.x,bottom.y-top.y));
+  const radius=Math.max(unit*.012,(screen>0?screen:unit*.45)*RADIUS)*state.scale;
+  const a=state.alpha;
   ctx.save();
-  ctx.lineCap='round';
-  if(kind==='tap'){
-    const spread=easeOut(phase);
-    const radius=unit*(.016+.040*spread);
-    const visible=appear*(1-phase)**.92;
-    // A broad translucent band reads over busy screens without covering the target.
-    ring(ctx,point,radius,unit*.022,visible*.47,'#403255');
-    ring(ctx,point,radius,unit*.015,visible*.84,'#cec2ff');
-    contact(ctx,point,unit,appear*(1-clamp(phase/.43,0,1))*.92);
-  }else if(kind==='hold'){
-    const expansion=easeOut(clamp(phase/.26,0,1));
-    const radius=unit*(.017+.012*expansion+.008*(1-release));
-    ring(ctx,point,radius,unit*.017,appear*release*.45,'#29203d');
-    ring(ctx,point,radius,unit*.011,appear*release*.66,'#c0aff8');
-    ctx.globalAlpha=appear*release*.9;
-    ctx.beginPath();
-    ctx.arc(point.x,point.y,radius,-Math.PI/2,-Math.PI/2+fullCircle*phase);
-    ctx.lineWidth=unit*.004;
-    ctx.strokeStyle='#f6efff';
-    ctx.stroke();
-    contact(ctx,point,unit,appear*release*.9);
-  }else if(kind==='swipe'){
-    const tail=project(gestureAt(moment,Math.max(moment.time,time-.16))??action);
-    swipeTrail(ctx,point,tail,unit,appear*release);
-    ring(ctx,point,unit*.025,unit*.014,appear*release*.46,'#332648');
-    ring(ctx,point,unit*.025,unit*.008,appear*release*.72,'#d3c5ff');
-    contact(ctx,point,unit,appear*release*.9);
-  }
+  ctx.beginPath();
+  ctx.arc(point.x,point.y,radius,0,fullCircle);
+  ctx.shadowColor=`rgba(0,0,0,${.28*a})`;
+  ctx.shadowBlur=radius*.45;
+  ctx.shadowOffsetY=radius*.08;
+  ctx.fillStyle=`rgba(70,70,78,${.37*a})`;
+  ctx.fill();
+  ctx.shadowColor='transparent';
+  ctx.lineWidth=Math.max(1,radius*.073);
+  ctx.strokeStyle=`rgba(255,255,255,${.78*a})`;
+  ctx.stroke();
   ctx.restore();
 }
