@@ -64,10 +64,9 @@ export default function SubscriptionPage({ subscription,payment,onSelection }) {
     <PurchaseOptions title="Choose a duration" options={options} selected={selected}
       disabled={Boolean(payment?.pending)} onSelect={id=>{setSelected(id);onSelection?.();}}
       renderOption={item=><>
-        {item.save>0&&<span className="premium-save">{t('Save {percent}%').replace('{percent}',item.save)}</span>}
         <span className="purchase-option-amount">{item.months}</span>
         <span className="purchase-option-unit">{monthUnit(item.months,lang)}</span>
-        <span className="premium-per-month">{t('{price} ★ / month').replace('{price}',number(item.perMonth,1))}</span>
+        {item.save>0&&<span className="premium-save"><svg viewBox="0 0 12 12" aria-hidden="true"><path d="M6 .5c.5 3 2 4.5 5.5 5.5C8 7 6.5 8.5 6 11.5 5.5 8.5 4 7 .5 6 4 5 5.5 3.5 6 .5Z"/></svg>{t('Save {percent}%').replace('{percent}',item.save)}</span>}
       </>}/>
 
     <section aria-labelledby="premium-compare">

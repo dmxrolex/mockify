@@ -81,3 +81,6 @@ button.settings-row:not(:disabled):active,a.settings-row:not([aria-disabled]):ac
 .app-settings .setting-look { background:#bf5af2; }
 .settings-toggle[data-disabled] { cursor:default; }
 .settings-toggle[data-disabled] .settings-row-label,.settings-toggle[data-disabled] .ios-setting-icon,.settings-toggle[data-disabled] input { opacity:.45; }
+/* With Premium the usual price is struck through, so “free” is clear. */
+.settings-cost-was { color:#6c6c72; text-decoration-thickness:1px; }
+.settings-cost-free { color:#30d158; font-weight:600; }

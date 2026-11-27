@@ -35,12 +35,11 @@
 }
 @supports not (top:mod(1px,2px)) { .premium-sparkles i:nth-child(odd) { inset-block-start:22%; } .premium-sparkles i:nth-child(even) { inset-block-start:52%; } }
 
-/* Plans: per-month price and savings on every card. */
+/* Plans: a gold savings tag on the longer plans. */
 .subscription-page .purchase-option-face { aspect-ratio:auto; min-block-size:132px; padding-block:18px 10px; }
-.premium-save { position:absolute; inset:7px auto auto 50%; translate:-50% 0; z-index:2; padding:2px 7px; border-radius:999px; background:linear-gradient(135deg,#ffd76a,#f5a623); color:#3a2400; font-size:10px; font-weight:750; white-space:nowrap; }
-.subscription-page .purchase-option-face:has(.premium-save) { padding-block-start:26px; }
+.premium-save { position:relative; z-index:1; display:inline-flex; margin-block:2px 2px; align-items:center; gap:4px; padding:3px 9px 3px 7px; border-radius:999px; background:linear-gradient(180deg,#ffe58a,#f7b733 55%,#ef9d1c); box-shadow:inset 0 1px 0 #fff8,0 0 0 1px #ffd24d55,0 3px 12px rgba(247,183,51,.35); color:#3a2200; font-size:11px; font-weight:780; letter-spacing:-.01em; white-space:nowrap; }
+.premium-save svg { inline-size:10px; block-size:10px; fill:currentColor; opacity:.85; }
 .subscription-page .purchase-check { inset:7px auto auto 7px; }
-.premium-per-month { position:relative; z-index:1; color:#8e8e93; font-size:.6875rem; font-variant-numeric:tabular-nums; }
 
 /* Free vs Premium. */
 .premium-compare { overflow:hidden; border-radius:20px; background:#1a1a1d; box-shadow:var(--glass-edge); }

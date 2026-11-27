@@ -97,11 +97,11 @@ export default function SettingsPage({preferences,update,onBalance,onSubscriptio
           {!premium&&<span className="settings-meter" role="meter" aria-label={t('Saved drafts')} aria-valuemin={0} aria-valuemax={FREE_DRAFT_LIMIT} aria-valuenow={drafts}><i style={{inlineSize:drafts/FREE_DRAFT_LIMIT*100+'%'}}/></span>}
         </div>
         <button type="button" className="ios-setting-row settings-row" aria-expanded={costs} onClick={()=>setCosts(!costs)}>
-          <span className="ios-setting-icon setting-costs"><Glyph name="costs"/></span><span className="settings-row-label">{t('Export costs')}</span>
-          <span className="ios-setting-value">{premium?t('Included'):''}</span><span className="settings-chevron settings-disclosure"><Glyph name="next"/></span>
+          <span className="ios-setting-icon setting-costs"><Glyph name="costs"/></span><span className="settings-row-label">{t('Export costs')}<small>{premium?t('Free with your Premium'):t('Paid per export in stars')}</small></span>
+          <span className="ios-setting-value">{premium?t('No charge'):t('From {price}').replace('{price}',starCount(exportCreditCost('photo')))}</span><span className="settings-chevron settings-disclosure"><Glyph name="next"/></span>
         </button>
         <div className="settings-costs" data-open={costs} inert={costs?undefined:''}><div>
-          {costRows.map(([icon,label,value])=><div key={icon} className="ios-setting-row settings-row settings-cost"><PlanIcon name={icon}/><span className="settings-row-label">{t(label)}</span><span className="ios-setting-value">{premium?t('Included'):value}</span></div>)}
+          {costRows.map(([icon,label,value])=><div key={icon} className="ios-setting-row settings-row settings-cost"><PlanIcon name={icon}/><span className="settings-row-label">{t(label)}</span><span className="ios-setting-value">{premium?<><s className="settings-cost-was">{value}</s> <b className="settings-cost-free">{t('No charge')}</b></>:value}</span></div>)}
         </div></div>
       </div>
 
