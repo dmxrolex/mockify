@@ -1,4 +1,5 @@
 import { frameFile } from './chat-framing.js';
+import { shareOptions, savedFile } from './export-sharing.js';
 import {WELCOME_CREDITS,exportCreditCost,accountFromRow,premiumActive} from './credit-model.js';
 import {handlePayments} from './payments.js';
 const encoder = new TextEncoder();
@@ -204,7 +205,15 @@ export default {
       if(!delivered.ok){await refundExport(env,id,user.id);await env.DB.prepare('UPDATE exports SET status = ? WHERE id = ? AND user_id = ?').bind('failed',id,user.id).run();return json({error:delivered.error_code===403?'Open the bot chat and allow messages, then try again.':'The file could not be delivered. Please retry.'},502);}
       await env.DB.prepare('UPDATE exports SET status = ?, message_id = ? WHERE id = ? AND user_id = ?').bind('sent',String(delivered.result.message_id),id,user.id).run();
       await env.DB.prepare("UPDATE export_charges SET status='complete' WHERE id=? AND user_id=?").bind(id,user.id).run();
-      return json({delivered:true,messageId:delivered.result.message_id,account:await accountFor(env,user.id)});
+      // Share to any chat and save to the device are offered on top of the bot-chat copy.
+      const extras=await shareOptions(env,user,delivered.result,id,url.origin).catch(()=>({}));
+      return json({delivered:true,messageId:delivered.result.message_id,account:await accountFor(env,user.id),...extras});
+    }
+    // Opened by Telegram's native downloadFile popup, which cannot send initData: the signed,
+    // 30-minute token minted for the verified user after delivery is the authorization.
+    if (url.pathname === '/api/exports/save' && request.method === 'GET') {
+      try { const file = await savedFile(url.searchParams.get('token'), env); if (file) return file; } catch {}
+      return json({ error: 'This download link has expired. Your file is still in the bot chat.' }, 410);
     }
     if (url.pathname.startsWith('/api/')) return json({ error: 'Not found' }, 404);
     const response = await env.ASSETS.fetch(request);

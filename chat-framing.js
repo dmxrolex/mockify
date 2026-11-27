@@ -1,3 +1,4 @@
+import {base64url,fromBase64url,signature as sign,same} from './signed-token.js';
 // Framing from the chat: a screenshot or recording sent to the bot gets a "Frame it" button
 // that opens Mockify with that file loaded. Nothing is stored: the button carries a signed
 // reference, and the file is fetched from Telegram only when its owner opens it.
@@ -9,14 +10,7 @@ const copy={
   ru:{text:'Нажмите «Оформить», чтобы открыть это в Mockify в вашем стиле.',button:'✨ Оформить',large:'Файл больше 20 МБ. Отправьте запись короче или скриншот.'},
 };
 const encoder=new TextEncoder();
-const base64url=bytes=>btoa(String.fromCharCode(...bytes)).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
-const fromBase64url=text=>atob(text.replace(/-/g,'+').replace(/_/g,'/'));
-
-async function signature(env,payload){
-  const key=await crypto.subtle.importKey('raw',encoder.encode(env.TELEGRAM_BOT_TOKEN),{name:'HMAC',hash:'SHA-256'},false,['sign']);
-  return base64url(new Uint8Array(await crypto.subtle.sign('HMAC',key,encoder.encode('frame:'+payload)))).slice(0,32);
-}
-function same(a,b){if(a.length!==b.length)return false;let difference=0;for(let i=0;i<a.length;i++)difference|=a.charCodeAt(i)^b.charCodeAt(i);return difference===0;}
+const signature=(env,payload)=>sign(env,'frame',payload);
 
 // The media worth framing in a private message, or null.
 export function frameableMedia(message){
