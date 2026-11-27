@@ -919,9 +919,11 @@ function App({initialTelegram=null,initialProfile=null}) {
       const loaded=await Promise.allSettled(entries.map(loadMedia));
       if(token!==request.current || loaded.some(result=>result.status==='rejected')) {
         for(const result of loaded) if(result.status==='fulfilled') releaseMedia(result.value);
-        if(token===request.current) notify('Could not open media');
+        if(token===request.current) notify('This file could not be opened. Try a PNG, JPG or MP4.');
         return;
       }
+      // A tiny image gets stretched to fill the frame; say so instead of silently looking blurry.
+      if(loaded.some(result=>result.value.kind==='image'&&Math.min(result.value.width,result.value.height)<320))notify('This image is very small, so it may look blurry');
       const imported=loaded.map(result=>({id:itemId(),source:result.value,settings:{...projectSettings(chatLook.current?{...preferences,autoLook:true}:preferences),...presentationFor(result.value,preferences.cleanup)}}));
       const source=imported[0].source;
       setProject(prior=>{

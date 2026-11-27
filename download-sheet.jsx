@@ -1,4 +1,4 @@
-import {videoPlan,effectPlan,recordingInScene} from './video-plan.js';
+import {videoPlan,effectPlan,recordingInScene,MAX_VIDEO_BYTES} from './video-plan.js';
 import {sceneHasMotion} from './motion-effects.js';
 import {watchExportLifecycle} from './export-lifecycle.js';
 import {exportPageIndices} from './page-model.js';
@@ -23,10 +23,15 @@ const loadDownloadSticker=()=>import('./assets/download-duck.json');
 
 export default function DownloadSheet({project,telegram,onClose,onAbandon,account,onAccount=()=>{},onPremium}) {
   const dialog=useRef(null),body=useRef(null),task=useRef(null),urls=useRef([]),prepared=useRef(null),closing=useRef(false);
-  const [quality,setQuality]=useState('high'),[phase,setPhase]=useState('choose'),[progress,setProgress]=useState(0),[error,setError]=useState('');
+  const [quality,setQuality]=useState(()=>{const scene=sceneFor(project),recording=recordingInScene(scene.settings,scene.source);return recording&&videoPlan(recording.settings,recording.source,'high',scene.source).estimatedBytes>MAX_VIDEO_BYTES?'standard':'high';}),[phase,setPhase]=useState('choose'),[progress,setProgress]=useState(0),[error,setError]=useState('');
   const [delivery,setDelivery]=useState(null),[notice,setNotice]=useState(''),[busyAction,setBusyAction]=useState('');
   const scene=sceneFor(project),recording=recordingInScene(scene.settings,scene.source),animated=!recording&&sceneHasMotion(scene.settings),moving=!!recording||animated;
-  const megabytes=value=>Math.max(1,Math.round((recording?videoPlan(recording.settings,recording.source,value,scene.source):effectPlan(scene.settings,value)).estimatedBytes/1024/1024));
+  const planFor=value=>recording?videoPlan(recording.settings,recording.source,value,scene.source):effectPlan(scene.settings,value);
+  const megabytes=value=>Math.max(1,Math.round(planFor(value).estimatedBytes/1024/1024));
+  // Telegram bots can send up to ~50 MB: rule out sizes that cannot be delivered before the tap.
+  const tooLarge=value=>moving&&planFor(value).estimatedBytes>MAX_VIDEO_BYTES;
+  const maxClip=value=>{const plan=planFor(value),seconds=Math.floor(plan.seconds*MAX_VIDEO_BYTES/plan.estimatedBytes);return Math.floor(seconds/60)+':'+String(seconds%60).padStart(2,'0');};
+  const nothingFits=tooLarge('standard')&&tooLarge('high');
   const pageIndices=exportPageIndices(project),totalPages=pageIndices.length;
   const bundle=totalPages>1;
   function price(value,owner=account,from=0){let cost=0;for(let index=from;index<totalPages;index++){const page=sceneFor(project,pageIndices[index]);cost+=exportCreditCost(recordingInScene(page.settings,page.source)||sceneHasMotion(page.settings)?'video':'image',value,premiumActive(owner));}return cost;}
@@ -83,10 +88,11 @@ export default function DownloadSheet({project,telegram,onClose,onAbandon,accoun
       {phase==='choose'&&<>
         <fieldset className="download-quality"><legend className="visually-hidden">{t("Download quality")}</legend>
           {/* Named by outcome: what the file will be, not an abstract quality level. */}
-          {(moving?[['standard','HD 720p','Smaller file · Faster to send'],['high','Full HD 1080p','Sharper video · Larger file']]:[['standard','Full HD','Smaller file · Faster to send'],['high','Ultra HD','Sharpest detail · Larger file']]).map(([value,label,detail])=><label key={value}><span><strong>{t(label)}</strong><small>{moving?t(detail.split(' · ')[0])+' · '+megabytes(value)+' MB':t(detail)}</small></span><CreditAmount included={included} value={price(value)}/><input type="radio" name="download-quality" value={value} checked={quality===value} onChange={()=>setQuality(value)}/></label>)}
+          {(moving?[['standard','HD 720p','Smaller file · Faster to send'],['high','Full HD 1080p','Sharper video · Larger file']]:[['standard','Full HD','Smaller file · Faster to send'],['high','Ultra HD','Sharpest detail · Larger file']]).map(([value,label,detail])=><label key={value}><span><strong>{t(label)}</strong><small>{tooLarge(value)?t('Too long · trim to under {time}').replace('{time}',maxClip(value)):moving?t(detail.split(' · ')[0])+' · '+megabytes(value)+' MB':t(detail)}</small></span><CreditAmount included={included} value={price(value)}/><input type="radio" name="download-quality" value={value} checked={quality===value} disabled={tooLarge(value)} onChange={()=>setQuality(value)}/></label>)}
         </fieldset>
         {account&&<p className="download-credit-balance">{t('Balance')}: {account.credits??0} {t('stars')}</p>}
-        <button type="button" className="download-primary download-priced" autoFocus aria-label={t('Download')} onClick={download}><span>{t("Download")}</span><CreditAmount included={included} value={price(quality,account,remaining)}/></button>
+        {nothingFits&&<p className="download-limit">{t('This video is too long to send. Trim it to under {time} in the editor, then export.').replace('{time}',maxClip('standard'))}</p>}
+        <button type="button" className="download-primary download-priced" autoFocus aria-label={t('Download')} disabled={nothingFits||tooLarge(quality)} onClick={download}><span>{t("Download")}</span><CreditAmount included={included} value={price(quality,account,remaining)}/></button>
         {!included&&onPremium&&<button type="button" className="download-premium" onClick={onPremium}>{t('Unlimited exports with Premium')}<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 5 7 7-7 7"/></svg></button>}
       </>}
       {phase==='working'&&<div className="download-working"><div className="download-progress-label"><span>{t("Downloading…")}</span><output aria-live="polite">{progress}%</output></div><progress max="100" value={progress} aria-label={t("Download progress")}/></div>}
