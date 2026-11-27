@@ -86,34 +86,3 @@ export function AddSheet({items,onClose}){
   </dialog>;
 }
 
-const markGlyph={
-  none:<><circle cx="12" cy="12" r="8"/><path d="m6.5 17.5 11-11"/></>,
-  name:<><circle cx="9" cy="12" r="3.2"/><path d="M14.5 10.5h5M14.5 13.5h3.5"/><rect x="3" y="7" width="18" height="10" rx="5"/></>,
-  text:<><rect x="3" y="7" width="18" height="10" rx="5"/><path d="M8 10.5h8M10 13.5h4"/></>,
-  tiled:<path d="M4 9 9 4M4 15 15 4M4 21 21 4M10 21 21 10M16 21l5-5"/>,
-};
-const cornerGlyph={'top-left':'M8 16V8h8','top-right':'M8 8h8v8','bottom-left':'M8 8v8h8','bottom-right':'M16 8v8H8'};
-
-// Watermark: one panel — pick a style, then place it. Name uses the Telegram photo and @handle.
-export function WatermarkPanel({mark,onChange,onBack,onName,namePending=false,hasProfile=true}){
-  const styles=[['none','None'],['name','My name'],['text','Text'],['tiled','Tiled']];
-  const choose=style=>{hapticSelection();if(style==='name'&&!mark.name&&!mark.badge)onName();onChange({style});};
-  return <div className="group-panel watermark-panel" role="group" aria-label={t('Watermark')}>
-    <div className="group-heading"><button type="button" className="group-back controls-back" aria-label={t('Back to editor controls')} onClick={onBack}><Glyph name="back"/></button><span className="group-title">{t('Watermark')}</span></div>
-    <div className="mark-styles" role="radiogroup" aria-label={t('Watermark style')}>
-      {styles.map(([value,label])=><button key={value} type="button" role="radio" aria-checked={mark.style===value} aria-pressed={mark.style===value} disabled={value==='name'&&!hasProfile} onClick={()=>choose(value)}>
-        <span><svg viewBox="0 0 24 24" aria-hidden="true">{markGlyph[value]}</svg></span>{t(label)}
-      </button>)}
-    </div>
-    <div className="mark-options" data-style={mark.style}>
-      {(mark.style==='text'||mark.style==='tiled'||mark.style==='none')&&<input className="mark-text" type="text" maxLength={40} enterKeyHint="done" placeholder={t('@yourchannel')} aria-label={t('Watermark text')} value={mark.text} disabled={mark.style==='none'} onChange={event=>onChange({text:event.target.value})} onKeyDown={event=>{if(event.key==='Enter')event.currentTarget.blur();}}/>}
-      {mark.style==='name'&&<span className="mark-name">{namePending?t('Loading…'):mark.name||t('Telegram name')}</span>}
-      {mark.style!=='tiled'&&<div className="mark-corners" role="radiogroup" aria-label={t('Watermark position')}>
-        {Object.entries(cornerGlyph).map(([corner,path])=><button key={corner} type="button" role="radio" aria-checked={mark.corner===corner} aria-label={t(corner.replace('-',' '))} disabled={mark.style==='none'} onClick={()=>{hapticSelection();onChange({corner});}}><svg viewBox="0 0 24 24" aria-hidden="true"><path d={path}/></svg></button>)}
-      </div>}
-      <div className="mark-sizes" role="radiogroup" aria-label={t('Watermark size')}>
-        {[['s','S'],['m','M'],['l','L']].map(([size,label])=><button key={size} type="button" role="radio" aria-checked={mark.size===size} disabled={mark.style==='none'} onClick={()=>{hapticSelection();onChange({size});}}>{label}</button>)}
-      </div>
-    </div>
-  </div>;
-}

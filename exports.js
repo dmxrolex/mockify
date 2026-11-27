@@ -4,7 +4,7 @@ import { clipProgress } from './media.js';
 import {exportPageIndices} from './page-model.js';
 import { sceneFor } from './project.js';
 import { loadTextFonts } from './text-fonts.js';
-import { loadBadgeAvatar } from './profile-badge.js';
+import { loadMarkAssets } from './watermark.js';
 
 let nativeWebP;
 function canEncodeWebP(){
@@ -25,7 +25,7 @@ function makeArtboard(settings, scale) {
 export async function imageBlob(settings, media, photo, scale, mime, report=()=>{}, signal) {
   const check=()=>{if(signal?.aborted)throw new DOMException('Export canceled','AbortError');};
   check();report(.05);
-  await Promise.all([loadWatermarkBadge(settings.watermarkBadge),loadBadgeAvatar(settings.mark?.badge),loadTextFonts(settings)]);
+  await Promise.all([loadWatermarkBadge(settings.watermarkBadge),loadMarkAssets(settings.mark),loadTextFonts(settings)]);
   check();report(.15);
   await new Promise(resolve=>requestAnimationFrame(resolve));
   const { canvas, paint } = makeArtboard(settings, scale);

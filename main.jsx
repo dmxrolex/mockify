@@ -2,7 +2,7 @@ import {useStarPayments} from './payments-client.js';
 import {WelcomeCredits,DraftLimitSheet,PurchaseSuccessSheet} from './credits-ui.jsx';
 import {FREE_DRAFT_LIMIT,premiumActive} from './credit-model.js';
 import VideoTimeline from './video-timeline.jsx';
-import { LooksRow, ToolTabs, GroupPanel, MorePanel, AddSheet, WatermarkPanel } from './editor-tabs.jsx';
+import { LooksRow, ToolTabs, GroupPanel, MorePanel, AddSheet } from './editor-tabs.jsx';
 import { applyLook, captureLook, savedLooks, findLook } from './looks.js';
 import {ShowcaseCanvas,TouchRecorder} from './showcase-editor.jsx';
 import {detectTouches,zoomClusters} from './auto-touches.js';
@@ -51,7 +51,8 @@ import { BlurInspector, BlurCanvas } from './blur-editor.jsx';
 import { blurEffect, blurTargets, patchBlur } from './blur-model.js';
 import PatternInspector from './pattern-editor.jsx';
 import {makeProfileBadge,loadBadgeAvatar} from './profile-badge.js';
-import {markOf} from './watermark.js';
+import {markOf,loadMarkAssets} from './watermark.js';
+import WatermarkSheet from './watermark-sheet.jsx';
 import { loadTextFonts } from './text-fonts.js';
 import './styles.css';
 import './navigation.css';
@@ -221,7 +222,7 @@ function FrameCanvas({ settings, source = blank, photo, ready, thumbnail = false
   useLayoutEffect(queuePaint,[settings,source,photo,ready,time,scale,width,height,interactive]);
   useEffect(()=>{
     let alive=true;
-    Promise.allSettled([loadWatermarkBadge(settings.watermarkBadge),loadBadgeAvatar(settings.mark?.badge),loadTextFonts(settings)]).then(()=>{if(alive)queuePaint();});
+    Promise.allSettled([loadWatermarkBadge(settings.watermarkBadge),loadMarkAssets(settings.mark),loadTextFonts(settings)]).then(()=>{if(alive)queuePaint();});
     return ()=>{alive=false;};
   },[settings]);
   return <canvas ref={canvas} width={Math.round(width * scale)} height={Math.round(height * scale)} aria-hidden={thumbnail ? true : undefined} role={thumbnail ? undefined : 'img'} aria-label={thumbnail ? undefined : 'Mockup preview'}/>;
@@ -561,7 +562,7 @@ function Editor({ lookId, lookAuto=false, onLookSaved, project, profile, telegra
   async function closeInspector() {
     document.activeElement?.blur();
     const changed=await switchPanel(controlStage.current,()=>setSheet(null));
-    if(changed)controlStage.current?.querySelector(`[data-tool="${sheet==='layers'?'layers':'watermark'}"]`)?.focus({preventScroll:true});
+    if(changed)controlStage.current?.querySelector(`[data-tool="${sheet==='layers'?'layers':sheet==='mark'?'mark':'watermark'}"]`)?.focus({preventScroll:true});
   }
 
   useLayoutEffect(()=>{
@@ -639,7 +640,7 @@ function Editor({ lookId, lookAuto=false, onLookSaved, project, profile, telegra
     finally{if(autoTask.current===task){autoTask.current=null;setAutoState(null);}}
   }
   const framed=settings.device!=='flat',selectedText=!!baseSettings.layers?.some(l=>l.id===baseSettings.selectedLayerId&&l.type==='text');
-  const tabContext=sheet==='text'||selectedText?'watermark':hasSelectedObject?'phone':null;
+  const tabContext=sheet==='mark'?'mark':sheet==='text'||selectedText?'watermark':hasSelectedObject?'phone':null;
   const phoneChips=[{key:framed?'device':'image',label:framed?'Phone':source?.kind==='video'?'Video':'Image'},{key:'edges',label:'Corners',disabled:framed},{key:'shadow',label:'Shadow'},{key:'screen',label:'Status bar',disabled:!framed}];
   const canvasChips=[{key:'background',label:'Background'},{key:'size',label:'Format'}];
   const firstPhoneTool=phoneChips[0].key,phoneTool=phoneChips.find(chip=>chip.key===groupTool.phone&&!chip.disabled)?.key??(groupTool.phone==='device'||groupTool.phone==='image'?firstPhoneTool:firstPhoneTool),canvasTool=groupTool.canvas;
@@ -657,15 +658,17 @@ function Editor({ lookId, lookAuto=false, onLookSaved, project, profile, telegra
     {key:'asset',label:'Sticker',caption:'Shapes and art',icon:<Icon name="tools"/>,action:()=>setSheet('tools')},
     ...(timeline?[{key:'clip',label:'Video clip',caption:'Adds to the end',icon:<Icon name="video"/>,action:()=>addTimeline('clip')}]:[]),
   ];
-  const [markPending,setMarkPending]=useState(false);
-  async function loadMarkName(){
-    if(!profile||markPending)return;setMarkPending(true);
-    try{const {text,badge}=await makeProfileBadge(profile,telegram);if(badge.avatar)await loadBadgeAvatar(badge.avatar);update({mark:{...markOf(settings),style:'name',name:text,badge:badge.avatar??'',initials:badge.initials??''}});}
-    finally{setMarkPending(false);}
-  }
+  // The Telegram profile is ready before the Watermark sheet opens: one tap uses it.
+  const [profileMark,setProfileMark]=useState(null);
+  useEffect(()=>{
+    if(!profile)return;let alive=true;
+    makeProfileBadge(profile,telegram).then(async({text,badge})=>{if(badge.avatar)await loadBadgeAvatar(badge.avatar);if(alive)setProfileMark({name:[profile.firstName,profile.lastName].filter(Boolean).join(' ')||text,handle:text,avatar:badge.avatar??'',initials:badge.initials??''});}).catch(()=>{});
+    return()=>{alive=false;};
+  },[profile?.id]);
   function openGroup(key){
     if(key==='showcase')return openShowcase();
     if(key==='watermark')return openText();
+    if(key==='mark'){sequence.seek(current);return switchControls(null,'mark');}
     if(key==='phone'&&!hasSelectedObject){const first=currentPage?.objects.find(object=>!object.pose.hideDevice&&!object.pose.assetKind);if(first)mutateProject(prior=>selectObject(prior,first.id));}
     if(panel===key)return;
     switchControls(key);
@@ -689,7 +692,7 @@ function Editor({ lookId, lookAuto=false, onLookSaved, project, profile, telegra
     <div className="control-sheet">
       <div className="text-typing-host" ref={typingHost}/>
       <div className="control-stage" ref={controlStage}>
-      {activePanel==='pattern'&&settings.imagePattern&&hasSelectedObject?<PatternInspector pattern={settings.imagePattern} onChange={imagePattern=>update({imagePattern})} onDone={()=>switchControls(null)}/>:activePanel==='crop'?<CropInspector edges={settings.selectedLayerId==='background'?settings.backgroundPose?.imageEdges:settings.imageEdges} onEdges={imageEdges=>update(settings.selectedLayerId==='background'?{backgroundPose:{...settings.backgroundPose,imageEdges}}:{imageEdges})} value={settings.selectedLayerId==='background'?settings.backgroundPose?.imageCrop:settings.imageCrop} onChange={imageCrop=>update(settings.selectedLayerId==='background'?{backgroundPose:{...settings.backgroundPose,imageCrop}}:{imageCrop})} onDone={()=>switchControls(null)}/>:activePanel==='showcase'&&timeline?<TimelineInspector onRecord={startRecording} recording={touchRecording} onAuto={autoAnimate} autoState={autoState} timeline={timeline} selection={timelineTarget} current={current} mediaKind={targetObject?scene.source[targetObject.index]?.kind:undefined} keyframeId={keyframeId} onKeyframe={setKeyframeId} onSeek={sequence.seek} onAdd={kind=>addSequenceEffect(kind)} onKind={kind=>addSequenceEffect(kind,undefined,true)} onPatch={patchSequence} onDelete={deleteTimeline} onDone={()=>switchControls(null)}/>:activePanel==='adjust'?<AdjustInspector settings={settings} disabled={!!settings.pageObjects&&!settings.pageObjects.some(item=>item.id===settings.selectedLayerId)} update={update} onDone={()=>switchControls(null)}/>:sheet==='layers'?<Layers settings={settings} update={update} onEdit={kind=>kind==='image'?selectImage():switchControls(null,'text')} onDone={closeInspector}/>:sheet==='text' ? <TextInspector settings={settings} update={update} onAdd={createText} onProfile={null} profile={profile} onDone={closeInspector}/> : activePanel==='blur'?<BlurInspector settings={settings} source={scene.source} session={blurSession} setSession={setBlurSession} change={changeBlur} undo={undo} canUndo={canUndo} onDone={()=>switchControls(null)} onAdjusting={setBlurAdjusting}/>: activePanel==='phone'||activePanel==='canvas'?<GroupPanel label={activePanel==='phone'?'Phone':'Background'} chips={activePanel==='phone'?phoneChips:canvasChips} active={activePanel==='phone'?phoneTool:canvasTool} onChip={key=>setGroupTool(prior=>({...prior,[activePanel]:key}))} onBack={()=>shadowWheel?setShadowWheel(false):switchControls(null)}><div className="control-options">{controlsFor(activePanel==='phone'?phoneTool:canvasTool)}</div></GroupPanel>:activePanel==='mark'?<WatermarkPanel mark={markOf(settings)} hasProfile={!!profile} namePending={markPending} onName={loadMarkName} onChange={patch=>update({mark:{...markOf(settings),...patch}})} onBack={()=>switchControls(null)}/>:activePanel==='more'?<MorePanel items={moreItems} onBack={()=>switchControls(null)}/>: activePanel ? <>
+      {activePanel==='pattern'&&settings.imagePattern&&hasSelectedObject?<PatternInspector pattern={settings.imagePattern} onChange={imagePattern=>update({imagePattern})} onDone={()=>switchControls(null)}/>:activePanel==='crop'?<CropInspector edges={settings.selectedLayerId==='background'?settings.backgroundPose?.imageEdges:settings.imageEdges} onEdges={imageEdges=>update(settings.selectedLayerId==='background'?{backgroundPose:{...settings.backgroundPose,imageEdges}}:{imageEdges})} value={settings.selectedLayerId==='background'?settings.backgroundPose?.imageCrop:settings.imageCrop} onChange={imageCrop=>update(settings.selectedLayerId==='background'?{backgroundPose:{...settings.backgroundPose,imageCrop}}:{imageCrop})} onDone={()=>switchControls(null)}/>:activePanel==='showcase'&&timeline?<TimelineInspector onRecord={startRecording} recording={touchRecording} onAuto={autoAnimate} autoState={autoState} timeline={timeline} selection={timelineTarget} current={current} mediaKind={targetObject?scene.source[targetObject.index]?.kind:undefined} keyframeId={keyframeId} onKeyframe={setKeyframeId} onSeek={sequence.seek} onAdd={kind=>addSequenceEffect(kind)} onKind={kind=>addSequenceEffect(kind,undefined,true)} onPatch={patchSequence} onDelete={deleteTimeline} onDone={()=>switchControls(null)}/>:activePanel==='adjust'?<AdjustInspector settings={settings} disabled={!!settings.pageObjects&&!settings.pageObjects.some(item=>item.id===settings.selectedLayerId)} update={update} onDone={()=>switchControls(null)}/>:sheet==='mark'?<WatermarkSheet mark={markOf(settings)} profile={profileMark} onChange={patch=>update({mark:{...markOf(settings),...patch}})} onDone={closeInspector}/>:sheet==='layers'?<Layers settings={settings} update={update} onEdit={kind=>kind==='image'?selectImage():switchControls(null,'text')} onDone={closeInspector}/>:sheet==='text' ? <TextInspector settings={settings} update={update} onAdd={createText} onProfile={null} profile={profile} onDone={closeInspector}/> : activePanel==='blur'?<BlurInspector settings={settings} source={scene.source} session={blurSession} setSession={setBlurSession} change={changeBlur} undo={undo} canUndo={canUndo} onDone={()=>switchControls(null)} onAdjusting={setBlurAdjusting}/>: activePanel==='phone'||activePanel==='canvas'?<GroupPanel label={activePanel==='phone'?'Phone':'Background'} chips={activePanel==='phone'?phoneChips:canvasChips} active={activePanel==='phone'?phoneTool:canvasTool} onChip={key=>setGroupTool(prior=>({...prior,[activePanel]:key}))} onBack={()=>shadowWheel?setShadowWheel(false):switchControls(null)}><div className="control-options">{controlsFor(activePanel==='phone'?phoneTool:canvasTool)}</div></GroupPanel>:activePanel==='more'?<MorePanel items={moreItems} onBack={()=>switchControls(null)}/>: activePanel ? <>
         
         <div className="controls" key={activePanel + ':' + project.active}>
           <button type="button" className="round-action controls-back" aria-label={shadowWheel?'Back to shadow options':'Back to editor controls'} onPointerDown={jellyPress} onClick={()=>shadowWheel?setShadowWheel(false):switchControls(null)}><Icon name="arrowback"/></button>
@@ -990,7 +993,7 @@ function App({initialTelegram=null,initialProfile=null}) {
     const token = request.current;
     try {
       const scene=sceneFor(project);
-      await Promise.all([loadTextFonts(scene.settings),loadWatermarkBadge(scene.settings.watermarkBadge),loadBadgeAvatar(scene.settings.mark?.badge)]);
+      await Promise.all([loadTextFonts(scene.settings),loadWatermarkBadge(scene.settings.watermarkBadge),loadMarkAssets(scene.settings.mark)]);
       const thumbnail=document.createElement('canvas');
       const [w,h]=ratios[scene.settings.ratio];
       thumbnail.width=384;thumbnail.height=Math.round(384*h/w);
