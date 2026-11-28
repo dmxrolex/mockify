@@ -201,7 +201,7 @@ dialog::backdrop { -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px
 .dialog-header h2 { font-size: 1.21rem; }
 .dialog-actions { justify-content: end; margin-block-start: .7rem; }
 dialog progress { inline-size: 100%; }
-.toast { position: absolute; z-index: 2; inset: auto 1rem calc(4.9rem + var(--safe-bottom)); justify-self: center; padding: .6rem 1rem; background: var(--glass-fill), #2a2a2ee8; color: #fff; box-shadow: var(--glass-edge), var(--glass-shadow); -webkit-backdrop-filter: var(--glass-blur); backdrop-filter: var(--glass-blur); border-radius: 2rem; animation: toast-in .4s var(--spring) both; font-size: .82rem; font-weight: 650; text-align: center; pointer-events: none; }
+.toast { position: absolute; z-index: 2; inset: auto 1rem calc(5.4rem + var(--safe-bottom)); justify-self: center; padding: .6rem 1rem; background: var(--glass-fill), #2a2a2ee8; color: #fff; box-shadow: var(--glass-edge), var(--glass-shadow); -webkit-backdrop-filter: var(--glass-blur); backdrop-filter: var(--glass-blur); border-radius: 2rem; animation: toast-in .4s var(--spring) both; font-size: .82rem; font-weight: 650; text-align: center; pointer-events: none; }
 .toast:empty { display: none; }
 @keyframes toast-in { from { opacity: 0; transform: translateY(.6rem) scale(.92); } }
 .is-editor .toast { inset-block-end: calc(.6rem + var(--safe-bottom)); }
