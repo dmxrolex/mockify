@@ -15,7 +15,15 @@ export const botCopy={
   },
 };
 
-export function startReply(message,appUrl){
+// The welcome video ships as a static asset (served by Cloudflare's CDN, not the Worker).
+// Rename the file when it changes, so its year-long cache never serves a stale copy.
+export const START_VIDEO='/bot/welcome-v1.mp4';
+
+// With `animation` (a Telegram file_id or the video URL) the welcome is one looping, silent
+// video with the text as its caption; without it, the plain text welcome.
+export function startReply(message,appUrl,animation){
   const copy=botCopy[message.from?.language_code?.toLowerCase().split('-')[0]]??botCopy.en;
-  return {chat_id:message.chat.id,text:copy.welcome,parse_mode:'HTML',reply_markup:{inline_keyboard:[[{text:copy.button,web_app:{url:appUrl}}]]}};
+  const reply_markup={inline_keyboard:[[{text:copy.button,web_app:{url:appUrl}}]]};
+  if(animation)return {chat_id:message.chat.id,animation,caption:copy.welcome,parse_mode:'HTML',width:1280,height:720,duration:6,reply_markup};
+  return {chat_id:message.chat.id,text:copy.welcome,parse_mode:'HTML',reply_markup};
 }

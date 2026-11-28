@@ -1,12 +1,12 @@
 import {drawMark} from './watermark.js';
 import {drawRecordedGesture} from './gesture-render.js';
 import {keptVideoSegments,containsVideoTime} from './video-edits.js';
-import {cleanStatusProfile} from './status-profile.js';
+import {cleanStatusProfile,inpaintStatusRows,widenRows,frostSample} from './status-profile.js';
 import {cameraAt,anchoredZoom,orderedMoments,sourceSignature} from './showcase-model.js';
 import {evaluateTimeline,timelineDuration} from './timeline-model.js';
 import {assetShape,drawAssetFrame,isAssetFrame} from './asset-library.js';
 import {motionAt,movedPose,turnedDirection} from './motion-effects.js';
-import {statusGap} from './status-gap.js';
+import {busyRows,quietRun} from './status-gap.js';
 import {createAdjuster,adjustmentKey} from './adjustments.js';
 import { drawTextOverlay } from './text-model.js';
 import { imageGeometry, imageSettings, cropRect, backgroundGeometry } from './image-model.js';
@@ -194,6 +194,7 @@ const statusBlurRadius = 17;
 const statusBlurKernel = Array.from({length:statusBlurRadius*2+1},(_,index)=>Math.exp(-((index-statusBlurRadius)**2)/(2*6.2**2)));
 const statusBlurWeight = statusBlurKernel.reduce((sum,value)=>sum+value,0);
 
+const statusMask = document.createElement('canvas');
 function softenStatusBar(ctx, bounds, media, settings, sample, blend, cleanSource) {
   if (!drawable(media)) return;
   const [x,y,width,height] = bounds;
@@ -201,7 +202,10 @@ function softenStatusBar(ctx, bounds, media, settings, sample, blend, cleanSourc
   const scale = (settings.fit==='contain'?Math.min:Math.max)(width/media.width,height/media.height);
   const band = Math.min(height*.08,Math.max(width*.1,media.height*fraction*scale));
   const feather = width*.013;
-  const stripHeight = Math.ceil(band+feather);
+  // Like a real iPhone, the status area reaches the bottom of the Dynamic Island (151 of
+  // 1206 screen units); the clean band covers it fully, so app content can't sit half under it.
+  const unit = width/1206, island = 151*unit, reach = 48*unit;
+  const stripHeight = Math.ceil(Math.max(band,island+reach)+feather*3);
   const sampleWidth = 240;
   const sampleHeight = Math.max(1,Math.ceil(stripHeight*sampleWidth/width));
   resize(sample,sampleWidth,sampleHeight);
@@ -219,25 +223,35 @@ function softenStatusBar(ctx, bounds, media, settings, sample, blend, cleanSourc
   }
   const image=graphics.getImageData(0,0,sampleWidth,sampleHeight);
   const pixels=image.data;
-  // Stop in the quiet gap under the old status bar, so app content right below it
-  // (coin rows, back buttons) is never sliced half-cleaned.
-  const gap=statusGap(pixels,sampleWidth,sampleHeight),rowHeight=stripHeight/sampleHeight;
-  // Reconstruct a background profile instead of averaging the old glyphs into it.
-  // A status glyph occupies a minority of each column; the median rejects both
-  // light and dark lettering, unlike a stronger blur which retains their glow.
-  cleanStatusProfile(pixels,sampleWidth,sampleHeight,statusBlurKernel,statusBlurWeight);
+  // End inside the first quiet gap below the island when there is one close by, so nothing
+  // is sliced; otherwise fade out slowly from the island's bottom edge.
+  const rowHeight=stripHeight/sampleHeight,busy=busyRows(pixels,sampleWidth,sampleHeight),gap=quietRun(busy,island/rowHeight,Math.max(2,Math.round(8*unit/rowHeight)));
+  const usable=gap&&gap.start*rowHeight<=island+reach;
+  const rebuild=widenRows(busy),detailed=rebuild.reduce((sum,value)=>sum+value,0)>sampleHeight*.55;
+  if(detailed)frostSample(pixels,sampleWidth,sampleHeight,Math.round(sampleWidth*.04));
+  else if(!inpaintStatusRows(pixels,sampleWidth,sampleHeight,rebuild))cleanStatusProfile(pixels,sampleWidth,sampleHeight,statusBlurKernel,statusBlurWeight);
+  // A separately coloured status bar (common on Android) is extended down to the island's
+  // bottom, as on iPhone, so the edge never cuts through the new icons.
+  const islandRow=Math.min(sampleHeight-1,Math.round(island/rowHeight)),appRow=Math.min(sampleHeight-1,islandRow+Math.max(1,Math.round(6*unit/rowHeight)));
+  let barDiff=0;for(let col=0;col<sampleWidth;col+=4){const p=col*4,q=(appRow*sampleWidth+col)*4;barDiff+=Math.abs(.2126*(pixels[p]-pixels[q])+.7152*(pixels[p+1]-pixels[q+1])+.0722*(pixels[p+2]-pixels[q+2]));}
+  const colouredBar=!detailed&&barDiff/Math.ceil(sampleWidth/4)>40;
+  if(colouredBar)for(let row=1;row<=islandRow;row++)pixels.copyWithin(row*sampleWidth*4,0,sampleWidth*4);
+  // Status icons take the colour a real iPhone would pick: dark on light backgrounds.
+  let light=0,count=0;for(let row=Math.floor(46*unit/rowHeight);row<Math.min(sampleHeight,Math.ceil(136*unit/rowHeight));row++)for(let col=0;col<sampleWidth;col+=2){const at=(row*sampleWidth+col)*4;light+=.2126*pixels[at]+.7152*pixels[at+1]+.0722*pixels[at+2];count++;}
+  blend.statusTone=count&&light/count>165?'dark':'light';
   graphics.putImageData(image,0,0);
   resize(blend,width,stripHeight);
   const blended=blend.getContext('2d');
   blended.clearRect(0,0,width,stripHeight);
   blended.drawImage(sample,0,0,width,stripHeight);
+  const mask=statusMask.getContext('2d');resize(statusMask,width,stripHeight);mask.clearRect(0,0,width,stripHeight);
   blended.globalCompositeOperation='destination-in';
-  // A real iPhone draws its status bar over the app without blurring it, so the cleaned
-  // band ends where the old glyphs end and fades out gently instead of on a hard line.
-  const from=gap?gap.start*rowHeight:Math.max(0,band-feather*2.5),to=gap?Math.min(gap.end*rowHeight,from+feather*2.5):band;
-  const fade=blended.createLinearGradient(0,from,0,Math.max(from+1,to));
+  // Eased fade instead of a hard line where the clean band meets the app.
+  const from=colouredBar?island:usable?gap.start*rowHeight:island,to=colouredBar?island+feather*.6:usable?Math.min(gap.end*rowHeight,from+feather*2.5):Math.min(stripHeight,island+feather*3.5);
+  const fade=mask.createLinearGradient(0,from,0,Math.max(from+1,to));
   [[0,1],[.25,.9],[.5,.6],[.75,.25],[1,0]].forEach(([stop,alpha])=>fade.addColorStop(stop,`rgba(255,255,255,${alpha})`));
-  blended.fillStyle=fade;blended.fillRect(0,0,width,stripHeight);
+  mask.fillStyle=fade;mask.fillRect(0,0,width,stripHeight);
+  blended.drawImage(statusMask,0,0);
   blended.globalCompositeOperation='source-over';
   ctx.drawImage(blend,x,y);
 }
@@ -351,9 +365,10 @@ function sampleOverlay(ctx, x, y, width, height) {
   ctx.fillText('EXPLORE', left + width * .051, y + height * .926);
 }
 
-function statusOverlay(ctx, x, y, width, height, device, settings) {
+function statusOverlay(ctx, x, y, width, height, device, settings, autoTone='light') {
   if (!statusArt.complete || !statusArt.naturalWidth) return;
-  const tone = settings.statusTone === 'dark' ? '#000000' : '#ffffff';
+  // There is no manual tone control, so the background decides unless a look forces dark.
+  const tone = settings.statusTone === 'dark' || autoTone === 'dark' ? '#000000' : '#ffffff';
   let layer = statusVariants[tone];
   if (!layer) {
     layer = document.createElement('canvas');
@@ -438,9 +453,9 @@ function drawDeviceArt(ctx, art, settings, media, statusSample, statusBlend, sta
     if(statusCache?.canvas)ctx.drawImage(statusCache.canvas,x,y);
     else {
       softenStatusBar(ctx,art.screen,media,settings,statusSample,statusBlend,cleanSource);
-      if(statusCache){statusCache.canvas=document.createElement('canvas');resize(statusCache.canvas,statusBlend.width,statusBlend.height);statusCache.canvas.getContext('2d').drawImage(statusBlend,0,0);}
+      if(statusCache){statusCache.canvas=document.createElement('canvas');resize(statusCache.canvas,statusBlend.width,statusBlend.height);statusCache.canvas.getContext('2d').drawImage(statusBlend,0,0);statusCache.tone=statusBlend.statusTone;}
     }
-    statusOverlay(ctx, x, y, width, height, 'pro', settings);
+    statusOverlay(ctx, x, y, width, height, 'pro', settings, statusCache?.tone??statusBlend.statusTone);
   }
   ctx.restore();
   ctx.drawImage(frameForFinish(art, settings.finish), 0, 0);
