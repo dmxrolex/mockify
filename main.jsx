@@ -3,7 +3,11 @@ import {WelcomeCredits,DraftLimitSheet,PurchaseSuccessSheet} from './credits-ui.
 import {FREE_DRAFT_LIMIT,premiumActive} from './credit-model.js';
 import VideoTimeline from './video-timeline.jsx';
 import { LooksRow, ToolTabs, GroupPanel, MorePanel, AddSheet } from './editor-tabs.jsx';
-import { applyLook, captureLook, savedLooks, findLook } from './looks.js';
+import { applyLook } from './looks.js';
+import { captureTemplate, pageFromTemplate, projectFromPage, fillSpots, emptySpots, applyTemplateToPage, askedTexts, lookLimit } from './templates.js';
+import { starterLooks } from './starter-looks.js';
+import { loadLooks, saveLook as storeLook, deleteLook as removeLook } from './looks-client.js';
+import { LookSaveSheet, LookManageSheet } from './looks-ui.jsx';
 import {ShowcaseCanvas,TouchRecorder} from './showcase-editor.jsx';
 import TimelineInspector from './timeline-inspector.jsx';
 import {useSequencePlayback} from './use-sequence-playback.js';
@@ -357,7 +361,7 @@ function Artboard({ peeking=false, effectLoop=0, onEmptyAdd, touchRecorder, scen
   </div>;
 }
 
-function Editor({ lookId, lookAuto=false, onLookSaved, project, profile, telegram, ready, exporting=false, backHandler, update:saveUpdate, chooseSource, replaceSource, replaceVideoSource, removeSource, pickPhoto, notify, busy, undo, canUndo, mutateProject }) {
+function Editor({ fillSpot, looks=[], onUseLook, onManageLook, onSaveLook, project, profile, telegram, ready, exporting=false, backHandler, update:saveUpdate, chooseSource, replaceSource, replaceVideoSource, removeSource, pickPhoto, notify, busy, undo, canUndo, mutateProject }) {
   project=ensurePages(project);
   const [panel, setPanel] = useState(null);
   const [timelineSelection,setTimelineSelection]=useState(null),[keyframeId,setKeyframeId]=useState(null);
@@ -421,7 +425,7 @@ function Editor({ lookId, lookAuto=false, onLookSaved, project, profile, telegra
     const main=timeline&&placedClips(timeline).find(c=>c.objectId===id&&current>=c.start&&current<c.end),overlay=timeline?.overlays.find(c=>c.objectId===id&&current>=c.start&&current<c.start+c.out-c.in),entry=main??overlay;
     if(entry){const type=main?'clip':'overlay';if(timelineSelection?.id!==entry.id)setTimelineSelection({type,id:entry.id});mutateProject(prior=>changePage(selectObject(prior,id),Object.keys(patch).length?{timeline:updateTimeline(timeline,type,entry.id,{pose:{...entry.pose,...patch}})}:{}));}
     else mutateProject(prior=>changePage(selectObject(prior,id),patch));
-  },onDuplicate:id=>mutateProject(prior=>duplicateObject(prior,id)),onRemove:id=>{if(timeline&&owner?.objectId===id)deleteTimeline(timeline.main.some(c=>c.id===owner.id)?'clip':'overlay',owner.id);else mutateProject(prior=>removeObject(prior,id));},onFrame:id=>mutateProject(prior=>toggleFrameAtCurrentSize(prior,id)),onShadow:id=>{mutateProject(prior=>selectObject(prior,id));switchControls('shadow');},onEdges:id=>{mutateProject(prior=>selectObject(prior,id));switchControls('edges');}};
+  },onFillSpot:id=>fillSpot?.(id),onDuplicate:id=>mutateProject(prior=>duplicateObject(prior,id)),onRemove:id=>{if(timeline&&owner?.objectId===id)deleteTimeline(timeline.main.some(c=>c.id===owner.id)?'clip':'overlay',owner.id);else mutateProject(prior=>removeObject(prior,id));},onFrame:id=>mutateProject(prior=>toggleFrameAtCurrentSize(prior,id)),onShadow:id=>{mutateProject(prior=>selectObject(prior,id));switchControls('shadow');},onEdges:id=>{mutateProject(prior=>selectObject(prior,id));switchControls('edges');}};
   const recording=recordingInScene(settings,scene.source),video=recording?.source.element??null;
   const videoSettings=settings;
   const duration=sequence.duration,progress=duration?current/duration:0;
@@ -666,7 +670,6 @@ function Editor({ lookId, lookAuto=false, onLookSaved, project, profile, telegra
     switchControls(key);
   }
   function applyChosenLook(look){if(timeline&&targetObject)update(look.settings);else mutateProject(prior=>applyLook(ensurePages(prior),look));}
-  function saveLook(){const count=savedLooks().length+1,look={id:'look-'+Date.now().toString(36),name:t('My look')+(count>1?' '+count:''),settings:captureLook(settings)};onLookSaved?.(look);notify(t('Look saved'));return look;}
   function controlsFor(key){
     const flat=!settings.pageObjects&&settings.device==='flat'&&['edges','image','shadow'].includes(key),locked=!hasSelectedObject&&['motion','device','image','edges','shadow','screen'].includes(key);
     return <fieldset className="control-fields" disabled={locked} {...(locked?{inert:''}:{})}><EditorControls panel={key} settings={flat?imageSettings(settings):settings} update={patch=>update(flat&&imageLayers(settings).some(layer=>layer.id===settings.selectedLayerId)?patchImage(settings,settings.selectedLayerId,patch):patch)} source={source} photo={photo} pickPhoto={pickPhoto} replaceSource={source?.kind==='video'?replaceVideoSource:replaceSource}
@@ -695,7 +698,7 @@ function Editor({ lookId, lookAuto=false, onLookSaved, project, profile, telegra
           </fieldset></div>
         </div>
       </> : <div className="editor-root">
-        <LooksRow settings={settings} onApply={applyChosenLook} onSave={saveLook} autoId={lookAuto?lookId:null}/>
+        <LooksRow settings={settings} onApply={applyChosenLook} onSave={onSaveLook} templates={looks} onUseTemplate={onUseLook} onManageTemplate={onManageLook} currentTemplate={settings.lookId}/>
         <ToolTabs tabs={tabs} context={tabContext} onOpen={openGroup}/>
       </div>}
       </div>
@@ -732,9 +735,7 @@ function ProfilePage({profile,authStatus,telegram,config,onRetry}) {
 
 
 function projectSettings(preferences, template) {
-  // "Apply my look automatically": new screenshots open with the saved look.
-  const look=!template&&preferences.autoLook?findLook(preferences.lookId):null;
-  return { ...defaults, ...templates[template]?.settings, ...look?.settings, cleanup: preferences.cleanup };
+  return { ...defaults, ...templates[template]?.settings, cleanup: preferences.cleanup };
 }
 
 function App({initialTelegram=null,initialProfile=null}) {
@@ -826,6 +827,46 @@ function App({initialTelegram=null,initialProfile=null}) {
   function closeBalance(){switchPanel(main.current,()=>navigate(balanceReturn.current));}
   function openSubscription(){subscriptionReturn.current=page==='subscription'?'settings':page;switchPanel(main.current,()=>navigate('subscription'));}
   function closeSubscription(){switchPanel(main.current,()=>navigate(subscriptionReturn.current));}
+
+  // Looks: saved whole-page designs (server for Telegram users, this device in development).
+  const [looks,setLooks]=useState(null),[lookSave,setLookSave]=useState(null),[managingLook,setManagingLook]=useState(null),[lookBusy,setLookBusy]=useState(false),[lookError,setLookError]=useState('');
+  const premium=premiumActive(profile);
+  useEffect(()=>{if(telegram&&!profile)return;let alive=true;loadLooks(telegram,premium).then(data=>{if(alive)setLooks(data.looks);}).catch(()=>{if(alive)setLooks([]);});return()=>{alive=false;};},[telegram,!!profile,premium]);
+  const lookMedia=kind=>loadAsset(kind).catch(()=>null);
+  async function useLook(look,inEditor){
+    setManagingLook(null);
+    try{
+      if(look.starter)look={...look,layers:look.layers.map(layer=>layer.type==='text'?{...layer,text:t(layer.text)}:layer)};
+      const built=await pageFromTemplate(look,{media:lookMedia,defaults:{...defaults,cleanup:preferences.cleanup}});
+      if(inEditor&&project.items.length)setProject(prior=>applyTemplateToPage(prior,built));
+      else{setProject(projectFromPage(built,look.starter?t(look.name):look.name,{...defaults,cleanup:preferences.cleanup}),{reset:true});navigate('editor');}
+      const spots=built.page.objects.filter(object=>object.pose.lookSlot).length;
+      notify(inEditor&&project.items.length?'Look applied':spots?'Tap + to add your screenshots':'Look ready');
+    }catch{notify('Could not open this look');}
+  }
+  function lookThumb(){
+    const canvas=document.querySelector('.artboard canvas');if(!canvas?.width)return '';
+    const scale=Math.min(1,320/Math.max(canvas.width,canvas.height)),thumb=document.createElement('canvas');thumb.width=Math.round(canvas.width*scale);thumb.height=Math.round(canvas.height*scale);
+    thumb.getContext('2d').drawImage(canvas,0,0,thumb.width,thumb.height);try{return thumb.toDataURL('image/jpeg',.78);}catch{return '';}
+  }
+  function openLookSave(update=null){
+    // Editing a page that came from one of your Looks updates that Look instead of adding one.
+    const own=pageFor(ensurePages(project))?.settings.lookId;update??=looks?.find(look=>look.id===own)??null;
+    const page=pageFor(ensurePages(project)),texts=(page?.settings.layers??[]).filter(layer=>layer.type==='text'&&layer.text?.trim());
+    setLookError('');setLookSave({thumb:lookThumb(),texts,update,name:update?.name??(page?.settings.lookId&&looks?.find(look=>look.id===page.settings.lookId)?.name)??t('My look')+((looks?.length??0)?' '+((looks?.length??0)+1):'')});
+  }
+  async function commitLookSave(name,ask){
+    setLookBusy(true);setLookError('');
+    try{
+      const captured=captureTemplate(project,{name,ask,thumb:lookSave.thumb});
+      const look=lookSave.update?{...captured,id:lookSave.update.id,createdAt:lookSave.update.createdAt}:captured;
+      const data=await storeLook(telegram,look,premium);setLooks(data.looks);setLookSave(null);notify(lookSave.update?'Look updated':'Look saved');
+      setProject(prior=>changeScene(prior,{lookId:look.id}));
+    }catch(error){setLookError(error.message==='look_limit'?'':t(error.message||'Could not save the look.'));if(error.message==='look_limit')setLookSave(prior=>prior&&{...prior,full:true});}
+    finally{setLookBusy(false);}
+  }
+  async function renameLook(look,name){try{const data=await storeLook(telegram,{...look,name},premium);setLooks(data.looks);setManagingLook(null);}catch(error){notify(error.message||'Could not rename the look');}}
+  async function deleteSavedLook(look){try{const data=await removeLook(telegram,look.id,premium);setLooks(data.looks);setManagingLook(null);notify('Look deleted');}catch{notify('Could not delete the look');}}
 
   function navigate(next) {
     routeState.current.page=next;
@@ -938,11 +979,12 @@ function App({initialTelegram=null,initialProfile=null}) {
       }
       // A tiny image gets stretched to fill the frame; say so instead of silently looking blurry.
       if(loaded.some(result=>result.value.kind==='image'&&Math.min(result.value.width,result.value.height)<320))notify('This image is very small, so it may look blurry');
-      const imported=loaded.map(result=>({id:itemId(),source:result.value,settings:{...projectSettings(chatLook.current?{...preferences,autoLook:true}:preferences),...presentationFor(result.value,preferences.cleanup)}}));
+      const imported=loaded.map(result=>({id:itemId(),source:result.value,settings:{...projectSettings(preferences),...presentationFor(result.value,preferences.cleanup)}}));
       const source=imported[0].source;
       setProject(prior=>{
         if(intent==='new'){const next={...newProject(source.name.replace(/\.[^.]+$/,''),imported[0].settings),items:imported,layout:imported.length>1&&imported.some(item=>item.settings.device==='flat')?'individual':'matching'};return ensurePages(next);}
         if(intent==='replace-video'){const target=prior.items[prior.active]?.source.kind==='video'?prior.items[prior.active]:prior.items.find(item=>item.source.kind==='video');if(!target)return prior;const pose={trimStart:0,trimEnd:null,videoCuts:[],videoCutPoints:[]};return {...prior,settings:prior.pages?prior.settings:{...prior.settings,...pose},items:prior.items.map(item=>item.id===target.id?{...item,source,settings:{...item.settings,...pose}}:item),...(prior.pages?{pages:prior.pages.map(page=>({...page,objects:page.objects.map(object=>object.itemId===target.id?{...object,pose:{...object.pose,...pose}}:object)}))}:{})};}
+        if(intent.startsWith('fill:'))return fillSpots(prior,imported,intent.slice(5));
         if(intent==='add')return appendItems(ensurePages(prior),imported);
         if(prior.pages&&intent==='replace'){const current=pageFor(prior),chosen=current.objects.find(object=>object.id===current.selectedObjectId);if(!chosen)return appendItems(prior,imported,{overlay:true});return {...prior,items:prior.items.map(item=>item.id===chosen.itemId?{...item,source,settings:imported[0].settings}:item),pages:prior.pages.map(page=>({...page,objects:page.objects.map(object=>object.itemId===chosen.itemId?{...object,pose:{...object.pose,...presentationFor(source,preferences.cleanup),trimStart:0,trimEnd:null,videoCuts:[],videoCutPoints:[]}}:object)}))};}
         if(intent==='replace'&&prior.items.length){
@@ -1077,7 +1119,7 @@ function App({initialTelegram=null,initialProfile=null}) {
           {savedRevision===project&&saveBurst>0&&<span key={saveBurst} className="draft-sparkles" aria-hidden="true">{Array.from({length:6},(_,i)=><svg key={i} style={{'--spark':i}} viewBox="0 0 20 20"><path d="M10 0c1.2 7.1 2.9 8.8 10 10-7.1 1.2-8.8 2.9-10 10C8.8 12.9 7.1 11.2 0 10 7.1 8.8 8.8 7.1 10 0Z"/></svg>)}</span>}
         </button>
         <span className="visually-hidden" role="status">{savedRevision===project?'Draft saved':''}</span>
-        <button className="round-action export-action" type="button" aria-label={t("Export")} onPointerDown={jellyPress} onClick={() => { activeSource?.element?.pause?.(); setExporting(true); }} disabled={!activeSource || busy}><Icon name="export"/></button>
+        <button className="round-action export-action" type="button" aria-label={t("Export")} onPointerDown={jellyPress} onClick={() => { if(emptySpots(project).length){notify('Add your screenshots to the empty spots first');return;} activeSource?.element?.pause?.(); setExporting(true); }} disabled={!activeSource || busy}><Icon name="export"/></button>
       </> : <>
         {/* Settings already shows the profile card, so its header carries the page title instead. */}
         {page==='settings'?<h1 className="header-page-title">{t('Settings')}</h1>:<HeaderProfile profile={profile} onOpen={()=>switchPanel(main.current,()=>navigate('settings'))}/>}
@@ -1087,13 +1129,15 @@ function App({initialTelegram=null,initialProfile=null}) {
       </>}
     </header>
     <main ref={main} className="content">
-      {page === 'home' && <HomeScreen busy={busy} onPick={kind => pickSource('new',kind)} onDrop={files => importSource(files, 'new')} recent={draftList} onOpen={openDraft} onFiles={()=>navigate('files')}/>}
+      {page === 'home' && <HomeScreen busy={busy} onPick={kind => pickSource('new',kind)} onDrop={files => importSource(files, 'new')} recent={draftList} onOpen={openDraft} looks={looks} lookLimit={lookLimit(premiumActive(profile))} starters={starterLooks} onUseLook={look=>useLook(look,false)} onManageLook={setManagingLook}/>}
+      {lookSave&&<LookSaveSheet thumb={lookSave.thumb} texts={lookSave.texts} initialName={lookSave.name} updating={!!lookSave.update} busy={lookBusy} error={lookError} limit={lookLimit(premium)} count={looks?.length??0} premium={premium} onPremium={()=>{setLookSave(null);openSubscription();}} onSave={commitLookSave} onClose={()=>setLookSave(null)}/>}
+      {managingLook&&<LookManageSheet look={managingLook} onUse={()=>useLook(managingLook,editing)} onRename={name=>renameLook(managingLook,name)} onUpdate={editing&&!managingLook.starter?()=>{const target=managingLook;setManagingLook(null);openLookSave(target);}:null} onDelete={()=>deleteSavedLook(managingLook)} onClose={()=>setManagingLook(null)}/>}
       {page === 'files' && <DraftPage list={draftList} onOpen={openDraft} onRemove={draft => drafts.remove(draft.id).then(refreshDrafts).catch(() => notify('Could not delete the draft'))}/>}
       {page === 'settings' && <SettingsPage preferences={preferences} update={updatePreferences} onBalance={openBalance} onSubscription={openSubscription} profile={profile} botUsername={config?.botUsername} draftCount={draftList?.length??0}/>}
       {balancePage&&<BalancePage onSubscription={openSubscription} balance={profile?.credits??0} premium={premiumActive(profile)} payment={payment} onSelection={purchaseSelection}/>}
       {subscriptionPage&&<SubscriptionPage subscription={profile?.subscription} payment={payment} onSelection={purchaseSelection}/>}
       {page === 'profile' && <ProfilePage profile={profile} authStatus={authStatus} telegram={telegram} config={config} onRetry={()=>signIn(telegram)}/>}
-      {editing && <Editor lookId={preferences.lookId} lookAuto={!!preferences.autoLook} onLookSaved={look=>updatePreferences({lookId:look.id})} backHandler={editorBack} exporting={exporting} project={project} profile={profile} telegram={telegram} mutateProject={setProject} ready={ready} notify={notify} busy={busy} undo={undo} canUndo={canUndo}
+      {editing && <Editor looks={looks??[]} onUseLook={look=>useLook(look,true)} onManageLook={setManagingLook} onSaveLook={()=>openLookSave()} backHandler={editorBack} exporting={exporting} project={project} profile={profile} telegram={telegram} mutateProject={setProject} ready={ready} notify={notify} busy={busy} undo={undo} canUndo={canUndo}
         update={patch => setProject(prior => changeScene(prior, patch))}
         removeSource={() => {
           ++photoRequest.current;
@@ -1103,7 +1147,7 @@ function App({initialTelegram=null,initialProfile=null}) {
             return { ...prior, items, active };
           });
         }}
-        chooseSource={kind => pickSource('add',kind??'any')} replaceSource={() => pickSource('replace')} replaceVideoSource={() => pickSource('replace-video','video')} pickPhoto={() => photoInput.current.click()}/>}
+        fillSpot={id=>pickSource('fill:'+id,'image')} chooseSource={kind => pickSource('add',kind??'any')} replaceSource={() => pickSource('replace')} replaceVideoSource={() => pickSource('replace-video','video')} pickPhoto={() => photoInput.current.click()}/>}
     </main>
     {!editing && !balancePage && !subscriptionPage && <nav aria-label={t("Main")} className="dock" style={{'--active-tab':Math.max(0,tabs.findIndex(([id])=>id===page))}}>{tabs.map(([id, label]) => <a key={id} href={'#' + id} aria-label={t(label)} aria-current={page === id ? 'page' : undefined} onClick={() => { if (preferences.haptics) telegram?.HapticFeedback?.selectionChanged(); }}><Icon name={id==='home'?'navhome':id==='settings'?'navsettings':id}/></a>)}</nav>}
     <input ref={input} type="file" hidden accept="image/*,video/*" multiple onChange={event => { const files = [...event.target.files]; event.target.value = ''; importSource(files, uploadIntent.current); }}/>

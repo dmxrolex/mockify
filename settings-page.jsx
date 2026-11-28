@@ -7,7 +7,6 @@ import { subscriptionInfo, subscriptionDate } from './subscription-model.js';
 import { switchPanel } from './ui-motion.js';
 import { hapticSelection } from './haptics.js';
 import TermsSheet from './terms-sheet.jsx';
-import { findLook } from './looks.js';
 import './settings-page.css';
 
 const paths={
@@ -84,7 +83,6 @@ export default function SettingsPage({preferences,update,onBalance,onSubscriptio
       <h2 className="account-section-label">{t('Preferences')}</h2>
       <div className="ios-settings-group settings-group">
         <Row icon="language" className="settings-language-link" label="Language" value={languages.find(([value])=>value===preferences.language)?.[1]} onClick={()=>go('language')}/>
-        <Toggle icon="look" label="Apply my look" caption={findLook(preferences.lookId)?'New screenshots open with your saved look':'Save a look in the editor first'} disabled={!findLook(preferences.lookId)} checked={!!preferences.autoLook&&!!findLook(preferences.lookId)} onChange={autoLook=>update({autoLook})}/>
         <Toggle icon="haptics" label="Haptic feedback" caption="Subtle taps on dials, wheels and choices" checked={preferences.haptics!==false} onChange={haptics=>update({haptics})}/>
         <Toggle icon="statusbar" label="Clean status bar" caption="New screenshots get a tidy iOS status bar" checked={preferences.cleanup!=='off'} onChange={on=>update({cleanup:on?'auto':'off'})}/>
       </div>

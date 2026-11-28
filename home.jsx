@@ -1,6 +1,6 @@
 import { t } from './i18n.js';
 import React, { useState } from 'react';
-import DraftTile from './draft-tiles.jsx';
+import {LookThumb,useLookPress} from './looks-ui.jsx';
 import './home.css';
 
 function CreateIcon({ type }) {
@@ -12,9 +12,9 @@ function CreateIcon({ type }) {
   </svg>;
 }
 
-export default function HomeScreen({ busy, onPick, onDrop, recent, onOpen, onFiles }) {
+export default function HomeScreen({ busy, onPick, onDrop, recent, onOpen, looks, lookLimit, starters, onUseLook, onManageLook }) {
   const [dragging,setDragging] = useState(false);
-  const drafts=recent?.slice(0,9) ?? [];
+  const last=recent?.[0],press=useLookPress(onUseLook,onManageLook),pressStarter=useLookPress(onUseLook);
   return <div className="home-screen">
     <section className={'create-dock'+(dragging?' is-dragging':'')} aria-label={t("Create a mockup")}
       onDragOver={event=>{event.preventDefault();setDragging(true);}}
@@ -27,15 +27,27 @@ export default function HomeScreen({ busy, onPick, onDrop, recent, onOpen, onFil
       </button>
       <button type="button" className="create-shortcut" aria-label={t("Select a video")} disabled={busy} onClick={()=>onPick('video')}><CreateIcon type="video"/></button>
     </section>
-    <section className="draft-gallery" aria-labelledby="home-drafts-heading" aria-busy={!recent}>
-      <button className="draft-gallery-heading" type="button" onClick={onFiles} aria-label={t("View all files")}><h2 id="home-drafts-heading">{t("Recent drafts")}</h2></button>
-      <div className="draft-gallery-grid">
-        {Array.from({length:9},(_,index)=>{
-          const draft=drafts[index];
-          return <DraftTile key={draft?.id??'empty-'+index} draft={draft} onOpen={onOpen}/>;
-        })}
+
+    {last&&<button type="button" className="home-continue" onClick={()=>onOpen(last)}>
+      <span className="home-continue-art">{last.preview?<img src={last.preview} alt="" decoding="async"/>:<CreateIcon type="image"/>}</span>
+      <span className="home-continue-text"><small>{t('Continue editing')}</small><strong>{last.title||t('Untitled')}</strong></span>
+      <span className="home-continue-go" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="m9 5 7 7-7 7"/></svg></span>
+    </button>}
+
+    {/* Your Looks: saved designs to reuse. Tap to start, long-press for more. */}
+    <section className="home-looks" aria-labelledby="home-looks-heading">
+      <header><h2 id="home-looks-heading">{t('Your looks')}</h2>{looks&&<small>{looks.length}/{lookLimit}</small>}</header>
+      <div className="home-look-row">
+        {(looks??[]).map(look=><button key={look.id} type="button" className="home-look" aria-label={look.name} {...press(look)}><LookThumb look={look}/><span>{look.name}</span></button>)}
+        {(!looks||looks.length===0)&&<div className="home-look-empty"><strong>{t('Save a design as a look')}</strong><span>{t('In the editor, tap + in the looks row. Next time just drop in new screenshots.')}</span></div>}
       </div>
-      {!drafts.length&&<span className="visually-hidden">{t(recent?'No drafts yet. Save your work in the editor to continue later.':'Loading drafts')}</span>}
+    </section>
+
+    <section className="home-looks" aria-labelledby="home-starters-heading">
+      <header><h2 id="home-starters-heading">{t('Starter looks')}</h2></header>
+      <div className="home-look-row">
+        {starters.map(look=><button key={look.id} type="button" className="home-look" aria-label={t(look.name)} {...pressStarter(look)}><LookThumb look={look}/><span>{t(look.name)}</span></button>)}
+      </div>
     </section>
   </div>;
 }

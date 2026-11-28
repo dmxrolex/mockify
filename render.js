@@ -754,7 +754,7 @@ export function createRenderer(canvas,{cacheScene=true}={}) {
       const byId=new Map(settings.pageObjects.map(item=>[item.id,item]));
       for(const layer of sceneLayers(settings)){
         if(layer.type==='text')drawObject(settings,sources,layer.id,()=>drawTextOverlay(ctx,{textOverlay:layer},width,height));
-        else {const item=byId.get(layer.id);if(!item||item.pose.hideDevice||!sources[item.index])continue;const {pose,bounds}=pageObjectPlacement(settings,item,width,height);pose._timelineScale=objectCamera(settings,sources,item.id)?.zoom??1;drawObject(settings,sources,item.id,()=>drawDevice(pose,sources[item.index],bounds,progress,false,item.id,true));}
+        else {const item=byId.get(layer.id);if(!item||item.pose.hideDevice||!sources[item.index]||(!cacheScene&&item.pose.lookSlot&&item.pose.assetEmpty))continue;const {pose,bounds}=pageObjectPlacement(settings,item,width,height);pose._timelineScale=objectCamera(settings,sources,item.id)?.zoom??1;drawObject(settings,sources,item.id,()=>drawDevice(pose,sources[item.index],bounds,progress,false,item.id,true));}
       }
       caption(ctx,settings.caption,width,height,settings.background);return;
     }

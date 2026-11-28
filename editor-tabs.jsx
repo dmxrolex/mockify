@@ -1,6 +1,7 @@
 import React, { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { t } from './i18n.js';
-import { builtInLooks, lookPreview, sameLook, savedLooks, storeLooks } from './looks.js';
+import { builtInLooks, lookPreview, sameLook } from './looks.js';
+import { LookThumb, useLookPress } from './looks-ui.jsx';
 import { hapticSelection, hapticImpact } from './haptics.js';
 import { dismissBackdrop } from './dialog-dismiss.js';
 import './editor-tabs.css';
@@ -18,29 +19,17 @@ function LookFace({look}){
   return <span className="look-face" style={{'--look-bg':p.background,'--look-finish':p.finish}} data-long={p.long||undefined}><i/></span>;
 }
 
-// Looks come first: saved looks, then ready-made ones. Long-press a saved look to remove it.
-export function LooksRow({settings,onApply,onSave,autoId}){
-  const [saved,setSaved]=useState(savedLooks),[removing,setRemoving]=useState(null),hold=useRef(null);
-  useEffect(()=>()=>clearTimeout(hold.current),[]);
-  function save(){
-    const look=onSave();if(!look)return;
-    const next=[look,...saved.filter(item=>item.id!==look.id)];if(storeLooks(next))setSaved(next.slice(0,8));hapticImpact('medium');
-  }
-  function remove(id){const next=saved.filter(item=>item.id!==id);storeLooks(next);setSaved(next);setRemoving(null);hapticImpact('light');}
-  const press=look=>({
-    onPointerDown:()=>{clearTimeout(hold.current);if(look.custom)hold.current=setTimeout(()=>{setRemoving(look.id);hapticImpact('medium');},480);},
-    onPointerUp:()=>clearTimeout(hold.current),onPointerLeave:()=>clearTimeout(hold.current),onPointerCancel:()=>clearTimeout(hold.current),
-    onContextMenu:event=>{if(look.custom){event.preventDefault();setRemoving(look.id);}},
-  });
-  const looks=[...saved.map(item=>({...item,custom:true})),...builtInLooks];
-  const currentId=looks.find(look=>sameLook(look,settings))?.id;
-  return <div className="looks-row" role="group" aria-label={t('Looks')} onKeyDown={event=>{if(event.key==='Escape')setRemoving(null);}}>
-    <button type="button" className="look-tile look-save" onClick={save}><span className="look-face"><Glyph name="plus"/></span><small>{t('Save look')}</small></button>
-    {looks.map(look=><div key={look.id} className="look-cell">
-      <button type="button" className="look-tile" aria-pressed={look.id===currentId} {...press(look)} onClick={()=>{if(removing){setRemoving(null);return;}hapticSelection();onApply(look);}}>
-        <LookFace look={look}/>{look.id===autoId&&<b className="look-auto" title={t('Applied to new screenshots')}>A</b>}<small>{look.custom?look.name:t(look.name)}</small>
-      </button>
-      {removing===look.id&&<button type="button" className="look-remove" aria-label={t('Remove look')+' '+look.name} onClick={()=>remove(look.id)}><Glyph name="close"/></button>}
+// Your Looks first (whole saved designs: tap to use on this page, long-press for more), then the
+// quick styles that only recolour the background and phones.
+export function LooksRow({settings,onApply,onSave,templates=[],onUseTemplate,onManageTemplate,currentTemplate}){
+  const press=useLookPress(look=>onUseTemplate?.(look),look=>onManageTemplate?.(look));
+  const styleId=builtInLooks.find(look=>sameLook(look,settings))?.id;
+  return <div className="looks-row" role="group" aria-label={t('Looks')}>
+    <button type="button" className="look-tile look-save" onClick={()=>onSave?.()}><span className="look-face"><Glyph name="plus"/></span><small>{t('Save look')}</small></button>
+    {templates.map(look=><div key={look.id} className="look-cell"><button type="button" className="look-tile is-template" aria-pressed={look.id===currentTemplate} aria-label={look.name} {...press(look)}><span className="look-face look-face-template"><LookThumb look={look}/></span><small>{look.name}</small></button></div>)}
+    {templates.length>0&&<span className="looks-divider" aria-hidden="true"/>}
+    {builtInLooks.map(look=><div key={look.id} className="look-cell">
+      <button type="button" className="look-tile" aria-pressed={look.id===styleId&&!currentTemplate} onClick={()=>{hapticSelection();onApply(look);}}><LookFace look={look}/><small>{t(look.name)}</small></button>
     </div>)}
   </div>;
 }

@@ -1,4 +1,5 @@
 import { frameFile } from './chat-framing.js';
+import { looksRequest } from './looks-api.js';
 import {WELCOME_CREDITS,exportCreditCost,accountFromRow,premiumActive} from './credit-model.js';
 import {handlePayments} from './payments.js';
 const encoder = new TextEncoder();
@@ -163,6 +164,15 @@ export default {
         if(url.pathname==='/api/welcome/claim')await env.DB.prepare('UPDATE users SET credits=credits+?, welcome_claimed_at=? WHERE id=? AND welcome_claimed_at IS NULL').bind(WELCOME_CREDITS,Date.now(),user.id).run();
         return json({account:await accountFor(env,user.id)});
       }catch{return json({error:'Account service unavailable. Please retry.'},503);}
+    }
+    if(url.pathname==='/api/looks'){
+      if(request.method!=='POST')return json({error:'Method not allowed'},405);
+      if(request.headers.get('Origin')!==url.origin)return json({error:'Origin rejected'},403);
+      if(Number(request.headers.get('Content-Length'))>450000)return json({error:'This look is too large.'},413);
+      let user;try{user=await verifyTelegram(request.headers.get('X-Telegram-Init-Data'),env.TELEGRAM_BOT_ID);}catch{return json({error:'Reopen the app in Telegram to continue.'},401);}
+      let body={};try{const raw=await request.text();if(raw.length>450000)return json({error:'This look is too large.'},413);body=raw?JSON.parse(raw):{};}catch{return json({error:'Invalid request'},400);}
+      try{const result=await looksRequest(env,user,await accountFor(env,user.id),body);return json(result.body,result.status);}
+      catch{return json({error:'Looks are unavailable right now. Please retry.'},503);}
     }
     if (url.pathname === '/api/exports/telegram') {
       if (request.method !== 'POST') return json({ error: 'Method not allowed' }, 405);
