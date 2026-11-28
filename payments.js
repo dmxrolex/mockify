@@ -1,7 +1,7 @@
 import {frameReply,frameableMedia} from './chat-framing.js';
 import {creditPacks} from './credit-model.js';
 import {subscriptionOffers,extendMonths} from './subscription-model.js';
-import {startReply,START_VIDEO} from './bot-messages.js';
+import {startReply,START_VIDEO,START_EMOJI_PACK,packEmoji} from './bot-messages.js';
 const json=(data,status=200)=>Response.json(data,{status,headers:{'Cache-Control':'no-store'}});
 export function productFor(id){const pack=creditPacks.find(pack=>pack.id===id);if(pack)return {id,kind:'credits',credits:pack.credits,months:0,stars:pack.stars,title:pack.credits+' Mockify Stars',description:pack.bonus?`${pack.credits-pack.bonus} stars + ${pack.bonus} bonus stars.`:`${pack.credits} stars for photo and video exports.`};const offer=subscriptionOffers.find(offer=>'premium-'+offer.months===id);return offer?{id,kind:'premium',credits:0,months:offer.months,stars:offer.stars,title:'Mockify Premium',description:`${offer.months} month${offer.months===1?'':'s'} of unlimited exports and drafts. One-time payment, no automatic renewal.`}:null;}
 async function bot(env,method,body){const response=await fetch('https://api.telegram.org/bot'+env.TELEGRAM_BOT_TOKEN+'/'+method,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body),signal:AbortSignal.timeout(7000)}),data=await response.json();if(!response.ok||!data.ok)throw new Error('Telegram payment service unavailable. Please retry.');return data.result;}
@@ -37,13 +37,23 @@ async function support(env,message){const user=String(message.from.id),id='messa
 // /start welcome video. Telegram fetches the static file once, then the bot reuses the
 // file_id Telegram returns, so later /start messages upload nothing. A START_VIDEO_FILE_ID
 // variable makes that permanent across Worker restarts. Falls back to the text welcome.
-let startAnimation=null;
+let startAnimation=null,startPack,packCheckedAt=0;
+// The premium welcome emoji, read once from the pack (retried hourly if Telegram refuses).
+async function welcomeEmoji(env){
+  if(startPack!==undefined&&(startPack||Date.now()-packCheckedAt<3600000))return startPack;
+  packCheckedAt=Date.now();
+  try{const set=await bot(env,'getStickerSet',{name:env.START_EMOJI_PACK||START_EMOJI_PACK});const pack=packEmoji(set?.stickers);startPack=Object.keys(pack).length?pack:null;}catch{startPack=null;}
+  return startPack;
+}
 export async function sendStart(env,message){
-  const url=new URL(START_VIDEO,env.PAYMENTS_BASE_URL).href;
-  for(const animation of [...new Set([env.START_VIDEO_FILE_ID,startAnimation,url].filter(Boolean))]){
-    try{const sent=await bot(env,'sendAnimation',startReply(message,env.PAYMENTS_BASE_URL,animation));startAnimation=sent?.animation?.file_id??sent?.document?.file_id??startAnimation;return;}catch{}
+  const url=new URL(START_VIDEO,env.PAYMENTS_BASE_URL).href,pack=await welcomeEmoji(env);
+  // With the premium emoji first; if Telegram rejects them, the same welcome with plain emoji.
+  for(const emoji of pack?[pack,null]:[null]){
+    for(const animation of [...new Set([env.START_VIDEO_FILE_ID,startAnimation,url].filter(Boolean))]){
+      try{const sent=await bot(env,'sendAnimation',startReply(message,env.PAYMENTS_BASE_URL,animation,emoji));startAnimation=sent?.animation?.file_id??sent?.document?.file_id??startAnimation;return;}catch{}
+    }
+    try{await bot(env,'sendMessage',startReply(message,env.PAYMENTS_BASE_URL,undefined,emoji));return;}catch(error){if(!emoji)throw error;}
   }
-  await bot(env,'sendMessage',startReply(message,env.PAYMENTS_BASE_URL));
 }
 async function webhook(request,env){
   if(request.method!=='POST')return json({error:'Method not allowed'},405);

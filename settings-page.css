@@ -53,14 +53,14 @@ button.settings-row:not(:disabled):active,a.settings-row:not([aria-disabled]):ac
 .settings-disclosure svg { transition:rotate .3s var(--spring); }
 [aria-expanded=true] > .settings-disclosure svg { rotate:90deg; }
 .settings-toggle { cursor:pointer; }
-.settings-toggle input { flex:none; margin:0; accent-color:#30d158; }
+.settings-toggle input { flex:none; margin:0; accent-color:var(--tint); }
 .settings-toggle input[type="checkbox"][switch].switch { appearance:none; position:relative; top:0; inline-size:51px; block-size:31px; border:0; border-radius:16px; background:#39393d; box-shadow:none; transition:background-color .2s; }
 .settings-toggle input[type="checkbox"][switch].switch::before { content:""; position:absolute; inset:2px auto auto 2px; inline-size:27px; block-size:27px; border-radius:50%; background:#fff; box-shadow:0 2px 6px #0004; transition:translate .3s var(--spring); }
-.settings-toggle input[type="checkbox"][switch].switch:checked { background:#30d158; }
+.settings-toggle input[type="checkbox"][switch].switch:checked { background:var(--tint); }
 .settings-toggle input[type="checkbox"][switch].switch:checked::before { translate:20px 0; }
 .settings-toggle input:focus-visible { outline:2px solid #fff; outline-offset:3px; }
 .settings-meter { flex:none; inline-size:64px; block-size:6px; overflow:hidden; border-radius:3px; background:#ffffff1a; }
-.settings-meter i { display:block; block-size:100%; border-radius:inherit; background:linear-gradient(90deg,#30d158,#34c759); transition:inline-size .5s var(--ease-out); }
+.settings-meter i { display:block; block-size:100%; border-radius:inherit; background:#f5f5f7; transition:inline-size .5s var(--ease-out); }
 .settings-costs { display:grid; grid-template-rows:0fr; transition:grid-template-rows .32s var(--ease-out); }
 .settings-costs[data-open=true] { grid-template-rows:1fr; }
 .settings-costs > div { min-block-size:0; overflow:hidden; }
@@ -73,7 +73,7 @@ button.settings-row:not(:disabled):active,a.settings-row:not([aria-disabled]):ac
 .settings-subpage-heading h1 { font-size:24px; font-weight:750; letter-spacing:-.02em; }
 .app-settings .settings-language-option { min-block-size:58px; }
 .settings-language-option .settings-row-label { font-size:17px; }
-.settings-check { display:grid; place-items:center; flex:none; inline-size:26px; block-size:26px; border-radius:50%; color:#05240f; background:var(--select-ring); scale:0; transition:scale .3s var(--spring); }
+.settings-check { display:grid; place-items:center; flex:none; inline-size:26px; block-size:26px; border-radius:50%; color:#fff; background:var(--tint); scale:0; transition:scale .3s var(--spring); }
 .settings-check svg { inline-size:15px; block-size:15px; stroke-width:2.6; }
 .settings-language-option[aria-checked=true] .settings-check { scale:1; }
 .settings-footnote { margin:0 14px; color:#8e8e93; font-size:13px; line-height:1.4; }
@@ -83,4 +83,4 @@ button.settings-row:not(:disabled):active,a.settings-row:not([aria-disabled]):ac
 .settings-toggle[data-disabled] .settings-row-label,.settings-toggle[data-disabled] .ios-setting-icon,.settings-toggle[data-disabled] input { opacity:.45; }
 /* With Premium the usual price is struck through, so “free” is clear. */
 .settings-cost-was { color:#6c6c72; text-decoration-thickness:1px; }
-.settings-cost-free { color:#30d158; font-weight:600; }
+.settings-cost-free { color:#fff; font-weight:600; }

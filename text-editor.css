@@ -74,7 +74,7 @@
 .text-effects-panel > * + * { border-block-start:1px solid #38383a99; border-radius:0; }
 .text-switch-row > button { display:grid; place-items:center; min-inline-size:52px; min-block-size:44px; padding:0; border:0; background:none; }
 .text-switch-track { display:block; position:relative; inline-size:43px; block-size:26px; border-radius:20px; background:#56565d; }.text-switch-track i { position:absolute; inset:3px auto auto 3px; inline-size:20px; block-size:20px; border-radius:50%; background:#fff; box-shadow:0 1px 2px #0002; }
-.text-switch-row button[aria-checked="true"] .text-switch-track { background:#30d158; }.text-switch-row button[aria-checked="true"] i { translate:17px 0; }
+.text-switch-row button[aria-checked="true"] .text-switch-track { background:var(--tint); }.text-switch-row button[aria-checked="true"] i { translate:17px 0; }
 .layer-list { position:relative; display:grid; gap:1px; margin:0; padding:0 0 16px; list-style:none; }
 .layer-list li { position:relative; display:flex; align-items:center; min-block-size:56px; border:1px solid transparent; border-radius:10px; background:#1c1c1e; scroll-margin:14px; }
 .layer-list li.is-selected { border-color:#447fb9; }
@@ -111,11 +111,11 @@
 @media(max-width:350px) { .text-inspector,.layers-panel { padding-inline:12px; } }
 
 @media(prefers-reduced-motion:no-preference) { .text-floating-toolbar { animation:floating-toolbar-in .3s var(--spring) both; transform-origin:50% 100%; } @keyframes floating-toolbar-in { from { opacity:0; scale:.85; filter:blur(3px); } } }
-/* Layers: rounded iOS rows, green selection, per-row lock. Tap a row to select it on the
+/* Layers: rounded iOS rows, neutral selection, per-row lock. Tap a row to select it on the
    canvas; tap it again to edit. */
 .layer-list { gap:6px; }
 .layer-list li { min-block-size:58px; border:0; border-radius:18px; background:#1c1c1e; box-shadow:inset 0 0 0 1px #ffffff0d; transition:background-color .2s,box-shadow .2s,scale .2s var(--spring); }
-.layer-list li.is-selected { background:linear-gradient(180deg,rgba(48,209,88,.14),rgba(48,209,88,.05)),#1c1c1e; box-shadow:inset 0 0 0 1.5px var(--select-ring); }
+.layer-list li.is-selected { background:linear-gradient(180deg,#ffffff1c,#ffffff0a),#1c1c1e; box-shadow:inset 0 0 0 1.5px var(--select-ring); }
 .layer-list li:active:not(.is-dragging) { scale:.985; }
 .layer-select .layer-type { display:grid; place-items:center; flex:none; inline-size:36px; block-size:36px; border-radius:12px; background:#2c2c2e; }
 .layer-list li.is-selected .layer-type { background:var(--select); color:var(--select-ink); }
@@ -124,6 +124,6 @@
 .layer-lock[aria-pressed=true] { color:#ffd60a; }
 .layer-select .layer-type img { inline-size:24px; block-size:24px; object-fit:contain; }
 .layer-lock:focus-visible,.layer-delete:focus-visible { outline:2px solid #fff; outline-offset:-4px; }
-.layer-list[data-drop="true"]::after { background:#30d158; }
+.layer-list[data-drop="true"]::after { background:#fff; }
 @media(prefers-reduced-motion:reduce) { .layer-list li { transition:none; } }
 

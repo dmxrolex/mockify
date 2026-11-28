@@ -88,7 +88,7 @@
 .sequence-timeline[data-effects=true] .sequence-effect-capsule { inset-inline-start:0; inline-size:calc(var(--effect-length) + 24px); block-size:24px; translate:0 -50%; display:flex; align-items:center; padding-inline-start:4px; border-radius:12px; background:var(--glass),#202023; box-shadow:var(--glass-edge),0 2px 8px #0007; transition:background-color .18s,box-shadow .18s,scale .22s var(--spring); }
 .sequence-timeline[data-effects=true] .sequence-effect-capsule svg { display:block; inline-size:15px; block-size:15px; flex:none; }
 .sequence-timeline[data-effects=true] .is-dot .sequence-effect-capsule { inline-size:24px; translate:0 -50%; border-radius:50%; }
-.sequence-effect.selected .sequence-effect-capsule { background:rgba(48,209,88,.24),#1d2a20; color:var(--select-ink); box-shadow:var(--select-edge),0 4px 14px #000a; }
+.sequence-effect.selected .sequence-effect-capsule { background:#ffffff29; color:var(--select-ink); box-shadow:var(--select-edge),0 4px 14px #000a; }
 .sequence-effect.is-moving .sequence-effect-capsule { scale:1.06; box-shadow:0 10px 22px #000d; }
 .sequence-effect-readout { position:absolute; inset-block-start:50%; inset-inline-start:calc(100% + 24px); translate:0 -50%; color:var(--ink); font:600 11px/1 -apple-system,BlinkMacSystemFont,system-ui,sans-serif; font-variant-numeric:tabular-nums; white-space:nowrap; pointer-events:none; text-shadow:0 1px 4px #000; }
 /* Only the end grows: the start stays pinned to its keyframe. */
@@ -105,7 +105,7 @@
 .sequence-add-row { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:6px; padding-block:6px 2px; }
 .sequence-add-row button { position:relative; display:flex; align-items:center; justify-content:center; gap:6px; min-block-size:38px; padding:0 6px; border:0; border-radius:19px; background:var(--glass-fill),#1c1c1f; box-shadow:var(--glass-edge); color:#f5f5f7; font:600 13px/1 -apple-system,BlinkMacSystemFont,system-ui,sans-serif; transition:scale .22s var(--spring),background-color .15s; touch-action:manipulation; }
 .sequence-add-row button svg { inline-size:17px; block-size:17px; flex:none; }
-.sequence-add-row button i { position:absolute; inset:-3px -2px auto auto; display:grid; place-items:center; inline-size:15px; block-size:15px; border-radius:50%; background:#30d158; color:#05240f; font:800 11px/1 -apple-system,system-ui,sans-serif; font-style:normal; box-shadow:0 0 0 2px #000; }
+.sequence-add-row button i { position:absolute; inset:-3px -2px auto auto; display:grid; place-items:center; inline-size:15px; block-size:15px; border-radius:50%; background:#fff; color:#000; font:800 11px/1 -apple-system,system-ui,sans-serif; font-style:normal; box-shadow:0 0 0 2px #000; }
 .sequence-add-row button:not(:disabled):active { scale:.93; background:var(--select); }
 .sequence-add-row button:disabled { opacity:.35; }
 .sequence-add-row button:focus-visible { outline:2px solid #fff; outline-offset:2px; }

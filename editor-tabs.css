@@ -22,7 +22,7 @@
 /* Bottom tabs reuse the tool tile look; the tab for the tapped object glows softly. */
 .toolstrip.tool-tabs { justify-content:space-around; gap:0; overflow:visible; }
 .toolstrip.tool-tabs button { flex:1 1 0; min-inline-size:0; max-inline-size:84px; }
-.tool-tabs button[data-context] > span { box-shadow:var(--glass-edge),0 0 0 2px rgba(48,209,88,.55); }
+.tool-tabs button[data-context] > span { box-shadow:var(--glass-edge),0 0 0 2px #ffffffa6; }
 .tool-tabs button[data-context] { color:#fff; }
 
 /* Group panels: back + chips on one line, tool controls below. */
