@@ -1,29 +1,43 @@
+/* Main tab bar: a floating iOS 26-style capsule. Icon over a short label, a glass lens behind the
+   selected tab that glides between tabs, and a blue tint with a softly filled icon for the selection. */
 .dock {
- position:absolute; z-index:3; inset:auto 0 calc(15px + var(--safe-bottom));
- display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:0;
- inline-size:min(calc(100% - 56px),330px); margin-inline:auto; padding:5px;
- border:0; border-radius:32px; isolation:isolate;
- background:var(--glass-fill),#1c1c1fd9;
- box-shadow:var(--glass-edge),0 12px 32px #000a;
- backdrop-filter:var(--glass-blur); -webkit-backdrop-filter:var(--glass-blur);
+ --tab-tint:#0a84ff;
+ position:absolute; z-index:3; inset:auto 0 calc(14px + var(--safe-bottom));
+ display:grid; grid-template-columns:repeat(3,minmax(0,1fr));
+ inline-size:min(calc(100% - 48px),340px); margin-inline:auto; padding:4px;
+ border-radius:999px; isolation:isolate;
+ background:linear-gradient(180deg,#ffffff17,#ffffff05 55%),#1b1b1ee6;
+ box-shadow:inset 0 .5px 0 #ffffff40,inset 0 0 0 .5px #ffffff1a,0 10px 30px #000000b3,0 2px 6px #0006;
+ backdrop-filter:blur(28px) saturate(180%); -webkit-backdrop-filter:blur(28px) saturate(180%);
 }
+/* The lens: a lighter glass pill under the selected tab. */
 .dock::before {
- content:""; position:absolute; z-index:-1; inset:5px auto 5px 5px;
- inline-size:calc((100% - 10px)/3); border:0; border-radius:26px;
- background:linear-gradient(180deg,#ffffff2e,#ffffff14); box-shadow:inset 0 1px 0 #ffffff33,0 4px 12px #0006;
+ content:""; position:absolute; z-index:-1; inset:4px auto 4px 4px;
+ inline-size:calc((100% - 8px)/3); border-radius:999px;
+ background:linear-gradient(180deg,#ffffff24,#ffffff10);
+ box-shadow:inset 0 .5px 0 #ffffff38,inset 0 0 0 .5px #ffffff14;
  transform:translateX(calc(var(--active-tab)*100%)); pointer-events:none;
 }
 .dock a {
- display:grid; place-items:center; position:relative; min-inline-size:0; min-block-size:48px;
- padding:8px; border:0; border-radius:26px; color:#aeb6b6; background:none;
+ position:relative; display:grid; justify-items:center; align-content:center; gap:2px;
+ min-inline-size:0; min-block-size:54px; padding:6px 4px 5px; border-radius:999px;
+ color:#98989f; text-decoration:none; -webkit-tap-highlight-color:transparent; touch-action:manipulation;
+ transition:color .2s ease,background-color .2s ease;
 }
-.dock a[aria-current="page"] { color:#fff; }
+.dock a svg { inline-size:25px; block-size:25px; stroke-width:1.65; transition:scale .25s var(--spring),fill .2s ease; }
+.dock a span { max-inline-size:100%; overflow:hidden; font:600 10.5px/1.15 -apple-system,BlinkMacSystemFont,system-ui,sans-serif; letter-spacing:.01em; text-overflow:ellipsis; white-space:nowrap; }
+.dock a[aria-current="page"] { color:var(--tab-tint); }
+/* Selected icons fill softly, like SF Symbols' .fill variants; cut-outs (door, gear hub) stay open. */
+.dock a[aria-current="page"] svg { fill:color-mix(in srgb,var(--tab-tint) 24%,transparent); }
+.dock a svg .nav-cut { fill:none; }
+.dock a:not([aria-current="page"]):active { background:#ffffff0d; color:#d1d1d6; }
 .dock a:active svg { scale:.86; }
-.dock a svg { transition:scale .22s var(--spring); }
-.dock a svg { inline-size:24px; block-size:24px; stroke-width:1.6; }
-.dock a:focus-visible { outline:2px solid #fff; outline-offset:-3px; }
+.dock a:focus-visible { outline:2px solid var(--tab-tint); outline-offset:-2px; }
 @media(prefers-reduced-motion:no-preference) {
- .dock::before { transition:transform 480ms cubic-bezier(.2,.9,.15,1.15); }
- .dock a[aria-current="page"] svg { animation:nav-jelly 520ms ease-out; }
+ .dock::before { transition:transform 460ms cubic-bezier(.25,1.1,.35,1),scale 220ms var(--spring); }
+ /* Pressing the selected tab swells the lens slightly, the way the Liquid Glass lens reacts. */
+ .dock:has(a[aria-current="page"]:active)::before { scale:1.05 1.08; }
+ .dock a[aria-current="page"] svg { animation:nav-bounce 420ms cubic-bezier(.3,.7,.4,1.4); }
+ @keyframes nav-bounce { 0%{scale:.8} 55%{scale:1.1} 100%{scale:1} }
 }
 @media(forced-colors:active) { .dock a[aria-current="page"] { outline:2px solid Highlight; outline-offset:-3px; } }

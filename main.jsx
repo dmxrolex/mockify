@@ -74,8 +74,9 @@ const paths = {
   person: <><circle cx="12" cy="8" r="3.5"/><path d="M5 21v-2a7 7 0 0 1 14 0v2"/></>,
   coin: <><circle cx="12" cy="12" r="9.3"/><circle cx="12" cy="12" r="7.1"/><path d="m12 6.5 1.55 3.15 3.45.5-2.5 2.44.59 3.44L12 14.4l-3.09 1.63.59-3.44L7 10.15l3.45-.5Z"/><path d="M7 3.7 5.5 5M17 3.7 18.5 5M4 8l-.4 2M20 8l.4 2"/></>,
   files: <><path d="M7 3h9l4 4v13a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1Z"/><path d="M15 3v5h5M3 7v12m6-6h8m-8 4h5"/></>,
-  navhome: <><path d="M3.5 10.1 11 4.2a1.6 1.6 0 0 1 2 0l7.5 5.9v9.1a1.5 1.5 0 0 1-1.5 1.5H5a1.5 1.5 0 0 1-1.5-1.5Z"/><path d="M9.2 20.7v-7.2h5.6v7.2M17.5 5.3V8"/></>,
-  navsettings: <><path d="M12 3 14 6l3-.3.5 3.3L20 11l-1.5 3 1 3-3 1-2 3-3-1-3 1-2-3-3-1 1-3L3 11l2.5-2 .5-3.3 3 .3Z"/><circle cx="11.5" cy="12" r="3"/></>,
+  navhome: <><path d="M3.6 10.3a2 2 0 0 1 .7-1.5l6.4-5.5a2 2 0 0 1 2.6 0l6.4 5.5a2 2 0 0 1 .7 1.5V19a2 2 0 0 1-2 2H5.6a2 2 0 0 1-2-2Z"/><path className="nav-cut" d="M9.5 21v-6.2a1 1 0 0 1 1-1h3a1 1 0 0 1 1 1V21"/></>,
+  navfiles: <path d="M3 7.2A2.2 2.2 0 0 1 5.2 5h3.6a2 2 0 0 1 1.5.7l1.3 1.5h7.2A2.2 2.2 0 0 1 21 9.4v8.4a2.2 2.2 0 0 1-2.2 2.2H5.2A2.2 2.2 0 0 1 3 17.8Z"/>,
+  navsettings: <><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2Z"/><circle className="nav-cut" cx="12" cy="12" r="3"/></>,
   plus: <path d="M12 5v14M5 12h14"/>,
   home: <><path d="m3 10 9-7 9 7v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M9 20v-6h6v6"/></>,
   drafts: <path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z"/>,
@@ -1155,7 +1156,7 @@ function App({initialTelegram=null,initialProfile=null}) {
         }}
         fillSpot={id=>pickSource('fill:'+id,'image')} chooseSource={kind => pickSource('add',kind??'any')} replaceSource={() => pickSource('replace')} replaceVideoSource={() => pickSource('replace-video','video')} pickPhoto={() => photoInput.current.click()}/>}
     </main>
-    {!editing && !balancePage && !subscriptionPage && <nav aria-label={t("Main")} className="dock" style={{'--active-tab':Math.max(0,tabs.findIndex(([id])=>id===page))}}>{tabs.map(([id, label]) => <a key={id} href={'#' + id} aria-label={t(label)} aria-current={page === id ? 'page' : undefined} onClick={() => { if (preferences.haptics) telegram?.HapticFeedback?.selectionChanged(); }}><Icon name={id==='home'?'navhome':id==='settings'?'navsettings':id}/></a>)}</nav>}
+    {!editing && !balancePage && !subscriptionPage && <nav aria-label={t("Main")} className="dock" style={{'--active-tab':Math.max(0,tabs.findIndex(([id])=>id===page))}}>{tabs.map(([id, label]) => <a key={id} href={'#' + id} aria-current={page === id ? 'page' : undefined} onClick={() => { if (preferences.haptics) telegram?.HapticFeedback?.selectionChanged(); }}><Icon name={'nav'+id}/><span>{t(label)}</span></a>)}</nav>}
     <input ref={input} type="file" hidden accept="image/*,video/*" multiple onChange={event => { const files = [...event.target.files]; event.target.value = ''; importSource(files, uploadIntent.current); }}/>
     <input ref={photoInput} type="file" hidden accept="image/*" onChange={event => { const file = event.target.files[0]; event.target.value = ''; importPhoto(file); }}/>
     <div className="toast" role="status">{message}</div>
