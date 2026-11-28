@@ -794,7 +794,7 @@ function App({initialTelegram=null,initialProfile=null}) {
     history.replaceState(null,'',location.pathname+location.search+'#home');
   }
 
-  // Opened from the bot's "Frame it" button: load that chat file with the saved look.
+  // Opened from the bot's "Make mockup" button: load that chat file with the saved look.
   const frameRequest=useRef(new URLSearchParams(location.search).get('frame')),chatLook=useRef(false);
   async function openFramedFile(app){
     const token=frameRequest.current;if(!token||!app?.initData)return;frameRequest.current=null;
