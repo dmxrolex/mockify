@@ -110,4 +110,8 @@
 .look-tile.is-template[aria-pressed=true] .look-face { box-shadow:0 0 0 2px #000,0 0 0 4px var(--select-ring); }
 .looks-divider { flex:none; align-self:center; inline-size:1px; block-size:34px; margin:0 4px 14px; background:#ffffff1f; }
 .look-tile { -webkit-touch-callout:none; -webkit-user-select:none; user-select:none; }
+/* Tools area: zoom ruler slot above the tabs; it keeps its height, so nothing shifts when the
+   selected object has no ruler (photos). */
+.editor-zoom-slot { display:grid; place-items:center; min-block-size:76px; }
+.editor-zoom-slot .preview-zoom { inline-size:min(410px,calc(100% - 32px)); min-block-size:72px; padding-block:0; }
 
