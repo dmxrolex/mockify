@@ -4,12 +4,13 @@
 import {badgeAvatar,loadBadgeAvatar} from './profile-badge.js';
 
 export const markPlacements=['top-left','top-right','center','bottom-left','bottom-right','tiled'];
-export const markDefaults={kind:'text',on:false,text:'',photo:false,badge:'',initials:'',image:'',shape:'original',style:'pill',placement:'bottom-right',size:100,opacity:100,density:3};
+export const markDefaults={kind:'text',on:false,text:'',photo:false,badge:'',initials:'',image:'',shape:'original',style:'pill',placement:'bottom-right',layer:'front',size:100,opacity:100,density:3};
 
 // Older marks (style none/name/text/tiled, corner, size s/m/l) open in the new model unchanged.
 export function markOf(settings){
   const raw=settings?.mark??{};
-  if(raw.kind)return {...markDefaults,...raw};
+  // Text watermarks are always a pill now; older drafts saved as plain become pills.
+  if(raw.kind)return {...markDefaults,...raw,style:'pill'};
   const legacy={...markDefaults};
   if(raw.style&&raw.style!=='none'){legacy.on=true;legacy.text=raw.style==='name'?raw.name??'':raw.text??'';legacy.photo=raw.style==='name';legacy.badge=raw.badge??'';legacy.initials=raw.initials??'';}
   if(raw.style==='tiled')legacy.placement='tiled';else if(raw.corner)legacy.placement=raw.corner;

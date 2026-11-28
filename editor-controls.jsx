@@ -85,7 +85,6 @@ export function EffectsControls({settings,update,disabled=false,video=false}){
         <span className="effect-label">{t(label)}</span>
       </button>)}
     </div>
-    <p className="effect-note">{t(disabled?'Select a phone or image to add an effect':video?'Plays across your video':'Exports as a 4-second video')}</p>
   </fieldset>;
 }
 

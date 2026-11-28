@@ -15,6 +15,8 @@ export function SelectionIcon({name}){
     frameoff:<><path d="M6 7V5a3 3 0 0 1 3-3h6a3 3 0 0 1 3 3v8m0 4v2a3 3 0 0 1-3 3H9a3 3 0 0 1-3-3v-8M10 5h4M3 3l18 18"/></>,
     flip:<><path d="M12 3v2m0 4v2m0 4v2m0 4v.01M9 5 3 9v6l6 4Zm6 0 6 4v6l-6 4Z"/></>,
     trash:<><path d="M3 6h18M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2M5 6l1 14a1 1 0 0 0 1 1h10a1 1 0 0 0 1-1l1-14M10 10v7m4-7v7"/></>,
+    corners:<path d="M4 20v-9a7 7 0 0 1 7-7h9M14 20h6v-6"/>,
+    shadow:<><rect x="3" y="3" width="13" height="13" rx="3"/><path d="M19 8.5V17a2 2 0 0 1-2 2H8.5" opacity=".55"/><path d="M21.5 11v7a3.5 3.5 0 0 1-3.5 3.5h-7" opacity=".3"/></>,
     fill:<><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8" cy="8" r="1.5"/><path d="m3 16 5-5 5 5 3-3 5 5"/></>,
   };
   return <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">{shapes[name]??shapes.more}</svg>;

@@ -4,17 +4,11 @@
 .editor[data-sheet="mark"] > .control-sheet { block-size:100%; padding:0; overflow:hidden; }
 .editor[data-sheet="mark"] .control-stage { block-size:100%; overflow:hidden; }
 
-.mark-sheet { display:grid; grid-template-rows:auto auto minmax(0,1fr); block-size:100%; border-radius:28px 28px 0 0; background:var(--glass-fill),#121214; box-shadow:var(--glass-edge),0 -10px 30px #0008; color:#f5f5f7; font-family:-apple-system,BlinkMacSystemFont,system-ui,sans-serif; }
+.mark-sheet { display:grid; grid-template-rows:auto auto auto minmax(0,1fr); block-size:100%; border-radius:28px 28px 0 0; background:var(--glass-fill),#121214; box-shadow:var(--glass-edge),0 -10px 30px #0008; color:#f5f5f7; font-family:-apple-system,BlinkMacSystemFont,system-ui,sans-serif; }
 .mark-grabber { justify-self:center; inline-size:36px; block-size:5px; margin-block-start:7px; border-radius:3px; background:#ffffff38; }
 .mark-header { display:grid; grid-template-columns:1fr auto 1fr; align-items:center; min-block-size:46px; padding:0 14px; }
 .mark-header h2 { margin:0; font-size:16px; font-weight:650; }
 .mark-done { justify-self:end; }
-.mark-switch { display:flex; align-items:center; gap:8px; color:#8e8e93; font-size:13px; font-weight:500; cursor:pointer; }
-.mark-switch input { margin:0; accent-color:#30d158; }
-.mark-switch input[type="checkbox"][switch].switch { appearance:none; position:relative; inline-size:44px; block-size:27px; border:0; border-radius:14px; background:#39393d; transition:background-color .2s; }
-.mark-switch input[type="checkbox"][switch].switch::before { content:""; position:absolute; inset:2px auto auto 2px; inline-size:23px; block-size:23px; border-radius:50%; background:#fff; box-shadow:0 2px 6px #0004; transition:translate .3s var(--spring); }
-.mark-switch input[type="checkbox"][switch].switch:checked { background:#30d158; }
-.mark-switch input[type="checkbox"][switch].switch:checked::before { translate:17px 0; }
 .mark-scroll { display:grid; align-content:start; gap:12px; min-block-size:0; overflow-y:auto; overscroll-behavior:contain; padding:4px 14px calc(16px + var(--safe-bottom)); }
 
 .mark-profile { display:flex; align-items:center; gap:12px; inline-size:100%; min-block-size:62px; padding:10px 12px; border:0; border-radius:18px; background:linear-gradient(135deg,#2a2550,#1c1c1f 70%); box-shadow:var(--glass-edge); color:#fff; text-align:start; transition:scale .22s var(--spring); }
@@ -50,15 +44,15 @@
 
 .mark-label { margin:2px 0 -4px 4px; color:#8e8e93; font-size:12px; font-weight:600; letter-spacing:.06em; text-transform:uppercase; }
 .mark-place-row { display:flex; align-items:stretch; gap:10px; }
-.mark-pad { position:relative; flex:none; block-size:112px; inline-size:min(170px,calc(112px * var(--pad-ratio))); border-radius:14px; background:linear-gradient(150deg,#2c2645,#1c1c1f 70%); box-shadow:inset 0 0 0 1px #ffffff1a; }
+.mark-pad { position:relative; flex:none; block-size:132px; inline-size:min(176px,calc(132px * var(--pad-ratio))); border-radius:22px; background:linear-gradient(150deg,#2c2645,#1c1c1f 70%); box-shadow:inset 0 0 0 1px #ffffff1a; }
 .mark-spot { position:absolute; display:grid; place-items:center; inline-size:44px; block-size:44px; padding:0; border:0; background:none; }
 .mark-spot[data-spot=top-left] { inset:0 auto auto 0; }
 .mark-spot[data-spot=top-right] { inset:0 0 auto auto; }
 .mark-spot[data-spot=bottom-left] { inset:auto auto 0 0; }
 .mark-spot[data-spot=bottom-right] { inset:auto 0 0 auto; }
 .mark-spot[data-spot=center] { inset:50% auto auto 50%; translate:-50% -50%; }
-.mark-spot i { inline-size:20px; block-size:8px; border-radius:4px; background:#ffffff40; transition:background-color .2s,inline-size .25s var(--spring),block-size .25s var(--spring),box-shadow .2s; }
-.mark-spot[aria-checked=true] i { inline-size:26px; block-size:11px; border-radius:6px; background:#30d158; box-shadow:0 0 0 3px rgba(48,209,88,.25),0 0 12px rgba(48,209,88,.6); }
+.mark-spot i { inline-size:14px; block-size:14px; border-radius:50%; background:#ffffff40; transition:background-color .2s,inline-size .25s var(--spring),block-size .25s var(--spring),box-shadow .2s; }
+.mark-spot[aria-checked=true] i { inline-size:18px; block-size:18px; border-radius:50%; background:#30d158; box-shadow:0 0 0 3px rgba(48,209,88,.25),0 0 12px rgba(48,209,88,.6); }
 .mark-spot:active i { scale:.85; }
 .mark-pad[data-tiled] .mark-spot i { background:rgba(48,209,88,.35); }
 .mark-tiled { display:flex; flex:1; min-inline-size:0; align-items:center; gap:10px; padding:10px 12px; border:0; border-radius:14px; background:#1c1c1e; box-shadow:inset 0 0 0 1px #ffffff12; color:#d1d1d6; text-align:start; transition:background-color .2s,color .2s,scale .2s var(--spring); }
@@ -78,3 +72,25 @@
 .mark-ranges .text-range { grid-template-columns:66px minmax(30px,1fr) 70px; padding-inline:2px; background:none; }
 .mark-ranges .text-range output { text-align:end; white-space:nowrap; }
 .mark-sheet .mark-input:focus-visible { outline:none; box-shadow:inset 0 0 0 1.5px var(--select-ring); }
+
+/* Header switch: one iOS-green pill, no browser or polyfill colours. */
+.mark-toggle { display:flex; align-items:center; gap:8px; justify-self:start; min-block-size:44px; padding:0; border:0; background:none; color:#8e8e93; font:500 13px/1 inherit; font-family:inherit; }
+.mark-toggle i { position:relative; flex:none; inline-size:46px; block-size:28px; border-radius:14px; background:#39393d; transition:background-color .22s; }
+.mark-toggle i::after { content:''; position:absolute; inset:2px auto auto 2px; inline-size:24px; block-size:24px; border-radius:50%; background:#fff; box-shadow:0 2px 6px #0005; transition:translate .3s var(--spring); }
+.mark-toggle[aria-checked=true] i { background:#30d158; }
+.mark-toggle[aria-checked=true] i::after { translate:18px 0; }
+.mark-toggle[aria-checked=true] span { color:#f5f5f7; }
+/* Tabs: Content / Position / Look. */
+.mark-tabs { margin:2px 14px 4px; }
+.mark-tabs button { min-block-size:36px; font-size:13.5px; }
+@media(prefers-reduced-motion:no-preference) { .mark-scroll { animation:mark-tab-in .24s var(--ease-out); } @keyframes mark-tab-in { from { opacity:0; translate:0 6px; } } }
+/* Position: a round-cornered mini canvas plus pill options. */
+.mark-place-options { display:grid; align-content:center; gap:10px; flex:1; min-inline-size:0; }
+.mark-pill-option { display:flex; align-items:center; justify-content:center; gap:8px; min-block-size:44px; padding:0 16px; border:0; border-radius:22px; background:#1c1c1e; box-shadow:inset 0 0 0 1px #ffffff12; color:#d1d1d6; font:600 14px/1 inherit; font-family:inherit; transition:background-color .2s,color .2s,scale .2s var(--spring); }
+.mark-pill-option svg { inline-size:20px; block-size:20px; fill:none; stroke:currentColor; stroke-width:1.9; stroke-linecap:round; }
+.mark-pill-option[aria-pressed=true] { background:var(--select); box-shadow:var(--select-edge); color:var(--select-ink); }
+.mark-pill-option:active { scale:.95; }
+.mark-layer { border-radius:22px; } .mark-layer::before { border-radius:19px; } .mark-layer button { min-block-size:38px; font-size:13px; }
+.mark-place-caption { margin:0 4px; color:#8e8e93; font-size:12px; text-align:center; }
+.mark-density[data-disabled] { opacity:.35; }
+
