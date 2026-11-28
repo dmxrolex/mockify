@@ -134,3 +134,8 @@
 .purchase-terms { display:block; inline-size:100%; margin-block-start:7px; padding:4px; border:0; background:none; color:var(--store-muted); font-size:.75rem; line-height:1.4; text-align:center; }
 .purchase-terms u { color:#d1d1d6; text-decoration-color:#ffffff55; text-underline-offset:2px; }
 .purchase-terms:active u { color:#fff; }
+
+/* Promo discount: the usual price struck through, and a quiet note above checkout. */
+.star-price-was { margin-inline-end:4px; color:currentColor; opacity:.55; font-weight:500; text-decoration-thickness:1.5px; }
+.purchase-discount { display:flex; align-items:center; justify-content:center; gap:6px; margin:0 0 8px; color:#d1d1d6; font-size:13.5px; font-weight:600; }
+.purchase-discount svg { flex:none; inline-size:16px; block-size:16px; fill:none; stroke:currentColor; stroke-width:1.9; stroke-linecap:round; stroke-linejoin:round; }

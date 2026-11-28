@@ -2,15 +2,17 @@ import React, { useId, useState } from 'react';
 import TermsSheet from './terms-sheet.jsx';
 import { TelegramStar } from './brand-icons.jsx';
 import { t } from './i18n.js';
+import { discountedStars } from './promo-model.js';
 import './purchase-ui.css';
 
-export function StarPrice({ stars }) {
+// With `was`, the usual price is shown struck through beside the promo price.
+export function StarPrice({ stars, was }) {
   return <span className="star-price">
-    <TelegramStar/><strong>{stars}</strong><span className="visually-hidden">{t('Telegram Stars')}</span>
+    <TelegramStar/>{was!=null&&was!==stars&&<s className="star-price-was">{was}</s>}<strong>{stars}</strong><span className="visually-hidden">{t('Telegram Stars')}</span>
   </span>;
 }
 
-export function PurchaseOptions({ title, options, selected, onSelect, disabled, renderOption }) {
+export function PurchaseOptions({ title, options, selected, onSelect, disabled, renderOption, discount }) {
   const name = useId();
   return <fieldset className="purchase-options" disabled={disabled}>
     <legend className="account-section-label">{t(title)}</legend>
@@ -21,14 +23,14 @@ export function PurchaseOptions({ title, options, selected, onSelect, disabled, 
         <span className="purchase-option-face">
           <span className="purchase-check" aria-hidden="true"><svg viewBox="0 0 16 16"><path d="m4 8 2.5 2.5L12 5"/></svg></span>
           {renderOption(option)}
-          <StarPrice stars={option.stars}/>
+          <StarPrice stars={discountedStars(option.stars,discount)} was={discount?option.stars:null}/>
         </span>
       </label>)}
     </div>
   </fieldset>;
 }
 
-export function PurchasePage({ className, label, children, payment, product, action, note }) {
+export function PurchasePage({ className, label, children, payment, product, action, note, discount }) {
   const pending = Boolean(payment?.pending);
   const activity = t(payment?.pending === 'confirming' ? 'Confirming payment…'
     : payment?.pending === 'telegram' ? 'Continue in Telegram…' : 'Opening Telegram…');
@@ -44,10 +46,11 @@ export function PurchasePage({ className, label, children, payment, product, act
     <footer className="purchase-footer">
       <div className="purchase-footer-inner">
         <div className="purchase-notice" role="status" aria-atomic="true" data-error={payment?.error||undefined}>{message && t(message)}</div>
+        {discount&&<p className="purchase-discount"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3.5 12.6V5a1.5 1.5 0 0 1 1.5-1.5h7.6L20.5 11.4a1.5 1.5 0 0 1 0 2.1l-7 7a1.5 1.5 0 0 1-2.1 0Z"/><circle cx="8" cy="8" r="1.4"/></svg>{t('{percent}% off with {code}').replace('{percent}',discount.percent).replace('{code}',discount.code)}</p>}
         <div className="purchase-action-row" data-pending={pending}>
           <button type="button" className="purchase-submit" disabled={pending} aria-busy={pending}
             onClick={() => payment?.buy(product.id)}>
-            <span>{pending ? activityLabel : action}</span><StarPrice stars={product.stars}/>
+            <span>{pending ? activityLabel : action}</span><StarPrice stars={discountedStars(product.stars,discount)} was={discount?product.stars:null}/>
           </button>
           {pending&&<progress className="checkout-spinner" aria-label={activity}/>}
         </div>

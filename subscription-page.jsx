@@ -45,12 +45,12 @@ export function SubscriptionStatus({ subscription }) {
   </div>;
 }
 
-export default function SubscriptionPage({ subscription,payment,onSelection }) {
+export default function SubscriptionPage({ subscription,payment,onSelection,discount }) {
   const status = useSubscription(subscription);
   const [selected,setSelected] = useState(options[0].id);
   const offer = options.find(item=>item.id===selected);
   const lang=document.documentElement.lang;
-  return <PurchasePage className="subscription-page" label="My subscription" payment={payment} product={offer}
+  return <PurchasePage className="subscription-page" label="My subscription" payment={payment} product={offer} discount={discount}
     action={t(status.active?'Extend Premium':'Get Premium')+' · '+offer.months+' '+monthUnit(offer.months,lang)} note="By subscribing, you agree to our Terms of Service.">
     <div className="premium-hero">
       <span className="premium-hero-glow" aria-hidden="true"/>
@@ -61,7 +61,7 @@ export default function SubscriptionPage({ subscription,payment,onSelection }) {
       <SubscriptionStatus subscription={subscription}/>
     </div>
 
-    <PurchaseOptions title="Choose a duration" options={options} selected={selected}
+    <PurchaseOptions title="Choose a duration" options={options} selected={selected} discount={discount}
       disabled={Boolean(payment?.pending)} onSelect={id=>{setSelected(id);onSelection?.();}}
       renderOption={item=><>
         <span className="purchase-option-amount">{item.months}</span>

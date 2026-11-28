@@ -2,6 +2,7 @@ import { frameFile } from './chat-framing.js';
 import { looksRequest } from './looks-api.js';
 import {WELCOME_CREDITS,exportCreditCost,accountFromRow,premiumActive} from './credit-model.js';
 import {handlePayments} from './payments.js';
+import {ensureSchema,isAdmin,redeemPromo,adminRequest} from './promo-api.js';
 const encoder = new TextEncoder();
 const telegramPublicKey = 'e7bf03a2fa4602af4580703d88dda5bb59f32ed8b02a56c187fe7d34caed242d';
 
@@ -90,7 +91,7 @@ export async function verifyTelegram(initData, botId, publicKey = telegramPublic
   };
 }
 
-async function accountFor(env,id){return accountFromRow(await env.DB.prepare('SELECT credits, welcome_claimed_at, subscription_expires_at FROM users WHERE id=?').bind(id).first());}
+async function accountFor(env,id){await ensureSchema(env);return accountFromRow(await env.DB.prepare('SELECT credits, welcome_claimed_at, subscription_expires_at, discount_percent, discount_scope, discount_until, discount_code FROM users WHERE id=?').bind(id).first());}
 async function refundExport(env,id,userId){await env.DB.prepare("DELETE FROM export_charges WHERE id=? AND user_id=? AND status='held'").bind(id,userId).run();}
 export default {
   async fetch(request, env) {
@@ -111,10 +112,11 @@ export default {
         user = await verifyTelegram(JSON.parse(raw).initData, env.TELEGRAM_BOT_ID);
       } catch { return json({ error: 'Telegram sign-in expired or could not be verified. Reopen the app from the bot.' }, 401); }
       try {
+        await ensureSchema(env);
         await env.DB.prepare(
-          'INSERT INTO users (id, profile, created_at, last_seen_at) VALUES (?, ?, ?, ?) ON CONFLICT(id) DO UPDATE SET profile=excluded.profile, last_seen_at=excluded.last_seen_at'
+          "INSERT INTO users (id, profile, created_at, last_seen_at, source) VALUES (?, ?, ?, ?, 'app') ON CONFLICT(id) DO UPDATE SET profile=excluded.profile, last_seen_at=excluded.last_seen_at"
         ).bind(user.id, JSON.stringify(user), Date.now(), Date.now()).run();
-        return json({ user:{...user,...await accountFor(env,user.id)} });
+        return json({ user:{...user,...await accountFor(env,user.id),...(isAdmin(env,user)?{admin:true}:{})} });
       } catch { return json({ error: 'Profile service unavailable. Try again.' }, 503); }
     }
     if(url.pathname==='/api/profile-avatar'){
@@ -164,6 +166,16 @@ export default {
         if(url.pathname==='/api/welcome/claim')await env.DB.prepare('UPDATE users SET credits=credits+?, welcome_claimed_at=? WHERE id=? AND welcome_claimed_at IS NULL').bind(WELCOME_CREDITS,Date.now(),user.id).run();
         return json({account:await accountFor(env,user.id)});
       }catch{return json({error:'Account service unavailable. Please retry.'},503);}
+    }
+    if(url.pathname==='/api/promo/redeem'||url.pathname==='/api/admin'){
+      if(request.method!=='POST')return json({error:'Method not allowed'},405);
+      if(request.headers.get('Origin')!==url.origin)return json({error:'Origin rejected'},403);
+      let user;try{user=await verifyTelegram(request.headers.get('X-Telegram-Init-Data'),env.TELEGRAM_BOT_ID);}catch{return json({error:'Reopen the app in Telegram to continue.'},401);}
+      const admin=url.pathname==='/api/admin';
+      if(admin&&!isAdmin(env,user))return json({error:'Not found'},404);
+      let body;try{const raw=await request.text();if(raw.length>4096)return json({error:'Too large'},413);body=JSON.parse(raw||'{}');if(!body||typeof body!=='object')throw Error();}catch{return json({error:'Invalid request'},400);}
+      try{const result=admin?await adminRequest(env,body):await redeemPromo(env,user,body.code,accountFor);return json(result.body,result.status);}
+      catch{return json({error:'Something went wrong. Please retry.'},503);}
     }
     if(url.pathname==='/api/looks'){
       if(request.method!=='POST')return json({error:'Method not allowed'},405);

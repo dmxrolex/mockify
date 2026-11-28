@@ -2,6 +2,8 @@ import {frameReply,frameableMedia} from './chat-framing.js';
 import {creditPacks} from './credit-model.js';
 import {subscriptionOffers,extendMonths} from './subscription-model.js';
 import {startReply,START_VIDEO,START_EMOJI_PACK,packEmoji} from './bot-messages.js';
+import {recordBotUser} from './promo-api.js';
+import {discountFor,discountedStars} from './promo-model.js';
 const json=(data,status=200)=>Response.json(data,{status,headers:{'Cache-Control':'no-store'}});
 export function productFor(id){const pack=creditPacks.find(pack=>pack.id===id);if(pack)return {id,kind:'credits',credits:pack.credits,months:0,stars:pack.stars,title:pack.credits+' Mockify Stars',description:pack.bonus?`${pack.credits-pack.bonus} stars + ${pack.bonus} bonus stars.`:`${pack.credits} stars for photo and video exports.`};const offer=subscriptionOffers.find(offer=>'premium-'+offer.months===id);return offer?{id,kind:'premium',credits:0,months:offer.months,stars:offer.stars,title:'Mockify Premium',description:`${offer.months} month${offer.months===1?'':'s'} of unlimited exports and drafts. One-time payment, no automatic renewal.`}:null;}
 async function bot(env,method,body){const response=await fetch('https://api.telegram.org/bot'+env.TELEGRAM_BOT_TOKEN+'/'+method,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body),signal:AbortSignal.timeout(7000)}),data=await response.json();if(!response.ok||!data.ok)throw new Error('Telegram payment service unavailable. Please retry.');return data.result;}
@@ -27,6 +29,8 @@ export async function applyPayment(env,order,chargeId,paidAt=Date.now()){
       env.DB.prepare("INSERT OR IGNORE INTO payment_receipts(charge_id,order_id,user_id,stars,paid_at) SELECT ?,?,?,?,? FROM users JOIN payment_orders ON payment_orders.user_id=users.id WHERE users.id=? AND payment_orders.id=? AND payment_orders.status IN ('pending','checkout') AND (?='credits' OR COALESCE(users.subscription_expires_at,0)=?)").bind(chargeId,order.id,order.user_id,order.stars,paidAt,order.user_id,order.id,order.kind,previous),
       env.DB.prepare("UPDATE users SET credits=credits+?,subscription_expires_at=CASE WHEN ?='premium' THEN ? ELSE subscription_expires_at END WHERE id=? AND EXISTS(SELECT 1 FROM payment_receipts WHERE charge_id=? AND order_id=? AND applied=0)").bind(order.credits,order.kind,next,order.user_id,chargeId,order.id),
       env.DB.prepare("UPDATE payment_orders SET status='paid',paid_at=? WHERE id=? AND EXISTS(SELECT 1 FROM payment_receipts WHERE charge_id=? AND order_id=? AND applied=0)").bind(paidAt,order.id,chargeId,order.id),
+      // The promo discount this order used is spent once it is paid.
+      env.DB.prepare("UPDATE users SET discount_percent=NULL,discount_scope=NULL,discount_until=NULL,discount_code=NULL WHERE id=? AND ? IS NOT NULL AND discount_code=? AND EXISTS(SELECT 1 FROM payment_receipts WHERE charge_id=? AND order_id=? AND applied=0)").bind(order.user_id,order.promo_code??null,order.promo_code??null,chargeId,order.id),
       env.DB.prepare('UPDATE payment_receipts SET applied=1 WHERE charge_id=? AND order_id=? AND applied=0').bind(chargeId,order.id)
     ];
     const result=await env.DB.batch(statements);if(result[0].meta.changes)return true;
@@ -74,7 +78,7 @@ async function webhook(request,env){
     else if(message?.from?.id&&message.chat?.type==='private'&&frameableMedia(message)){const reply=await frameReply(message,env);if(reply)await bot(env,'sendMessage',reply);}
     else if(message?.from?.id&&message.chat?.type==='private'&&typeof message.text==='string'){
       const start=/^\/start(?:@([a-z0-9_]+))?(?:\s|$)/i.exec(message.text);
-      if(start&&(!start[1]||start[1].toLowerCase()===env.TELEGRAM_BOT_USERNAME?.toLowerCase()))await sendStart(env,message);
+      if(start&&(!start[1]||start[1].toLowerCase()===env.TELEGRAM_BOT_USERNAME?.toLowerCase())){try{await recordBotUser(env,message.from);}catch{}await sendStart(env,message);}
       else if(/^\/paysupport(?:@\w+)?(?:\s|$)/.test(message.text)){await support(env,message);await bot(env,'sendMessage',{chat_id:message.chat.id,text:'Payment support request received. Reply here with your issue and payment receipt so the Mockify team can review it.'});}
       else {const ticket=await env.DB.prepare('SELECT id FROM payment_support WHERE user_id=? LIMIT 1').bind(String(message.from.id)).first();if(ticket)await support(env,message);}
     }
@@ -100,8 +104,10 @@ export async function handlePayments(request,env,{verifyTelegram,accountFor}){
     const existing=await env.DB.prepare('SELECT * FROM payment_orders WHERE id=?').bind(body.requestId).first();
     if(existing){if(existing.user_id!==user.id||existing.product_id!==product.id)return json({error:'Order mismatch'},409);if(existing.status==='paid')return json({orderId:existing.id,status:'paid',account:await accountFor(env,user.id)});if(existing.invoice_url)return json({orderId:existing.id,url:existing.invoice_url});}
     const info=await bot(env,'getWebhookInfo',{});if(info.url!==env.PAYMENTS_BASE_URL+'/api/telegram/webhook')return json({error:'Payment confirmation is not configured. Please try later.'},503);
-    await env.DB.prepare('INSERT OR IGNORE INTO payment_orders(id,user_id,product_id,kind,stars,credits,months,created_at) VALUES(?,?,?,?,?,?,?,?)').bind(body.requestId,user.id,product.id,product.kind,product.stars,product.credits,product.months,Date.now()).run();
-    const link=await bot(env,'createInvoiceLink',{title:product.title,description:product.description,payload:'pixova:'+body.requestId,provider_token:'',currency:'XTR',prices:[{label:product.title,amount:product.stars}]});
+    // A promo discount the account holds lowers this order's price; it is used up on payment.
+    const discount=discountFor(await accountFor(env,user.id),product.kind==='premium'?'premium':'credits'),stars=discountedStars(product.stars,discount);
+    await env.DB.prepare('INSERT OR IGNORE INTO payment_orders(id,user_id,product_id,kind,stars,credits,months,created_at,promo_code) VALUES(?,?,?,?,?,?,?,?,?)').bind(body.requestId,user.id,product.id,product.kind,stars,product.credits,product.months,Date.now(),discount?.code||null).run();
+    const link=await bot(env,'createInvoiceLink',{title:product.title,description:discount?`${product.description} · ${discount.percent}% off`:product.description,payload:'pixova:'+body.requestId,provider_token:'',currency:'XTR',prices:[{label:product.title,amount:stars}]});
     if(typeof link!=='string'||!/^https:\/\/t\.me\//.test(link))throw new Error('Invalid invoice response');
     await env.DB.prepare('UPDATE payment_orders SET invoice_url=? WHERE id=? AND user_id=?').bind(link,body.requestId,user.id).run();return json({orderId:body.requestId,url:link});
   }catch{return json({error:'Could not open payment. Please retry.'},503);}

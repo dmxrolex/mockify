@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { Suspense, lazy, useEffect, useRef, useState } from 'react';
 import { t, starCount } from './i18n.js';
 import { telegramStar, SubscriptionIcon } from './brand-icons.jsx';
 import { PlanIcon } from './purchase-ui.jsx';
@@ -7,6 +7,8 @@ import { subscriptionInfo, subscriptionDate } from './subscription-model.js';
 import { switchPanel } from './ui-motion.js';
 import { hapticSelection } from './haptics.js';
 import TermsSheet from './terms-sheet.jsx';
+import PromoSheet from './promo-sheet.jsx';
+const AdminPage=lazy(()=>import('./admin-page.jsx'));
 import './settings-page.css';
 
 const paths={
@@ -18,6 +20,8 @@ const paths={
   share:'M12 15V3m0 0L8 7m4-4 4 4M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-7',
   terms:'M6 3h9l4 4v14H5V3Zm8 0v5h5M8 12h8m-8 4h6',
   costs:'M12 3v18M17 7.5C17 5.6 14.8 4 12 4S7 5.6 7 7.5 9.2 11 12 11.5s5 1.6 5 3.5-2.2 3.5-5 3.5-5-1.6-5-3.5',
+  promo:'M3.5 12.6V5a1.5 1.5 0 0 1 1.5-1.5h7.6L20.5 11.4a1.5 1.5 0 0 1 0 2.1l-7 7a1.5 1.5 0 0 1-2.1 0ZM8 6.6a1.4 1.4 0 1 0 0 2.8 1.4 1.4 0 0 0 0-2.8Z',
+  dashboard:'M4 13h6V4H4Zm10 7h6v-9h-6ZM4 20h6v-4H4Zm10-12h6V4h-6Z',
   next:'m9 5 7 7-7 7',back:'m15 5-7 7 7 7',check:'m5 12 5 5 9-10',person:'M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8Zm-7 8a7 7 0 0 1 14 0',
 };
 function Glyph({name}){return <svg viewBox="0 0 24 24" aria-hidden="true"><path d={paths[name]}/></svg>;}
@@ -34,20 +38,21 @@ function Toggle({icon,label,caption,checked,onChange,disabled=false}){
     <input type="checkbox" switch="" role="switch" disabled={disabled} checked={checked} onChange={event=>{hapticSelection();onChange(event.target.checked);}}/></label>;
 }
 
-export default function SettingsPage({preferences,update,onBalance,onSubscription,profile,botUsername,draftCount=0}) {
-  const [view,setView]=useState('main'),[terms,setTerms]=useState(false),[costs,setCosts]=useState(false),root=useRef(null);
+export default function SettingsPage({preferences,update,onBalance,onSubscription,profile,botUsername,draftCount=0,telegram,onAccount}) {
+  const [view,setView]=useState('main'),[terms,setTerms]=useState(false),[costs,setCosts]=useState(false),[promo,setPromo]=useState(false),root=useRef(null);
   useEffect(()=>{if(!('switch' in HTMLInputElement.prototype))import('input-switch-polyfill').catch(()=>{});},[]);
   const status=subscriptionInfo(profile?.subscription),premium=status.active,balance=profile?.credits??0;
   const name=[profile?.firstName,profile?.lastName].filter(value=>typeof value==='string'&&value.trim()).join(' ')||t('Guest');
   const lang=document.documentElement.lang||'en';
   const app=window.Telegram?.WebApp;
   function go(next){switchPanel(root.current,()=>setView(next)).then(()=>root.current?.querySelector(next==='main'?'.settings-language-link':'.settings-subpage-back')?.focus({preventScroll:true}));}
+  const discount=profile?.discount;
   function openTelegram(event,href){if(app?.initData&&typeof app.openTelegramLink==='function'){event.preventDefault();app.openTelegramLink(href);}}
   const shareHref=botUsername?'https://t.me/share/url?url='+encodeURIComponent('https://t.me/'+botUsername)+'&text='+encodeURIComponent(t('Turn screenshots into beautiful mockups right in Telegram.')):undefined;
   const drafts=premium?null:Math.min(draftCount,FREE_DRAFT_LIMIT);
   const costRows=[['photo','Photo export',starCount(exportCreditCost('photo'))],['video','Video export',starCount(exportCreditCost('video'))],['quality','High quality',starCount(exportCreditCost('photo','high')-exportCreditCost('photo'),'+')]];
   return <section ref={root} className="page app-settings" aria-label={t('Settings')}>
-    {view==='language'?<div className="settings-subpage">
+    {view==='admin'?<Suspense fallback={<div className="settings-loading" role="status" aria-label={t('Loading…')}/>}><AdminPage telegram={telegram} onBack={()=>go('main')}/></Suspense>:view==='language'?<div className="settings-subpage">
       <header className="settings-subpage-heading">
         <button type="button" className="round-action settings-subpage-back" aria-label={t('Back to Settings')} onClick={()=>go('main')}><Glyph name="back"/></button>
         <h1>{t('Language')}</h1>
@@ -87,6 +92,7 @@ export default function SettingsPage({preferences,update,onBalance,onSubscriptio
       </div>
 
       <div className="ios-settings-group settings-group">
+        <Row icon="promo" label="Promo code" value={discount?t('{percent}% off').replace('{percent}',discount.percent):null} onClick={()=>setPromo(true)}/>
         <div className="ios-setting-row settings-row settings-usage">
           <PlanIcon name="drafts"/>
           <span className="settings-row-label">{t('Saved drafts')}</span><span className="ios-setting-value">{premium?t('Unlimited'):drafts+' / '+FREE_DRAFT_LIMIT}</span>
@@ -106,7 +112,9 @@ export default function SettingsPage({preferences,update,onBalance,onSubscriptio
         <Row icon="share" label="Share Mockify" href={shareHref} disabled={!shareHref} onClick={event=>{if(!shareHref){event.preventDefault();return;}openTelegram(event,shareHref);}}/>
         <Row icon="terms" label="Terms & Privacy" onClick={()=>setTerms(true)}/>
       </div>
+      {profile?.admin&&<div className="ios-settings-group settings-group"><Row icon="dashboard" label="Owner dashboard" onClick={()=>go('admin')}/></div>}
     </>}
     <TermsSheet open={terms} onClose={()=>setTerms(false)}/>
+    {promo&&<PromoSheet telegram={telegram} onAccount={onAccount} onClose={()=>setPromo(false)} onUseDiscount={scope=>{setPromo(false);(scope==='credits'?onBalance:onSubscription)?.();}}/>}
   </section>;
 }
