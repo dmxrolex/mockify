@@ -19,6 +19,7 @@ import { createRoot } from 'react-dom/client';
 import {flushSync} from 'react-dom';
 import { backdrops, createRenderer, defaults, detectPhone, finishes, loadDeviceArt, loadWatermarkBadge, ratios, suggestDevice, templates, zoomLevel } from './render.js';
 import { drafts, fromFile, isMedia, loadMedia, releaseMedia, setDraftOwner } from './media.js';
+import {useDrafts} from './use-drafts.js';
 import { authenticateTelegram, connectTelegram } from './telegram.js';
 import {dismissBackdrop} from './dialog-dismiss.js';
 import CropInspector from './crop-editor.jsx';
@@ -756,7 +757,6 @@ function App({initialTelegram=null,initialProfile=null}) {
   const [ready, setReady] = useState(false);
   const [preferences, setPreferences] = useState(restorePreferences);
   const {project,setProject,undo,redo,canUndo,canRedo,past}=useProjectHistory(newProject,page==='editor');
-  const [draftList, setDraftList] = useState(null);
   const [busy, setBusy] = useState(false);
   const [saving, setSaving] = useState(false);
   const [savedRevision,setSavedRevision] = useState(null);
@@ -773,6 +773,7 @@ function App({initialTelegram=null,initialProfile=null}) {
   // Set by Settings while a sub-page (Language, Dashboard) is open: Telegram's back arrow returns from it.
   const [settingsBack,setSettingsBackState]=useState(null),setSettingsBack=useCallback(back=>setSettingsBackState(()=>back),[]);
   const [profile,setProfile]=useState(initialProfile);
+  const {list:draftList,error:draftError,loading:draftsLoading,refresh:refreshDrafts}=useDrafts(String(profile?.id??''),telegram);
   const [draftLimitOpen,setDraftLimitOpen]=useState(false);
   const updateAccount=account=>{if(account)setProfile(prior=>prior?{...prior,...account}:prior);};
   const payment=useStarPayments(telegram,profile?.id,updateAccount);
@@ -822,16 +823,8 @@ function App({initialTelegram=null,initialProfile=null}) {
       setDraftOwner(user.id);
       setProfile(user);
       setAuthStatus('');
-      setDraftList(null);
       openFramedFile(app);
     }catch(error){setAuthStatus(error.message);}
-  }
-
-  function refreshDrafts() {
-    return drafts.list().then(list => setDraftList(list.sort((a, b) => b.updated - a.updated))).catch(() => {
-      setDraftList([]);
-      notify('Draft storage unavailable');
-    });
   }
 
   function purchaseSelection(){if(preferences.haptics)telegram?.HapticFeedback?.selectionChanged();}
@@ -945,7 +938,6 @@ function App({initialTelegram=null,initialProfile=null}) {
   }, []);
   useEffect(() => {
     main.current?.scrollTo(0, 0);
-    if (page === 'files' || page === 'home') refreshDrafts();
     if (!telegram?.BackButton) return;
     const goHome = () => exporting?setExporting(false):page==='settings'&&settingsBack?settingsBack():page==='balance'?closeBalance():page==='subscription'?closeSubscription():page==='editor'?routeState.current.requestEditorExit():navigate('home');
     // Telegram's own back arrow handles every screen that sits on top of a tab.
@@ -954,6 +946,9 @@ function App({initialTelegram=null,initialProfile=null}) {
     telegram.BackButton.onClick(goHome);
     return () => telegram.BackButton.offClick(goHome);
   }, [page, telegram, profile, exporting, settingsBack]);
+  useEffect(()=>{
+    if(page==='home'||page==='files')void refreshDrafts();
+  },[page,refreshDrafts]);
   useEffect(()=>{
     if(!telegram?.isVersionAtLeast('6.2'))return;
     if(page==='editor'&&(unsaved||exporting||saving))telegram.enableClosingConfirmation?.();
@@ -1146,6 +1141,10 @@ function App({initialTelegram=null,initialProfile=null}) {
       </>}
     </header>}
     <main ref={main} className="content">
+      {(page==='home'||page==='files')&&draftError&&<div className="draft-storage-notice" role="status">
+        <span>{t('Could not load saved drafts. Your saved work has not been deleted.')}</span>
+        <button type="button" disabled={draftsLoading} onClick={()=>refreshDrafts()}>{t('Retry')}</button>
+      </div>}
       {page === 'home' && <HomeScreen busy={busy} onPick={kind => pickSource('new',kind)} onDrop={files => importSource(files, 'new')} recent={draftList} onOpen={openDraft} looks={looks} lookLimit={lookLimit(premiumActive(profile))} starters={starterLooks} onUseLook={look=>useLook(look,false)} onManageLook={setManagingLook}/>}
       {lookSave&&<LookSaveSheet thumb={lookSave.thumb} texts={lookSave.texts} initialName={lookSave.name} updating={!!lookSave.update} busy={lookBusy} error={lookError} limit={lookLimit(premium)} count={looks?.length??0} premium={premium} onPremium={()=>{setLookSave(null);openSubscription();}} onSave={commitLookSave} onClose={()=>setLookSave(null)}/>}
       {managingLook&&<LookManageSheet look={managingLook} onUse={()=>useLook(managingLook,editing)} onRename={name=>renameLook(managingLook,name)} onUpdate={editing&&!managingLook.starter?()=>{const target=managingLook;setManagingLook(null);openLookSave(target);}:null} onDelete={()=>deleteSavedLook(managingLook)} onClose={()=>setManagingLook(null)}/>}
