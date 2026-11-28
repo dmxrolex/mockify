@@ -26,7 +26,6 @@ export function ReferSheet({botUsername,onClose}){
   useLayoutEffect(()=>{const element=ref.current;element.showModal();return()=>{if(element.open)element.close();};},[]);
   const app=window.Telegram?.WebApp,bot=botUsername||'Mockify_app';
   const open=url=>{haptic();if(app?.openTelegramLink)app.openTelegramLink(url);else window.open(url,'_blank','noopener');};
-  const share='https://t.me/share/url?url='+encodeURIComponent('https://t.me/'+bot)+'&text='+encodeURIComponent(t('Turn screenshots into beautiful mockups right in Telegram.'));
   const steps=[['1','Join the program','Open Mockify’s profile in Telegram and tap Affiliate program.'],['2','Share your link','Telegram gives you a personal link to send to friends.'],['3',pct('Earn {percent}%'),'When friends buy stars or Premium, Telegram pays you in Stars.']];
   return <dialog ref={ref} className="refer-sheet" aria-labelledby="refer-title" onCancel={event=>{event.preventDefault();onClose();}} onClick={event=>dismissBackdrop(event,onClose)}>
     <span className="refer-glow" aria-hidden="true"/>
@@ -37,6 +36,5 @@ export function ReferSheet({botUsername,onClose}){
     <p className="refer-lead">{pct('You get {percent}% of every purchase your friends make in Mockify — paid by Telegram, in Stars.')}</p>
     <ol className="refer-steps">{steps.map(([n,title,text])=><li key={n}><span>{n}</span><div><strong>{t(title)}</strong><small>{t(text)}</small></div></li>)}</ol>
     <button type="button" className="refer-primary" onClick={()=>open('https://t.me/'+bot+'?profile')}>{t('Get my link')}</button>
-    <button type="button" className="refer-secondary" onClick={()=>open(share)}>{t('Share Mockify')}</button>
   </dialog>;
 }
