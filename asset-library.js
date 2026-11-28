@@ -173,7 +173,7 @@ export const borderColours={white:'#ffffff',black:'#0b0b0c',cream:'#f3ead7'};
 export const frameKinds=['browser','polaroid','film','glass','box'];
 // The photo's area inside a frame of width × height (mirrors the drawing code below).
 export function innerBox(kind,pose,width,height){
-  if(kind==='border'&&pose.borderStyle!=='line'){const p=Math.max(0,pose.borderWidth??6)/100,pad=p*Math.min(width,height)/(1+2*p);return {x:pad,y:pad,width:width-pad*2,height:height-pad*2};}
+  if(kind==='border'&&pose.borderStyle!=='line'){const p=Math.max(0,pose.borderWidth??1.5)/100,pad=p*Math.min(width,height)/(1+2*p);return {x:pad,y:pad,width:width-pad*2,height:height-pad*2};}
   if(kind==='glass'||kind==='box'){const pad=width*(kind==='glass'?.035:.025);return {x:pad,y:pad,width:width-pad*2,height:height-pad*2};}
   if(kind==='browser'){const bar=Math.max(height*.085,width*.05);return {x:0,y:bar,width,height:height-bar};}
   if(kind==='polaroid'){const side=width*.06,bottom=Math.max(side*2.6,height*.17);return {x:side,y:side,width:width-side*2,height:height-side-bottom};}
@@ -191,7 +191,7 @@ function drawBorder(ctx,pose,media,width,height){
   const outer=Math.min(width,height)*Math.max(0,Math.min(50,pose.imageEdges??4))/100;
   if(pose.borderStyle==='line'){
     fillRound(ctx,pose,media,0,0,width,height,outer);
-    const line=Math.max(2,Math.min(width,height)*Math.max(.4,(pose.borderWidth??6)/6)/100),inset=Math.min(width,height)*.035+line/2;
+    const line=Math.max(2,Math.min(width,height)*Math.max(.3,(pose.borderWidth??1.5)/4)/100),inset=Math.min(width,height)*.035+line/2;
     ctx.save();ctx.strokeStyle='#ffffffe6';ctx.lineWidth=line;ctx.beginPath();ctx.roundRect(inset,inset,width-inset*2,height-inset*2,Math.max(0,outer-inset));ctx.stroke();ctx.restore();return;
   }
   ctx.fillStyle=borderColours[pose.borderStyle]??borderColours.white;ctx.fillRect(0,0,width,height);

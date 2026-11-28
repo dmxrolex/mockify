@@ -364,7 +364,7 @@ export function setObjectBorder(project,id,choice,{width}={}){
       const keep=object.pose.device!=='flat'?{framedPose:{...object.pose}}:framedPose?{framedPose}:{};
       if(choice==='none')return {...base,...keep,pose:flat};
       const style=['white','black','cream','line'].includes(choice)?choice:null,kind=style?'border':choice;
-      const next={...flat,assetKind:kind,assetEmpty:false,...(style?{borderStyle:style,borderWidth:width??object.pose.borderWidth??6}:{})};
+      const next={...flat,assetKind:kind,assetEmpty:false,...(style?{borderStyle:style,borderWidth:width??object.pose.borderWidth??1.5}:{})};
       return {...base,...keep,pose:{...next,frameAspect:frameAspectFor(kind,aspect,next)}};
     });
     const byId=new Map(objects.map(object=>[object.id,object]));

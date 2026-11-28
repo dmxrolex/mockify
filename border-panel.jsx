@@ -8,6 +8,8 @@ import {assetPreview,borderColours} from './asset-library.js';
 import {borderChoice} from './page-model.js';
 import './border-panel.css';
 
+// Slim by default, like the border new photos get; up to a bold 10.
+const DEFAULT_WIDTH=1.5,MAX_WIDTH=10;
 const plain=[['white','White'],['black','Black'],['cream','Cream'],['line','Line']];
 const frames=[['phone','iPhone'],['browser','Browser'],['polaroid','Instant'],['film','Film'],['glass','Glass'],['box','Box']];
 
@@ -18,8 +20,8 @@ function Swatch({style}){
 
 export default function BorderInspector({settings,disabled,onChoose,onDone}){
   const current=borderChoice(disabled?null:settings),isPlain=plain.some(([key])=>key===current);
-  const [width,setWidth]=useState(settings.borderWidth??6);
-  useEffect(()=>{setWidth(settings.borderWidth??6);},[settings.borderWidth,settings.selectedLayerId]);
+  const [width,setWidth]=useState(settings.borderWidth??DEFAULT_WIDTH);
+  useEffect(()=>{setWidth(settings.borderWidth??DEFAULT_WIDTH);},[settings.borderWidth,settings.selectedLayerId]);
   const choose=key=>{if(key===current)return;hapticSelection();onChoose(key,isPlain||plain.some(([k])=>k===key)?width:undefined);};
   const option=(key,label,face)=><button key={key} type="button" className="polished-option border-option" role="radio" aria-checked={current===key} aria-pressed={current===key} onClick={()=>choose(key)}>{face}<small>{t(label)}</small></button>;
   return <section className="border-panel" aria-label={t('Borders')}>
@@ -31,9 +33,9 @@ export default function BorderInspector({settings,disabled,onChoose,onDone}){
       {frames.map(([key,label])=>option(key,label,<span className="border-face is-frame"><img src={assetPreview(key)} alt="" draggable={false}/></span>))}
     </fieldset>
     {/* Thickness only means something for the plain borders; it stays in place, disabled, otherwise. */}
-    <label className="tune-slider border-width" data-disabled={!isPlain||disabled||undefined} style={{'--from':'0%','--to':(width-1)/19*100+'%','--tint':'#f5f5f7'}}>
+    <label className="tune-slider border-width" data-disabled={!isPlain||disabled||undefined} style={{'--from':'0%','--to':(width-.5)/(MAX_WIDTH-.5)*100+'%','--tint':'#f5f5f7'}}>
       <span className="tune-slider-label">{t('Thickness')}<output>{width}</output></span>
-      <input type="range" min="1" max="20" step="1" value={width} disabled={!isPlain||disabled} aria-label={t('Border thickness')}
+      <input type="range" min=".5" max={MAX_WIDTH} step=".5" value={width} disabled={!isPlain||disabled} aria-label={t('Border thickness')}
         onChange={event=>{const value=Number(event.target.value);setWidth(value);onChoose(current,value);}}/>
     </label>
   </section>;

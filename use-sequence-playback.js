@@ -70,7 +70,7 @@ export function useSequencePlayback(settings,sources){
   }
   useLayoutEffect(()=>{if(timeline)sync(current,playing);},[current,playing,revision,key,settings]);
   useEffect(()=>{
-    if(!playing)return;clock.current={time:state.current.current,at:performance.now()};let frame;
+    if(!playing)return;clock.current={time:state.current.current,at:performance.now()};let frame,lastUi=0;
     function tick(now){
       const s=state.current,time=clock.current.time+(now-clock.current.at)/1000;
       if(!s.playing)return;
@@ -81,7 +81,9 @@ export function useSequencePlayback(settings,sources){
         // Pause the project clock while a newly entered clip is still loading.
         clock.current={time:s.current,at:now};sync(s.current,false);frame=requestAnimationFrame(tick);return;
       }
-      sync(time,true);state.current.current=time;setCurrent(time);frame=requestAnimationFrame(tick);
+      // The video itself plays at full rate; the editor UI (playhead, overlays) re-renders at
+      // most 30 times a second, which halves the work on 60/120 Hz phones without visible steps.
+      sync(time,true);state.current.current=time;if(now-lastUi>=32){lastUi=now;setCurrent(time);}frame=requestAnimationFrame(tick);
     }
     frame=requestAnimationFrame(tick);return()=>{cancelAnimationFrame(frame);clock.current=null;for(const value of runtime.current.values())value.element.pause();};
   },[playing,key]);
