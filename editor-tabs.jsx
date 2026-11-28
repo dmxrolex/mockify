@@ -4,6 +4,7 @@ import { builtInLooks, lookPreview, sameLook } from './looks.js';
 import { LookThumb, useLookPress } from './looks-ui.jsx';
 import { hapticSelection, hapticImpact } from './haptics.js';
 import { dismissBackdrop } from './dialog-dismiss.js';
+import { PanelHeader } from './tune-panel.jsx';
 import './editor-tabs.css';
 
 const glyph={
@@ -49,19 +50,17 @@ export function GroupPanel({label,chips,active,onChip,onBack,children}){
   // Keep the chosen chip visible by scrolling only the chip row, never the panel.
   useLayoutEffect(()=>{const node=row.current,chip=node?.querySelector('[aria-pressed=true]');if(!chip)return;const left=chip.offsetLeft-node.offsetLeft,right=left+chip.offsetWidth;if(left<node.scrollLeft)node.scrollLeft=left-8;else if(right>node.scrollLeft+node.clientWidth)node.scrollLeft=right-node.clientWidth+8;},[active]);
   return <div className="group-panel" role="group" aria-label={t(label)}>
-    <div className="group-heading">
-      <button type="button" className="group-back controls-back" aria-label={t('Back to editor controls')} onClick={onBack}><Glyph name="back"/></button>
-      <div ref={row} className="group-chips" role="tablist" aria-label={t(label)}>
+    {/* Several sections show as tabs in the title's place; a single one is just the title. */}
+    <PanelHeader title={label} onBack={onBack} onDone={onBack}>{chips.length>1?<div ref={row} className="group-chips" role="tablist" aria-label={t(label)}>
         {chips.map(chip=><button key={chip.key} type="button" role="tab" aria-selected={active===chip.key} aria-pressed={active===chip.key} disabled={chip.disabled} onClick={()=>{hapticSelection();onChip(chip.key);}}>{t(chip.label)}</button>)}
-      </div>
-    </div>
+      </div>:null}</PanelHeader>
     <div className="group-body" key={active}>{children}</div>
   </div>;
 }
 
 export function MorePanel({items,onBack}){
   return <div className="group-panel more-panel" role="group" aria-label={t('More tools')}>
-    <div className="group-heading"><button type="button" className="group-back controls-back" aria-label={t('Back to editor controls')} onClick={onBack}><Glyph name="back"/></button><span className="group-title">{t('More')}</span></div>
+    <PanelHeader title="More" onBack={onBack} onDone={onBack}/>
     <div className="more-grid">{items.map(item=><button key={item.key} type="button" data-tool={item.key} disabled={item.disabled} onClick={()=>{hapticSelection();item.action();}}><span>{item.icon}</span>{t(item.label)}</button>)}</div>
   </div>;
 }

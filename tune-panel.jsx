@@ -6,17 +6,23 @@ import './tune-panel.css';
 // One compact panel for numeric looks (Adjust, Shadow): round chips across the top, each with
 // a ring showing its value, and a single large slider for the chosen one, as in iOS Photos.
 // Nothing scrolls; double-tap a chip to reset it.
+// The one header for every editor sub-panel: round back button, bold title (or tabs in its
+// place), then actions on the right — Reset in grey, Done in blue.
+export function PanelHeader({title,onBack,onDone,backLabel='Back to editor controls',children,actions}){
+  return <header className="tune-heading">
+    <button type="button" className="tune-round panel-back" aria-label={t(backLabel)} onClick={onBack??onDone}><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg></button>
+    {children??<h2>{t(title)}</h2>}
+    {actions}
+    {onDone&&<button type="button" className="tune-text tune-done" onClick={onDone}>{t('Done')}</button>}
+  </header>;
+}
+
 export default function TunePanel({title,items,active,onActive,onReset,onDone,onBack,changed=false,children}){
   const [local,setLocal]=useState(items.find(item=>!item.disabled)?.key);
   const key=active??local,select=onActive??setLocal,item=items.find(entry=>entry.key===key)??items[0];
   const span=item.max-item.min,fill=item.min<0?{from:(Math.min(0,item.value)-item.min)/span,to:(Math.max(0,item.value)-item.min)/span}:{from:0,to:(item.value-item.min)/span};
   return <section className="tune-panel" aria-label={t(title)}>
-    <header className="tune-heading">
-      <button type="button" className="tune-round" aria-label={t('Back to editor controls')} onClick={onBack??onDone}><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg></button>
-      <h2>{t(title)}</h2>
-      {onReset&&<button type="button" className="tune-text" disabled={!changed&&!items.some(entry=>entry.value!==entry.initial)} onClick={onReset}>{t('Reset')}</button>}
-      <button type="button" className="tune-text tune-done" onClick={onDone}>{t('Done')}</button>
-    </header>
+    <PanelHeader title={title} onBack={onBack??onDone} onDone={onDone} actions={onReset&&<button type="button" className="tune-text" disabled={!changed&&!items.some(entry=>entry.value!==entry.initial)} onClick={onReset}>{t('Reset')}</button>}/>
     {children}
     <div className="tune-chips" role="radiogroup" aria-label={t(title)}>
       {items.map(entry=>{const amount=Math.abs(entry.value-entry.initial)/Math.max(Math.abs(entry.max-entry.initial),Math.abs(entry.min-entry.initial));

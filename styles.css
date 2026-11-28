@@ -736,3 +736,7 @@ a,button,canvas,svg { -webkit-touch-callout:none; -webkit-user-drag:none; }
 .app-shell :is(input,textarea,[contenteditable="true"]) { -webkit-user-select:text; user-select:text; -webkit-touch-callout:default; }
 /* Sub-pages inside Telegram: Telegram's back arrow replaces the header, so only the safe area stays. */
 .header.is-bare { min-block-size:0; block-size:calc(var(--safe-top) + 8px); padding:0; }
+/* Editor sub-panels share one header (PanelHeader) above their options. */
+.controls { grid-template-columns:minmax(0,1fr); gap:6px; padding-block-start:4px; }
+.controls > .tune-heading { padding-inline:2px; }
+.editor[data-shadow-wheel="true"] .controls-back { margin-block-start:0; }
