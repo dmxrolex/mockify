@@ -1,0 +1,43 @@
+/* Refer & earn banner: a slim gold strip with a living star and drifting sparkles. */
+.refer-banner { position:relative; display:flex; align-items:center; gap:10px; min-block-size:58px; padding:6px 14px 6px 8px; overflow:hidden; border:0; border-radius:18px; background:radial-gradient(120% 160% at 0% 50%,#ffcf4a33,transparent 60%),linear-gradient(100deg,#2b2209,#1d1a12 55%,#22190a); box-shadow:inset 0 0 0 1px #ffd35a33,0 8px 22px #0006; color:#fff; text-align:start; font-family:inherit; isolation:isolate; transition:scale .22s var(--spring); }
+.refer-banner:active { scale:.97; }
+.refer-banner:focus-visible { outline:2px solid #ffd35a; outline-offset:2px; }
+.refer-star { display:block; flex:none; inline-size:44px; block-size:44px; }
+.refer-star svg,.refer-hero svg { inline-size:100% !important; block-size:100% !important; stroke:none; }
+.refer-copy { display:grid; gap:2px; flex:1; min-inline-size:0; }
+.refer-copy strong { font-size:15.5px; font-weight:700; letter-spacing:-.01em; background:linear-gradient(90deg,#ffe08a,#ffb938); -webkit-background-clip:text; background-clip:text; color:transparent; }
+.refer-copy small { overflow:hidden; color:#d9c79a; font-size:12.5px; text-overflow:ellipsis; white-space:nowrap; }
+.refer-go { flex:none; inline-size:16px; block-size:16px; fill:none; stroke:#c9a95a; stroke-width:2.4; stroke-linecap:round; stroke-linejoin:round; }
+.refer-sparkles { position:absolute; inset:0; z-index:-1; pointer-events:none; }
+.refer-sparkles i { position:absolute; inset-block-start:calc(20% + var(--i) * 11%); inset-inline-start:calc(30% + var(--i) * 11%); inline-size:4px; block-size:4px; border-radius:50%; background:#ffd35a; opacity:.5; box-shadow:0 0 6px #ffd35a; }
+
+/* The sheet: half the screen, warm glow, big star, three steps, one gold action. */
+dialog.refer-sheet { position:fixed; inset:auto 0 0; inline-size:min(100%,480px); max-inline-size:100%; max-block-size:calc(100dvh - var(--safe-top,0px) - 24px); margin:0 auto; padding:0 20px calc(18px + var(--safe-bottom,0px)); overflow:auto; overscroll-behavior:contain; border:0; border-radius:30px 30px 0 0; background:#121214; color:#f5f5f7; font-family:-apple-system,BlinkMacSystemFont,system-ui,sans-serif; text-align:center; isolation:isolate; }
+dialog.refer-sheet[open] { display:grid; justify-items:center; }
+.refer-sheet::backdrop { background:#0009; }
+.refer-glow { position:absolute; inset:-80px 0 auto; z-index:-1; block-size:260px; background:radial-gradient(50% 60% at 50% 50%,#ffc53d40,transparent 70%); pointer-events:none; }
+.refer-grabber { display:block; inline-size:36px; block-size:5px; margin-block-start:7px; border-radius:3px; background:#ffffff38; }
+.refer-close { position:absolute; inset:12px 14px auto auto; display:grid; place-items:center; inline-size:32px; block-size:32px; padding:0; border:0; border-radius:50%; background:#2c2c2e; color:#aeaeb2; }
+.refer-close::before { content:''; position:absolute; inset:-6px; }
+.refer-close svg { inline-size:14px; block-size:14px; fill:none; stroke:currentColor; stroke-width:2.4; stroke-linecap:round; }
+.refer-hero { display:block; inline-size:104px; block-size:104px; margin-block-start:10px; }
+.refer-sheet h2 { margin:4px 0 0; font-size:24px; font-weight:750; letter-spacing:-.02em; }
+.refer-lead { max-inline-size:320px; margin:8px 0 0; color:#c7c7cc; font-size:15px; line-height:1.4; }
+.refer-steps { display:grid; inline-size:100%; margin:16px 0 0; padding:0; overflow:hidden; border-radius:18px; background:#1c1c1e; list-style:none; text-align:start; }
+.refer-steps li { display:flex; align-items:center; gap:12px; padding:11px 14px; }
+.refer-steps li + li { box-shadow:inset 0 .5px 0 #ffffff1f; }
+.refer-steps li > span { display:grid; place-items:center; flex:none; inline-size:28px; block-size:28px; border-radius:50%; background:linear-gradient(180deg,#ffd35a,#f5a623); color:#3a2400; font-size:14px; font-weight:800; }
+.refer-steps div { display:grid; gap:2px; }
+.refer-steps strong { font-size:15px; font-weight:600; }
+.refer-steps small { color:#8e8e93; font-size:13px; line-height:1.35; }
+.refer-primary,.refer-secondary { inline-size:100%; min-block-size:52px; margin-block-start:14px; border:0; border-radius:16px; font:700 17px/1 inherit; font-family:inherit; transition:scale .2s var(--spring); }
+.refer-primary { background:linear-gradient(180deg,#ffd35a,#f5a623); color:#3a2400; box-shadow:0 8px 24px #f5a62340; }
+.refer-secondary { margin-block-start:8px; background:#2c2c2e; color:#fff; font-weight:600; }
+.refer-primary:active,.refer-secondary:active { scale:.97; }
+.refer-sheet button:focus-visible { outline:2px solid #fff; outline-offset:2px; }
+@media(prefers-reduced-motion:no-preference) {
+  dialog.refer-sheet[open] { animation:refer-in .36s cubic-bezier(.2,.8,.2,1); }
+  @keyframes refer-in { from { translate:0 60px; opacity:0; } }
+  .refer-sparkles i { animation:refer-drift 3.2s calc(var(--i) * -.55s) ease-in-out infinite; }
+  @keyframes refer-drift { 0%,100% { translate:0 0; opacity:.15; scale:.6; } 50% { translate:-14px -6px; opacity:.8; scale:1.2; } }
+}

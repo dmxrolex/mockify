@@ -8,6 +8,7 @@ import { switchPanel } from './ui-motion.js';
 import { hapticSelection } from './haptics.js';
 import TermsSheet from './terms-sheet.jsx';
 import PromoSheet from './promo-sheet.jsx';
+import {ReferBanner,ReferSheet} from './refer-sheet.jsx';
 const AdminPage=lazy(()=>import('./admin-page.jsx'));
 import './settings-page.css';
 
@@ -39,7 +40,7 @@ function Toggle({icon,label,caption,checked,onChange,disabled=false}){
 }
 
 export default function SettingsPage({preferences,update,onBalance,onSubscription,profile,botUsername,draftCount=0,telegram,onAccount,nativeBack=false,onSubpage}) {
-  const [view,setView]=useState('main'),[terms,setTerms]=useState(false),[costs,setCosts]=useState(false),[promo,setPromo]=useState(false),root=useRef(null);
+  const [view,setView]=useState('main'),[terms,setTerms]=useState(false),[costs,setCosts]=useState(false),[promo,setPromo]=useState(false),[refer,setRefer]=useState(false),root=useRef(null);
   useEffect(()=>{if(!('switch' in HTMLInputElement.prototype))import('input-switch-polyfill').catch(()=>{});},[]);
   const status=subscriptionInfo(profile?.subscription),premium=status.active,balance=profile?.credits??0;
   const name=[profile?.firstName,profile?.lastName].filter(value=>typeof value==='string'&&value.trim()).join(' ')||t('Guest');
@@ -86,6 +87,7 @@ export default function SettingsPage({preferences,update,onBalance,onSubscriptio
           <em>{t(premium?'Extend':'See plans')}</em>
         </button>
       </div>
+      <ReferBanner onOpen={()=>setRefer(true)}/>
 
       <div className="ios-settings-group settings-group">
         <Row icon="language" className="settings-language-link" label="Language" value={languages.find(([value])=>value===preferences.language)?.[1]} onClick={()=>go('language')}/>
@@ -117,6 +119,7 @@ export default function SettingsPage({preferences,update,onBalance,onSubscriptio
       {profile?.admin&&<div className="ios-settings-group settings-group"><Row icon="dashboard" label="Owner dashboard" onClick={()=>go('admin')}/></div>}
     </>}
     <TermsSheet open={terms} onClose={()=>setTerms(false)}/>
+    {refer&&<ReferSheet botUsername={botUsername} onClose={()=>setRefer(false)}/>}
     {promo&&<PromoSheet telegram={telegram} onAccount={onAccount} onClose={()=>setPromo(false)} onUseDiscount={scope=>{setPromo(false);(scope==='credits'?onBalance:onSubscription)?.();}}/>}
   </section>;
 }
