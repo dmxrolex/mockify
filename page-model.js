@@ -316,7 +316,7 @@ export function appendItems(project,imported,{overlay}={}) {
   if(!imported.length)return ensurePages(project);
   let prior=ensurePages(project);
   overlay??=false;
-  const known=new Set(prior.items.map(item=>item.id)),added=imported.filter(item=>!known.has(item.id)).map(item=>({...item,settings:{...item.settings,...(overlay?{device:'flat',locked:false,cleanup:'off',fit:'contain',imageEdges:4,shadow:38}:{}),locked:overlay?false:item.settings?.locked??item.settings?.device!=='flat'}}));
+  const known=new Set(prior.items.map(item=>item.id)),added=imported.filter(item=>!known.has(item.id)).map(item=>({...item,settings:{...item.settings,...(overlay?{device:'flat',locked:false,cleanup:'off',fit:'contain',imageEdges:7,shadow:38}:{}),locked:overlay?false:item.settings?.locked??item.settings?.device!=='flat'}}));
   if(!added.length)return prior;
   prior={...prior,items:[...prior.items,...added]};
   if(prior.pages.length){
