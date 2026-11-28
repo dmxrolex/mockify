@@ -47,14 +47,15 @@ test('limits: max redemptions, expiry, new accounts only, unknown codes and retr
   assert.equal((await redeemPromo(env,{id:'3'},'NEWBIE',accountFor)).status,429);
 });
 
-test('owner overview counts bot and app users and lists codes',async()=>{
+test('owner overview counts app accounts, bot-only starts separately, and lists codes',async()=>{
   const env=await setup();
   await recordBotUser(env,{id:99,first_name:'Bot',username:'botuser'});
   await create(env,{code:'HELLO',kind:'stars',amount:10});
   const {body}=await adminRequest(env,{action:'overview'});
-  assert.equal(body.totals.users,4);assert.equal(body.totals.bot,1);assert.equal(body.totals.week,1);
-  assert.equal(body.daily.length,7);assert.equal(body.daily.at(-1).count,1);
-  assert.equal(body.recentUsers[0].username,'botuser');assert.equal(body.recentUsers[0].source,'bot');
+  // App accounts are the users; people who only pressed /start are counted on their own.
+  assert.equal(body.totals.users,3);assert.equal(body.totals.bot,1);assert.equal(body.totals.week,0);
+  assert.equal(body.daily.length,7);assert.equal(body.daily.at(-1).count,0);
+  assert.ok(body.recentUsers.every(user=>user.source!=='bot'));
   assert.equal(body.promos[0].code,'HELLO');
   assert.equal((await adminRequest(env,{action:'users',query:'@botuser'})).body.users.length,1);
   assert.equal((await create(env,{code:'HELLO',kind:'stars',amount:10})).status,409);

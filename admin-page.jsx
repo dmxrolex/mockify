@@ -30,7 +30,7 @@ function UserRow({user}){
   const premium=user.premiumUntil&&user.premiumUntil>Date.now();
   return <li><button type="button" className="admin-row" onClick={()=>openProfile(user)} disabled={!user.username}>
     <Avatar user={user}/>
-    <span className="admin-row-main"><strong>{user.name}{user.telegramPremium&&<i className="admin-tg-premium" title="Telegram Premium">★</i>}</strong><small>{user.username?'@'+user.username:'id '+user.id} · {user.source==='bot'?'via bot':'via app'}</small></span>
+    <span className="admin-row-main"><strong>{user.name}{user.telegramPremium&&<i className="admin-tg-premium" title="Telegram Premium">★</i>}</strong><small>{user.username?'@'+user.username:'id '+user.id}{user.source==='bot'?' · bot only':''}</small></span>
     <span className="admin-row-side">{premium?<b className="admin-pill is-premium">Premium · {date(user.premiumUntil)}</b>:<b className="admin-pill">{num(user.credits)} ★</b>}<small>{ago(user.joinedAt)}</small></span>
   </button></li>;
 }
@@ -38,7 +38,7 @@ function UserRow({user}){
 function Overview({data}){
   const t=data.totals,max=Math.max(1,...data.daily.map(day=>day.count));
   const [showAll,setShowAll]=useState(false);
-  const tiles=[['Users',num(t.users),`+${num(t.day)} today`],['New · 7 days',num(t.week),`${num(t.bot)} via bot overall`],['Active · 7 days',num(t.active),`${t.users?Math.round(t.active/t.users*100):0}% of users`],['Premium',num(t.premium),'active now'],['Revenue · 7 days',stars(t.revenueWeek),<>{num(t.revenue)} ★ all time</>],['Exports · 7 days',num(t.exports),`${num(t.orders)} paid orders`]];
+  const tiles=[['Users',num(t.users),`+${num(t.day)} today`],['New · 7 days',num(t.week),`${num(t.bot)} started the bot only`],['Active · 7 days',num(t.active),`${t.users?Math.round(t.active/t.users*100):0}% of users`],['Premium',num(t.premium),'active now'],['Revenue · 7 days',stars(t.revenueWeek),<>{num(t.revenue)} ★ all time</>],['Exports · 7 days',num(t.exports),`${num(t.orders)} paid orders`]];
   return <>
     <div className="admin-tiles">{tiles.map(([label,value,note])=><div key={label} className="admin-tile"><span>{label}</span><strong>{value}</strong><small>{note}</small></div>)}</div>
     <section className="admin-card"><h3>New users <small>last 7 days</small></h3>
@@ -65,7 +65,7 @@ function Users({telegram}){
   useEffect(()=>{const timer=setTimeout(()=>load(0),query?300:0);return()=>clearTimeout(timer);},[load,query]);
   return <>
     <label className="admin-search"><Icon name="search"/><input type="search" placeholder="Name, @username or ID" value={query} onChange={event=>setQuery(event.target.value)} enterKeyHint="search"/></label>
-    <div className="admin-chips" role="radiogroup" aria-label="Filter">{[['all','All'],['premium','Premium'],['bot','Via bot']].map(([key,label])=><button key={key} type="button" role="radio" aria-checked={filter===key} onClick={()=>{haptic();setFilter(key);}}>{label}</button>)}</div>
+    <div className="admin-chips" role="radiogroup" aria-label="Filter">{[['all','All'],['premium','Premium'],['bot','Bot only']].map(([key,label])=><button key={key} type="button" role="radio" aria-checked={filter===key} onClick={()=>{haptic();setFilter(key);}}>{label}</button>)}</div>
     {error&&<p className="admin-error" role="alert">{error}</p>}
     {list==null?<div className="admin-skeleton" aria-hidden="true"/>:list.length?<section className="admin-card"><ul className="admin-list">{list.map(user=><UserRow key={user.id} user={user}/>)}</ul>{more&&<button type="button" className="admin-more" onClick={()=>load(list.length)}>Load more</button>}</section>:<p className="admin-empty">No users match.</p>}
   </>;

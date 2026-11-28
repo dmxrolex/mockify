@@ -114,7 +114,7 @@ export default {
       try {
         await ensureSchema(env);
         await env.DB.prepare(
-          "INSERT INTO users (id, profile, created_at, last_seen_at, source) VALUES (?, ?, ?, ?, 'app') ON CONFLICT(id) DO UPDATE SET profile=excluded.profile, last_seen_at=excluded.last_seen_at"
+          "INSERT INTO users (id, profile, created_at, last_seen_at, source) VALUES (?, ?, ?, ?, 'app') ON CONFLICT(id) DO UPDATE SET profile=excluded.profile, last_seen_at=excluded.last_seen_at, source='app'"
         ).bind(user.id, JSON.stringify(user), Date.now(), Date.now()).run();
         return json({ user:{...user,...await accountFor(env,user.id),...(isAdmin(env,user)?{admin:true}:{})} });
       } catch { return json({ error: 'Profile service unavailable. Try again.' }, 503); }
