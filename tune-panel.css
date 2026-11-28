@@ -2,7 +2,7 @@
 .tune-panel { display:grid; gap:10px; padding:4px 14px calc(10px + var(--safe-bottom)); color:#f5f5f7; font-family:-apple-system,BlinkMacSystemFont,system-ui,sans-serif; }
 .tune-heading { display:flex; align-items:center; gap:4px; min-block-size:44px; }
 .tune-heading h2 { flex:1; margin:0 6px; font-size:17px; font-weight:650; letter-spacing:-.02em; }
-.tune-round { display:grid; place-items:center; inline-size:40px; block-size:40px; padding:0; border:0; border-radius:50%; background:#1c1c1e; box-shadow:inset 0 0 0 1px #ffffff14; color:#f5f5f7; }
+.tune-round { flex:none; display:grid; place-items:center; inline-size:40px; block-size:40px; padding:0; border:0; border-radius:50%; background:#1c1c1e; box-shadow:inset 0 0 0 1px #ffffff14; color:#f5f5f7; }
 .tune-round svg { inline-size:18px; block-size:18px; fill:none; stroke:currentColor; stroke-width:2; stroke-linecap:round; stroke-linejoin:round; }
 .tune-text { min-block-size:44px; padding:0 8px; border:0; background:none; color:#8e8e93; font:500 15px/1 inherit; font-family:inherit; }
 .tune-text:disabled { opacity:.35; }
@@ -14,7 +14,7 @@
 .tune-dial::before { content:''; position:absolute; inset:0; border-radius:50%; background:conic-gradient(var(--tint) calc(var(--amount) * 360deg),#ffffff1f 0); -webkit-mask:radial-gradient(closest-side,transparent calc(100% - 3px),#000 calc(100% - 2.5px)); mask:radial-gradient(closest-side,transparent calc(100% - 3px),#000 calc(100% - 2.5px)); }
 .tune-dial svg { inline-size:22px; block-size:22px; fill:none; stroke:currentColor; stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round; }
 .tune-chip[aria-checked=true] { color:#f5f5f7; }
-.tune-chip[aria-checked=true] .tune-dial { background:#2c2c2e; box-shadow:0 0 0 2px #000,0 0 0 3.5px var(--tint); }
+.tune-chip[aria-checked=true] .tune-dial { background:#2c2c2e; box-shadow:0 0 0 2px #000,0 0 0 3.5px #fff; }
 .tune-chip:not(:disabled):active .tune-dial { scale:.9; }
 .tune-chip:disabled { opacity:.35; }
 .tune-chip:focus-visible { outline:none; }.tune-chip:focus-visible .tune-dial { outline:2px solid #fff; outline-offset:4px; }

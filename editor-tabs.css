@@ -115,3 +115,10 @@
 .editor-zoom-slot { display:grid; place-items:center; min-block-size:76px; }
 .editor-zoom-slot .preview-zoom { inline-size:min(410px,calc(100% - 32px)); min-block-size:72px; padding-block:0; }
 
+/* Group and More panels use the shared header; tabs sit where the title would. */
+.group-panel > .tune-heading { padding-inline:14px; gap:6px; }
+.group-panel > .tune-heading .group-chips { flex:1; min-inline-size:0; padding-inline:4px; }
+.more-grid span { inline-size:var(--control-size,48px); block-size:var(--control-size,48px); }
+/* One label style under every round control: grey, white and bolder when chosen. */
+.more-grid button,.tune-chip,.control-options .polished-option small,.control-options .round-choice small { color:#98989f; }
+.tune-chip[aria-checked=true],.control-options [aria-pressed=true] small { color:#fff; font-weight:600; }
