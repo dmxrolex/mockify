@@ -4,7 +4,7 @@ export const botCopy={
     shortDescription:'Beautiful mockups and animated showcases from your screenshots and recordings. Right inside Telegram.',
     startCommand:'Open Mockify and start creating',
     button:'Open Mockify',
-    welcome:'<b>Welcome to Mockify ✨</b>\n\nTurn screenshots and screen recordings into <b>beautiful mockups</b> and <b>animated showcases</b>.\n\nFrame it. Style it. Make it yours.\nYour finished images and videos land right here in chat.',
+    welcome:'<b>Welcome to Mockify ✨</b>\n\nTurn screenshots and screen recordings into <b>beautiful mockups</b> and <b>animated showcases</b>.\n\nPick a device. Style it. Make it yours.\nYour finished images and videos land right here in chat.',
   },
   ru:{
     description:'Превращайте скриншоты и записи экрана в красивые мокапы и анимированные демонстрации. Редактируйте, оформляйте и экспортируйте прямо в Telegram.',

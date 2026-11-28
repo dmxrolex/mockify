@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import {frameReply,frameFile,frameableMedia} from '../chat-framing.js';
 const env={TELEGRAM_BOT_TOKEN:'123:secret',PAYMENTS_BASE_URL:'https://app.example'};
 const message={message_id:7,chat:{id:42},from:{id:42,language_code:'en'},photo:[{file_id:'small',file_size:100},{file_id:'big.file-id',file_size:2000}]};
-test('photos get a Frame it button carrying a signed reference to the largest size',async()=>{
+test('photos get a Make mockup button carrying a signed reference to the largest size',async()=>{
   const reply=await frameReply(message,env);
   const url=new URL(reply.reply_markup.inline_keyboard[0][0].web_app.url);
   assert.equal(url.origin,'https://app.example');

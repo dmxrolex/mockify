@@ -1,13 +1,13 @@
 import {base64url,fromBase64url,signature as sign,same} from './signed-token.js';
-// Framing from the chat: a screenshot or recording sent to the bot gets a "Frame it" button
+// Mockups from the chat: a screenshot or recording sent to the bot gets a "Make mockup" button
 // that opens Mockify with that file loaded. Nothing is stored: the button carries a signed
 // reference, and the file is fetched from Telegram only when its owner opens it.
 const MAX_BYTES=20*1024*1024;
 const mimes={jpg:'image/jpeg',png:'image/png',webp:'image/webp',mp4:'video/mp4',mov:'video/quicktime'};
 const codes=Object.fromEntries(Object.entries(mimes).map(([code,mime])=>[mime,code]));
 const copy={
-  en:{text:'Tap Frame it to open this in Mockify with your look.',button:'✨ Frame it',large:'This file is over 20 MB. Send a shorter recording or a screenshot.'},
-  ru:{text:'Нажмите «Оформить», чтобы открыть это в Mockify в вашем стиле.',button:'✨ Оформить',large:'Файл больше 20 МБ. Отправьте запись короче или скриншот.'},
+  en:{text:'Tap Make mockup to open this in Mockify with your look.',button:'✨ Make mockup',large:'This file is over 20 MB. Send a shorter recording or a screenshot.'},
+  ru:{text:'Нажмите «Сделать мокап», чтобы открыть это в Mockify в вашем стиле.',button:'✨ Сделать мокап',large:'Файл больше 20 МБ. Отправьте запись короче или скриншот.'},
 };
 const encoder=new TextEncoder();
 const signature=(env,payload)=>sign(env,'frame',payload);
