@@ -1,0 +1,50 @@
+/* Compact tuning panel (Adjust, Shadow). Round chips, one slider; fits without scrolling. */
+.tune-panel { display:grid; gap:10px; padding:4px 14px calc(10px + var(--safe-bottom)); color:#f5f5f7; font-family:-apple-system,BlinkMacSystemFont,system-ui,sans-serif; }
+.tune-heading { display:flex; align-items:center; gap:4px; min-block-size:44px; }
+.tune-heading h2 { flex:1; margin:0 6px; font-size:17px; font-weight:650; letter-spacing:-.02em; }
+.tune-round { display:grid; place-items:center; inline-size:40px; block-size:40px; padding:0; border:0; border-radius:50%; background:#1c1c1e; box-shadow:inset 0 0 0 1px #ffffff14; color:#f5f5f7; }
+.tune-round svg { inline-size:18px; block-size:18px; fill:none; stroke:currentColor; stroke-width:2; stroke-linecap:round; stroke-linejoin:round; }
+.tune-text { min-block-size:44px; padding:0 8px; border:0; background:none; color:#8e8e93; font:500 15px/1 inherit; font-family:inherit; }
+.tune-text:disabled { opacity:.35; }
+.tune-done { color:#0a84ff; font-weight:600; }
+.tune-chips { display:flex; justify-content:space-around; gap:4px; }
+.tune-chip { display:grid; justify-items:center; gap:6px; min-inline-size:56px; padding:2px 0; border:0; background:none; color:#8e8e93; font:500 11.5px/1.2 inherit; font-family:inherit; font-variant-numeric:tabular-nums; -webkit-tap-highlight-color:transparent; }
+.tune-dial { position:relative; display:grid; place-items:center; inline-size:52px; block-size:52px; border-radius:50%; background:#1c1c1e; color:#f5f5f7; transition:scale .22s var(--spring),background-color .2s; }
+/* The ring fills with the chip's value, so changed settings are visible at a glance. */
+.tune-dial::before { content:''; position:absolute; inset:0; border-radius:50%; background:conic-gradient(var(--tint) calc(var(--amount) * 360deg),#ffffff1f 0); -webkit-mask:radial-gradient(closest-side,transparent calc(100% - 3px),#000 calc(100% - 2.5px)); mask:radial-gradient(closest-side,transparent calc(100% - 3px),#000 calc(100% - 2.5px)); }
+.tune-dial svg { inline-size:22px; block-size:22px; fill:none; stroke:currentColor; stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round; }
+.tune-chip[aria-checked=true] { color:#f5f5f7; }
+.tune-chip[aria-checked=true] .tune-dial { background:#2c2c2e; box-shadow:0 0 0 2px #000,0 0 0 3.5px var(--tint); }
+.tune-chip:not(:disabled):active .tune-dial { scale:.9; }
+.tune-chip:disabled { opacity:.35; }
+.tune-chip:focus-visible { outline:none; }.tune-chip:focus-visible .tune-dial { outline:2px solid #fff; outline-offset:4px; }
+.tune-slider { display:grid; gap:8px; padding:10px 14px 12px; border-radius:20px; background:#1c1c1e; }
+.tune-slider-label { display:flex; justify-content:space-between; font-size:14px; font-weight:550; }
+.tune-slider-label output { color:#8e8e93; font-size:13px; font-variant-numeric:tabular-nums; }
+.tune-slider input { appearance:none; inline-size:100%; block-size:28px; margin:0; background:linear-gradient(90deg,transparent var(--from),var(--tint) var(--from),var(--tint) var(--to),transparent var(--to)) center/100% 6px no-repeat,linear-gradient(#3a3a3c,#3a3a3c) center/100% 6px no-repeat; border-radius:3px; touch-action:pan-y; }
+.tune-slider input::-webkit-slider-thumb { appearance:none; inline-size:26px; block-size:26px; border-radius:50%; background:#fff; box-shadow:0 2px 8px #0006; }
+.tune-slider input::-moz-range-thumb { inline-size:26px; block-size:26px; border:0; border-radius:50%; background:#fff; box-shadow:0 2px 8px #0006; }
+.tune-slider input:focus-visible { outline:2px solid #fff; outline-offset:4px; }
+.tune-slider:has(input:disabled) { opacity:.4; }
+/* These panels need the room: hide the zoom ruler and size pills while they are open. */
+.editor[data-panel="adjust"] .preview-zoom,.editor[data-panel="adjust"] .editor-context-row,
+.editor[data-panel="shadow"] .preview-zoom,.editor[data-panel="shadow"] .editor-context-row,
+.editor[data-panel="blur"] .preview-zoom,.editor[data-panel="blur"] .editor-context-row { display:none; }
+.editor.page[data-panel="shadow"] .control-sheet,.editor.page[data-panel="adjust"] .control-sheet { padding:0; background:none; max-block-size:none; overflow:visible; }
+@media(prefers-reduced-motion:reduce) { .tune-dial { transition:none; } }
+/* Shadow style: four round pills above the sliders. */
+.shadow-styles { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:6px; padding:4px; border-radius:22px; background:#1c1c1e; }
+.shadow-styles button { display:flex; align-items:center; justify-content:center; gap:5px; min-block-size:40px; padding:0 4px; border:0; border-radius:18px; background:none; color:#aeaeb2; font:600 12.5px/1 inherit; font-family:inherit; transition:background-color .2s,color .2s,scale .2s var(--spring); }
+.shadow-styles svg { inline-size:17px; block-size:17px; flex:none; fill:none; stroke:currentColor; stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round; }
+.shadow-styles button[aria-checked=true] { background:var(--select); color:var(--select-ink); box-shadow:var(--select-edge); }
+.shadow-styles button:active { scale:.94; }
+
+/* Adjust, Shadow and Blur are taller than the default tools row: give them their full height
+   (the canvas shrinks above, the ruler is hidden), so nothing is cut off or needs scrolling. */
+.editor.page.page:not([data-video=true]):not([data-typing=true]):not(.x):not(.y)[data-panel="adjust"],
+.editor.page.page:not([data-video=true]):not([data-typing=true]):not(.x):not(.y)[data-panel="shadow"],
+.editor.page.page:not([data-video=true]):not([data-typing=true]):not(.x):not(.y)[data-panel="blur"],
+.editor.page.page[data-video=true]:not([data-typing=true])[data-panel="adjust"],
+.editor.page.page[data-video=true]:not([data-typing=true])[data-panel="shadow"],
+.editor.page.page[data-video=true]:not([data-typing=true])[data-panel="blur"] { grid-template-rows:minmax(120px,1fr) auto; }
+.editor[data-panel="adjust"] .control-stage,.editor[data-panel="shadow"] .control-stage,.editor[data-panel="blur"] .control-stage { block-size:auto; overflow:visible; }

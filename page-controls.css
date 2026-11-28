@@ -117,3 +117,30 @@
 .size-picker-options button:active { scale:.92; }
 .size-picker-options button:focus-visible { outline:2px solid #fff; outline-offset:2px; }
 
+
+/* Page handler polish: one consistent pill height, larger pager, green selection like the
+   rest of the editor, numbered badges on thumbnails and a dashed New page tile. */
+.editor-context-row { gap:8px; }
+.page-navigation,.editor-context-row .merge-action { min-block-size:44px; }
+.page-navigation::before,.merge-action::before { inset:4px 0; border-radius:20px; background:#1c1c1e; border-color:#ffffff12; }
+.page-navigation { flex:0 0 112px; inline-size:112px; }
+.page-navigation button { flex:0 0 32px; inline-size:32px; }
+.page-navigation svg { inline-size:15px; block-size:15px; stroke-width:2; }
+.page-navigation .page-count { font-size:13px; color:#8e8e93; }
+.page-count strong { font-weight:650; }
+.editor-context-row .merge-action { gap:6px; font:600 13px/1 system-ui,sans-serif; color:#e5e5ea; }
+.merge-action svg { inline-size:16px; block-size:16px; stroke-width:1.8; }
+.merge-page-card { position:relative; border-width:0; box-shadow:inset 0 0 0 1px #ffffff0d; transition:box-shadow .2s,scale .2s var(--spring); }
+.merge-page-card:active { scale:.96; }
+.merge-page-card[aria-pressed="true"] { box-shadow:inset 0 0 0 2px var(--select-ring),0 0 0 3px rgba(48,209,88,.18); }
+.merge-page-card:not(.merge-new-page) > span:last-child { position:absolute; inset:9px auto auto 9px; min-block-size:0; padding:3px 8px; border-radius:10px; background:#000000a8; color:#fff; font:650 11px/1 system-ui,sans-serif; -webkit-backdrop-filter:blur(8px); backdrop-filter:blur(8px); }
+.merge-page-card[aria-pressed="true"]:not(.merge-new-page) > span:last-child { background:#30d158; color:#002a0b; }
+.merge-new-page { box-shadow:none; color:#30d158; background:none; }
+.merge-new-page .merge-page-art { background:none; border:1.5px dashed #ffffff2e; border-radius:14px; }
+.merge-new-page > span:last-child { color:#8e8e93; font-weight:600; }
+.merge-heading button { color:#0a84ff; }
+.merge-check { background:#30d158; color:#002a0b; }
+.merge-image-choice[aria-pressed="true"] .merge-source-art { border-color:var(--select-ring); }
+.merge-section-heading button { color:#0a84ff; }
+.merge-page-rail { align-items:flex-start; }
+.merge-page-card:not(.merge-new-page) { justify-content:flex-start; }
