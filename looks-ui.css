@@ -29,7 +29,7 @@ dialog.look-sheet { position:fixed; inset:auto 0 0; inline-size:min(100%,480px);
 .look-asks button span { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .look-asks i { position:relative; flex:none; inline-size:46px; block-size:28px; border-radius:14px; background:#39393d; transition:background-color .22s; }
 .look-asks i::after { content:''; position:absolute; inset:2px auto auto 2px; inline-size:24px; block-size:24px; border-radius:50%; background:#fff; box-shadow:0 2px 6px #0005; transition:translate .3s var(--spring); }
-.look-asks button[aria-checked=true] i { background:#30d158; }
+.look-asks button[aria-checked=true] i { background:var(--tint); }
 .look-asks button[aria-checked=true] i::after { translate:18px 0; }
 .look-limit { display:grid; gap:4px; justify-items:center; padding:14px; border-radius:16px; background:linear-gradient(135deg,#2a2550,#1c1c1f 70%); text-align:center; }
 .look-limit strong { font-size:15px; }
@@ -48,7 +48,7 @@ dialog.look-sheet { position:fixed; inset:auto 0 0; inline-size:min(100%,480px);
 .look-actions button:active { background:#ffffff0f; }
 .look-actions button.is-danger { color:#ff6961; }
 .look-action-icon { display:grid; place-items:center; flex:none; inline-size:30px; block-size:30px; border-radius:9px; background:#636366; color:#fff; }
-.look-action-icon.is-use { background:#30d158; }
+.look-action-icon.is-use { background:var(--tint); }
 .look-action-icon.is-danger { background:#ff453a; }
 .look-action-icon svg { inline-size:18px; block-size:18px; fill:none; stroke:currentColor; stroke-width:1.9; stroke-linecap:round; stroke-linejoin:round; }
 .look-rename { display:flex; gap:8px; margin:0 16px; }

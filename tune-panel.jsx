@@ -20,12 +20,12 @@ export default function TunePanel({title,items,active,onActive,onReset,onDone,on
     {children}
     <div className="tune-chips" role="radiogroup" aria-label={t(title)}>
       {items.map(entry=>{const amount=Math.abs(entry.value-entry.initial)/Math.max(Math.abs(entry.max-entry.initial),Math.abs(entry.min-entry.initial));
-        return <button key={entry.key} type="button" role="radio" aria-checked={entry.key===item.key} disabled={entry.disabled} className="tune-chip" style={{'--amount':amount,'--tint':entry.tint??'#30d158'}}
+        return <button key={entry.key} type="button" role="radio" aria-checked={entry.key===item.key} disabled={entry.disabled} className="tune-chip" style={{'--amount':amount,'--tint':entry.tint??'#f5f5f7'}}
           onClick={()=>{if(entry.key!==item.key){hapticSelection();select(entry.key);}}} onDoubleClick={()=>{hapticSelection();entry.onChange(entry.initial);}}>
           <span className="tune-dial"><svg viewBox="0 0 24 24" aria-hidden="true">{entry.icon}</svg></span><small>{entry.display??(entry.value===entry.initial?t(entry.label):(entry.value>0&&entry.min<0?'+':'')+entry.value)}</small>
         </button>;})}
     </div>
-    <label className="tune-slider" style={{'--from':fill.from*100+'%','--to':fill.to*100+'%','--tint':item.tint??'#30d158'}}>
+    <label className="tune-slider" style={{'--from':fill.from*100+'%','--to':fill.to*100+'%','--tint':item.tint??'#f5f5f7'}}>
       <span className="tune-slider-label">{t(item.label)}<output>{item.display??((item.value>0&&item.min<0?'+':'')+item.value+(item.suffix??''))}</output></span>
       <input type="range" min={item.min} max={item.max} step={item.step??1} value={item.value} disabled={item.disabled} aria-label={t(item.label)} onChange={event=>item.onChange(event.target.valueAsNumber)}/>
     </label>

@@ -107,7 +107,7 @@
 .editor.page[data-panel="adjust"] { grid-template-rows:minmax(100px,1fr) auto; }
 
 @media(prefers-reduced-motion:no-preference) { .merge-page-card[data-new="true"].page-entry-fallback { animation:new-page-enter .3s cubic-bezier(.2,.8,.2,1); }@keyframes new-page-enter { from{opacity:0;translate:12px 0;scale:.84;}to{opacity:1;translate:0 0;scale:1;} } }
-/* Size pill and its menu: round, compact, the current format highlighted in green. */
+/* Size pill and its menu: round, compact, the current format highlighted. */
 .editor-context-row .size-action { flex:0 0 72px; inline-size:72px; font-variant-numeric:tabular-nums; }
 .editor-context-row .size-action[aria-expanded=true]::before { background:var(--select); box-shadow:var(--select-edge); }
 .size-picker-options { display:grid; grid-template-columns:repeat(4,58px); gap:6px; padding:6px; }
@@ -118,7 +118,7 @@
 .size-picker-options button:focus-visible { outline:2px solid #fff; outline-offset:2px; }
 
 
-/* Page handler polish: one consistent pill height, larger pager, green selection like the
+/* Page handler polish: one consistent pill height, larger pager, neutral selection like the
    rest of the editor, numbered badges on thumbnails and a dashed New page tile. */
 .editor-context-row { gap:8px; }
 .page-navigation,.editor-context-row .merge-action { min-block-size:44px; }
@@ -132,14 +132,14 @@
 .merge-action svg { inline-size:16px; block-size:16px; stroke-width:1.8; }
 .merge-page-card { position:relative; border-width:0; box-shadow:inset 0 0 0 1px #ffffff0d; transition:box-shadow .2s,scale .2s var(--spring); }
 .merge-page-card:active { scale:.96; }
-.merge-page-card[aria-pressed="true"] { box-shadow:inset 0 0 0 2px var(--select-ring),0 0 0 3px rgba(48,209,88,.18); }
+.merge-page-card[aria-pressed="true"] { box-shadow:inset 0 0 0 2px var(--select-ring),0 0 0 3px #ffffff24; }
 .merge-page-card:not(.merge-new-page) > span:last-child { position:absolute; inset:9px auto auto 9px; min-block-size:0; padding:3px 8px; border-radius:10px; background:#000000a8; color:#fff; font:650 11px/1 system-ui,sans-serif; -webkit-backdrop-filter:blur(8px); backdrop-filter:blur(8px); }
-.merge-page-card[aria-pressed="true"]:not(.merge-new-page) > span:last-child { background:#30d158; color:#002a0b; }
-.merge-new-page { box-shadow:none; color:#30d158; background:none; }
+.merge-page-card[aria-pressed="true"]:not(.merge-new-page) > span:last-child { background:#fff; color:#000; }
+.merge-new-page { box-shadow:none; color:#fff; background:none; }
 .merge-new-page .merge-page-art { background:none; border:1.5px dashed #ffffff2e; border-radius:14px; }
 .merge-new-page > span:last-child { color:#8e8e93; font-weight:600; }
 .merge-heading button { color:#0a84ff; }
-.merge-check { background:#30d158; color:#002a0b; }
+.merge-check { background:#fff; color:#000; }
 .merge-image-choice[aria-pressed="true"] .merge-source-art { border-color:var(--select-ring); }
 .merge-section-heading button { color:#0a84ff; }
 .merge-page-rail { align-items:flex-start; }
