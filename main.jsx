@@ -41,7 +41,7 @@ import { setHapticsEnabled } from './haptics.js';
 import { changeScene, itemId, loadProject, newProject, ownedMedia, saveProject, sceneFor } from './project.js';
 import { Picker, EffectsControls, EdgesControls, ImageControls, PreviewZoom, SizeControls, BackgroundControls, ShadowControls, StatusControls, TimeControls } from './editor-controls.jsx';
 import HomeScreen from './home.jsx';
-import DraftTile from './draft-tiles.jsx';
+import DraftGrid from './draft-tiles.jsx';
 import ToolScroller from './tool-scroller.jsx';
 import {useProjectHistory} from './use-project-history.js';
 import {sameProjectContent} from './project-history.js';
@@ -724,7 +724,7 @@ function Editor({ fillSpot, looks=[], onUseLook, onManageLook, onSaveLook, proje
 function DraftPage({ list, onOpen, onRemove }) {
   if (!list) return <section className="page files-empty" aria-label={t("Loading saved work")} aria-busy="true"/>;
   if (!list.length) return <section className="page files-empty" aria-label={t("Saved work")}><AnimatedSticker slot="files" className="files-animation"/><p>{t("Your saved work will appear here.")}</p></section>;
-  return <div className="page draft-gallery-grid files-grid" aria-label={t("Saved work")}>{Array.from({length:Math.max(9,list.length)},(_,index)=><DraftTile key={list[index]?.id??'empty-'+index} draft={list[index]} onOpen={onOpen} onRemove={onRemove}/>)}</div>;
+  return <DraftGrid list={list} onOpen={onOpen} onRemove={onRemove}/>;
 }
 
 function ProfilePage({profile,authStatus,telegram,config,onRetry}) {
