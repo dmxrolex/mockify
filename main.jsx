@@ -14,7 +14,7 @@ import {useSequencePlayback} from './use-sequence-playback.js';
 import {timelineFor,timelineDuration,placedClips,timelineOwner,effectTime,cameraValue,cameraFrames,timelineId,updateTimeline,removeTimelineItem,splitTimelineClip} from './timeline-model.js';
 import {recordingInScene} from './video-plan.js';
 import {assetLibrary,assetFor,loadAsset} from './asset-library.js';
-import React, { useEffect, useLayoutEffect, useId, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useLayoutEffect, useId, useRef, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import {flushSync} from 'react-dom';
 import { backdrops, createRenderer, defaults, detectPhone, finishes, loadDeviceArt, loadWatermarkBadge, ratios, suggestDevice, templates, zoomLevel } from './render.js';
@@ -765,6 +765,8 @@ function App({initialTelegram=null,initialProfile=null}) {
   const [exporting, setExporting] = useState(false);
   const [message, setMessage] = useState('');
   const [telegram, setTelegram] = useState(initialTelegram);
+  // Set by Settings while a sub-page (Language, Dashboard) is open: Telegram's back arrow returns from it.
+  const [settingsBack,setSettingsBackState]=useState(null),setSettingsBack=useCallback(back=>setSettingsBackState(()=>back),[]);
   const [profile,setProfile]=useState(initialProfile);
   const [draftLimitOpen,setDraftLimitOpen]=useState(false);
   const updateAccount=account=>{if(account)setProfile(prior=>prior?{...prior,...account}:prior);};
@@ -940,12 +942,13 @@ function App({initialTelegram=null,initialProfile=null}) {
     main.current?.scrollTo(0, 0);
     if (page === 'files' || page === 'home') refreshDrafts();
     if (!telegram?.BackButton) return;
-    const goHome = () => exporting?setExporting(false):page==='balance'?closeBalance():page==='subscription'?closeSubscription():page==='editor'?routeState.current.requestEditorExit():navigate('home');
-    if (page === 'editor' || page === 'profile'||page==='balance'||page==='subscription') telegram.BackButton.show();
+    const goHome = () => exporting?setExporting(false):page==='settings'&&settingsBack?settingsBack():page==='balance'?closeBalance():page==='subscription'?closeSubscription():page==='editor'?routeState.current.requestEditorExit():navigate('home');
+    // Telegram's own back arrow handles every screen that sits on top of a tab.
+    if (page === 'editor' || page === 'profile'||page==='balance'||page==='subscription'||(page==='settings'&&settingsBack)) telegram.BackButton.show();
     else telegram.BackButton.hide();
     telegram.BackButton.onClick(goHome);
     return () => telegram.BackButton.offClick(goHome);
-  }, [page, telegram, profile, exporting]);
+  }, [page, telegram, profile, exporting, settingsBack]);
   useEffect(()=>{
     if(!telegram?.isVersionAtLeast('6.2'))return;
     if(page==='editor'&&(unsaved||exporting||saving))telegram.enableClosingConfirmation?.();
@@ -1114,10 +1117,12 @@ function App({initialTelegram=null,initialProfile=null}) {
   },[telegram,editing]);
 
   const welcomeOpen=Boolean(telegram&&profile&&profile.welcomeClaimed===false);
+  const nativeBack=Boolean(telegram?.BackButton);
   return <div data-welcome={welcomeOpen?'true':undefined} onContextMenu={event=>{if(!event.target.closest('input,textarea,[contenteditable="true"]'))event.preventDefault();}} onCopy={event=>{if(!event.target.closest('input,textarea,[contenteditable="true"]'))event.preventDefault();}} className={'app-shell' + (editing ? ' is-editor' : '') + (balancePage?' is-balance':'') + (subscriptionPage?' is-subscription':'') + (telegram ? ' in-telegram' : '')}>
-    <header className="header">
+    {/* Inside Telegram, sub-pages use Telegram's back arrow, so their header is just the safe-area spacer. */}
+    {nativeBack&&(subscriptionPage||balancePage||(page==='settings'&&settingsBack))?<header className="header is-bare" aria-hidden="true"/>:<header className="header">
       {subscriptionPage||balancePage?<><button type="button" className="balance-back" aria-label={t('Back')} onClick={subscriptionPage?closeSubscription:closeBalance}><Icon name="arrowback"/></button>{subscriptionPage&&<><span className="store-title">{t('My subscription')}</span></>}</>:editing ? <>
-        <button className="round-action editor-back" type="button" aria-label={t("Back to Home")} onPointerDown={jellyPress} onClick={() => requestEditorExit()}><Icon name="arrowback"/></button>
+        <button className="round-action editor-back" type="button" aria-label={t("Home")} title={t("Home")} onPointerDown={jellyPress} onClick={() => requestEditorExit()}><Icon name="navhome"/></button>
         <span className="editor-title" aria-hidden="true"/>
         <span className="history-pill"><button className="editor-undo" type="button" aria-label={t('Undo')} disabled={!canUndo} onPointerDown={jellyPress} onClick={undo}><Icon name="undo"/></button><button className="editor-redo" type="button" aria-label={t('Redo')} disabled={!canRedo} onPointerDown={jellyPress} onClick={redo}><Icon name="redo"/></button></span>
         <button className="round-action look-action" type="button" aria-label={t('Save look')} title={t('Save look')} onPointerDown={jellyPress} onClick={()=>openLookSave()} disabled={!activeSource||busy}><Icon name="look"/></button>
@@ -1134,13 +1139,13 @@ function App({initialTelegram=null,initialProfile=null}) {
           <HeaderCoin/><strong>{(profile?.credits??0).toLocaleString(document.documentElement.lang)}</strong><span className="balance-pill-plus"><Icon name="plus"/></span>
         </button>
       </>}
-    </header>
+    </header>}
     <main ref={main} className="content">
       {page === 'home' && <HomeScreen busy={busy} onPick={kind => pickSource('new',kind)} onDrop={files => importSource(files, 'new')} recent={draftList} onOpen={openDraft} looks={looks} lookLimit={lookLimit(premiumActive(profile))} starters={starterLooks} onUseLook={look=>useLook(look,false)} onManageLook={setManagingLook}/>}
       {lookSave&&<LookSaveSheet thumb={lookSave.thumb} texts={lookSave.texts} initialName={lookSave.name} updating={!!lookSave.update} busy={lookBusy} error={lookError} limit={lookLimit(premium)} count={looks?.length??0} premium={premium} onPremium={()=>{setLookSave(null);openSubscription();}} onSave={commitLookSave} onClose={()=>setLookSave(null)}/>}
       {managingLook&&<LookManageSheet look={managingLook} onUse={()=>useLook(managingLook,editing)} onRename={name=>renameLook(managingLook,name)} onUpdate={editing&&!managingLook.starter?()=>{const target=managingLook;setManagingLook(null);openLookSave(target);}:null} onDelete={()=>deleteSavedLook(managingLook)} onClose={()=>setManagingLook(null)}/>}
       {page === 'files' && <DraftPage list={draftList} onOpen={openDraft} onRemove={draft => drafts.remove(draft.id).then(refreshDrafts).catch(() => notify('Could not delete the draft'))}/>}
-      {page === 'settings' && <SettingsPage preferences={preferences} update={updatePreferences} onBalance={openBalance} onSubscription={openSubscription} profile={profile} botUsername={config?.botUsername} draftCount={draftList?.length??0} telegram={telegram} onAccount={updateAccount}/>}
+      {page === 'settings' && <SettingsPage preferences={preferences} update={updatePreferences} onBalance={openBalance} onSubscription={openSubscription} profile={profile} botUsername={config?.botUsername} draftCount={draftList?.length??0} telegram={telegram} onAccount={updateAccount} nativeBack={nativeBack} onSubpage={setSettingsBack}/>}
       {balancePage&&<BalancePage onSubscription={openSubscription} balance={profile?.credits??0} premium={premiumActive(profile)} payment={payment} onSelection={purchaseSelection} discount={discountFor(profile,'credits')}/>}
       {subscriptionPage&&<SubscriptionPage subscription={profile?.subscription} payment={payment} onSelection={purchaseSelection} discount={discountFor(profile,'premium')}/>}
       {page === 'profile' && <ProfilePage profile={profile} authStatus={authStatus} telegram={telegram} config={config} onRetry={()=>signIn(telegram)}/>}
