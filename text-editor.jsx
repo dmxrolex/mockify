@@ -175,7 +175,6 @@ export function TextHandles({settings,update,onSelect,focusRequest=0,menuOpen=fa
   }
   const events=type=>({onPointerDown:event=>begin(event,type),onPointerMove:move,onPointerUp:end,onPointerCancel:end,onLostPointerCapture:event=>{if(pointers.current.has(event.pointerId))end(event);},onKeyDown:event=>keyboard(event,type)});
   const extentY=(Math.abs(Math.sin(box.angle))*box.width+Math.abs(Math.cos(box.angle))*box.height)/2;
-  const toolbarTop=box.cy-extentY>52?box.cy-extentY-52:Math.max(4,box.cy-extentY+4);
   function duplicate() {
     const copy={...model,locked:false,id:crypto.randomUUID(),anchor:null,x:box.cx/bounds.width+.045,y:box.cy/bounds.height+.045};
     const layers=[...sceneLayers(settings)],index=layers.findIndex(item=>item.id===model.id);layers.splice(index+1,0,copy);
@@ -195,7 +194,7 @@ export function TextHandles({settings,update,onSelect,focusRequest=0,menuOpen=fa
         {!typing&&<button type="button" className="text-move-handle" aria-label={t("Move text. Use arrow keys; Enter to edit.")} {...events('drag')} onClick={()=>{if(!moved.current){if(selected&&menuOpen&&!model.locked)setTyping(true);onSelect?.();}}} onDoubleClick={()=>{if(!model.locked)setTyping(true);onSelect?.();}}/>}
         {selected&&!typing&&!model.locked&&<>{(box.width<55||box.height<18?['se']:['nw','ne','sw','se']).map(corner=><button key={corner} type="button" className={'text-resize-handle '+corner} aria-label={'Resize text '+corner+'. Use arrow keys.'} {...events('resize')}><span/></button>)}<button type="button" className="text-rotate-handle" aria-label={t("Rotate text. Use arrow keys.")} {...events('rotate')}><Glyph name="rotate"/></button></>}
       </div>
-      {selected&&!dragging&&!typing&&<SelectionToolbar label="Selected text" locked={model.locked} onLock={()=>{setTyping(false);commit({locked:!model.locked});}} style={{left:clamp(box.cx,98,Math.max(98,bounds.width-98)),top:clamp(toolbarTop,4,Math.max(4,bounds.height-48))}} items={[
+      {selected&&!dragging&&!typing&&<SelectionToolbar label="Selected text" locked={model.locked} onLock={()=>{setTyping(false);commit({locked:!model.locked});}} target={{host:layer.current,top:box.cy-extentY,bottom:box.cy+extentY,cx:box.cx}} items={[
         {label:'Duplicate',icon:'duplicate',action:duplicate},
         ...['front','back'].map(direction=>({label:direction==='front'?'Bring to front':'Send to back',icon:direction,action:()=>{const layers=sceneLayers(settings),item=layers.find(l=>l.id===model.id),rest=layers.filter(l=>l.id!==model.id);update({layers:direction==='front'?[...rest,item]:[item,...rest]});}}))]}>
         <button type="button" aria-label={t('Edit text')} disabled={model.locked} onClick={()=>{setTyping(true);onSelect?.();}}><Glyph name="edit"/></button>
