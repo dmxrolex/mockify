@@ -86,7 +86,7 @@ export function AdjustInspector({settings,update,onDone,disabled=false}){
   return <TunePanel title="Adjust" items={items} onDone={onDone} onReset={()=>update({brightness:0,contrast:0,saturation:0,warmth:0})}/>;
 }
 export function ToolsSheet({onClose,onInsert,getCanvasRect}){
-  const dialog=useRef(null),closing=useRef(false),drag=useRef(null),[ghost,setGhost]=useState(null),[pending,setPending]=useState(null),[group,setGroup]=useState(()=>{try{return assetGroups.some(([key])=>key===sessionStorage.getItem('mockify.assetGroup'))?sessionStorage.getItem('mockify.assetGroup'):'frames';}catch{return 'frames';}});
+  const dialog=useRef(null),closing=useRef(false),drag=useRef(null),[ghost,setGhost]=useState(null),[pending,setPending]=useState(null),[group,setGroup]=useState(()=>{try{return assetGroups.some(([key])=>key===sessionStorage.getItem('mockify.assetGroup'))?sessionStorage.getItem('mockify.assetGroup'):assetGroups[0][0];}catch{return assetGroups[0][0];}});
   function chooseGroup(key){setGroup(key);try{sessionStorage.setItem('mockify.assetGroup',key);}catch{}}
   const native='popover' in HTMLElement.prototype;
   useLayoutEffect(()=>{const element=dialog.current;const source=document.querySelector('[data-tool="tools"]');native?element.showPopover(source?{source}:undefined):element.show();const escape=event=>{if(event.key==='Escape'){event.preventDefault();close();}};document.addEventListener('keydown',escape);return()=>document.removeEventListener('keydown',escape);},[]);

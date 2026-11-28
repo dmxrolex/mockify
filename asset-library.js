@@ -1,15 +1,17 @@
 import {loadMedia} from './media.js';
 // Categories follow Keynote's shape library: pick a group at the top, then tap or drag a tile.
-export const assetGroups=[['frames','Frames'],['camera','Camera'],['arrows','Arrows'],['marks','Marks'],['callouts','Callouts']];
+export const assetGroups=[['camera','Camera'],['arrows','Arrows'],['marks','Marks'],['callouts','Callouts']];
 export const assetLibrary=[
-  {id:'phone',group:'frames',name:'iPhone',frame:true,width:1206,height:2622},
+  {id:'phone',group:'hidden',name:'iPhone',frame:true,width:1206,height:2622},
   // Empty photo spot in a Look: takes the saved photo's proportions, shows a placeholder until filled.
   {id:'photo',group:'hidden',name:'Photo',frame:true,width:1000,height:1000},
-  {id:'browser',group:'frames',name:'Browser',frame:true,width:1200,height:860},
-  {id:'glass',group:'frames',name:'Glass card',frame:true,width:900,height:650},
-  {id:'box',group:'frames',name:'Rounded box',frame:true,width:800,height:800},
-  {id:'polaroid',group:'frames',name:'Instant photo',frame:true,width:880,height:1060},
-  {id:'film',group:'frames',name:'Film strip',frame:true,width:1200,height:820},
+  // A plain border around a photo (Borders tool): colour and thickness live on the pose.
+  {id:'border',group:'hidden',name:'Border',frame:true,width:1000,height:1000},
+  {id:'browser',group:'hidden',name:'Browser',frame:true,width:1200,height:860},
+  {id:'glass',group:'hidden',name:'Glass card',frame:true,width:900,height:650},
+  {id:'box',group:'hidden',name:'Rounded box',frame:true,width:800,height:800},
+  {id:'polaroid',group:'hidden',name:'Instant photo',frame:true,width:880,height:1060},
+  {id:'film',group:'hidden',name:'Film strip',frame:true,width:1200,height:820},
   // Camera overlays: transparent stickers that sit over a screenshot or photo.
   {id:'recording',group:'camera',name:'Recording',width:900,height:1600,view:'0 0 90 160'},
   {id:'viewfinder',group:'camera',name:'Corners',width:1000,height:1000},
@@ -97,6 +99,7 @@ export function loadAsset(kind){return loadMedia({kind:'image',name:assetFor(kin
 export function drawAssetFrame(ctx,pose,media,width,height){
   if(pose.assetKind==='browser')return drawBrowserFrame(ctx,pose,media,width,height);
   if(pose.assetKind==='photo')return drawPhotoSpot(ctx,pose,media,width,height);
+  if(pose.assetKind==='border')return drawBorder(ctx,pose,media,width,height);
   if(pose.assetKind==='polaroid')return drawInstantFrame(ctx,pose,media,width,height);
   if(pose.assetKind==='film')return drawFilmFrame(ctx,pose,media,width,height);
   const glass=pose.assetKind==='glass',pad=glass?width*.035:width*.025,radius=Math.min(width,height)*(glass?.075:.1);
@@ -162,5 +165,42 @@ function drawFilmFrame(ctx,pose,media,width,height){
   ctx.fillStyle='#ecebe6';
   for(let i=0;i<count;i++){const x=start+i*(holeW+gap);ctx.beginPath();ctx.roundRect(x,(band-holeH)/2,holeW,holeH,holeW*.18);ctx.roundRect(x,height-band+(band-holeH)/2,holeW,holeH,holeW*.18);ctx.fill();}
   const inset=width*.03;fillSpot(ctx,pose,media,inset,band,width-inset*2,height-band*2);
+  ctx.restore();
+}
+
+// Borders tool: plain colours and frames, sized so the photo inside keeps its proportions.
+export const borderColours={white:'#ffffff',black:'#0b0b0c',cream:'#f3ead7'};
+export const frameKinds=['browser','polaroid','film','glass','box'];
+// The photo's area inside a frame of width × height (mirrors the drawing code below).
+export function innerBox(kind,pose,width,height){
+  if(kind==='border'&&pose.borderStyle!=='line'){const p=Math.max(0,pose.borderWidth??6)/100,pad=p*Math.min(width,height)/(1+2*p);return {x:pad,y:pad,width:width-pad*2,height:height-pad*2};}
+  if(kind==='glass'||kind==='box'){const pad=width*(kind==='glass'?.035:.025);return {x:pad,y:pad,width:width-pad*2,height:height-pad*2};}
+  if(kind==='browser'){const bar=Math.max(height*.085,width*.05);return {x:0,y:bar,width,height:height-bar};}
+  if(kind==='polaroid'){const side=width*.06,bottom=Math.max(side*2.6,height*.17);return {x:side,y:side,width:width-side*2,height:height-side-bottom};}
+  if(kind==='film'){const band=height*.14,inset=width*.03;return {x:inset,y:band,width:width-inset*2,height:height-band*2};}
+  return {x:0,y:0,width,height};
+}
+// The frame proportions whose inner area matches a photo of aspect `aspect`.
+export function frameAspectFor(kind,aspect,pose={}){
+  let low=.15,high=8;
+  for(let i=0;i<40;i++){const mid=(low+high)/2,box=innerBox(kind,pose,mid*1000,1000);if(box.width/box.height<aspect)low=mid;else high=mid;}
+  return (low+high)/2;
+}
+// A plain border: solid colour around the photo, or a thin line drawn just inside its edge.
+function drawBorder(ctx,pose,media,width,height){
+  const outer=Math.min(width,height)*Math.max(0,Math.min(50,pose.imageEdges??4))/100;
+  if(pose.borderStyle==='line'){
+    fillRound(ctx,pose,media,0,0,width,height,outer);
+    const line=Math.max(2,Math.min(width,height)*Math.max(.4,(pose.borderWidth??6)/6)/100),inset=Math.min(width,height)*.035+line/2;
+    ctx.save();ctx.strokeStyle='#ffffffe6';ctx.lineWidth=line;ctx.beginPath();ctx.roundRect(inset,inset,width-inset*2,height-inset*2,Math.max(0,outer-inset));ctx.stroke();ctx.restore();return;
+  }
+  ctx.fillStyle=borderColours[pose.borderStyle]??borderColours.white;ctx.fillRect(0,0,width,height);
+  const box=innerBox('border',pose,width,height),pad=box.x;
+  fillRound(ctx,pose,media,box.x,box.y,box.width,box.height,Math.max(0,outer-pad*.6));
+}
+function fillRound(ctx,pose,media,x,y,w,h,radius){
+  ctx.save();ctx.beginPath();ctx.roundRect(x,y,w,h,radius);ctx.clip();
+  if(!pose.assetEmpty&&media?.element){const scale=Math.max(w/media.width,h/media.height),dw=media.width*scale,dh=media.height*scale;ctx.drawImage(media.element,x+(w-dw)/2,y+(h-dh)/2,dw,dh);}
+  else {ctx.fillStyle='#2b2e36';ctx.fillRect(x,y,w,h);}
   ctx.restore();
 }

@@ -1,9 +1,9 @@
-import {isAssetFrame} from './asset-library.js';
+import {isAssetFrame,innerBox} from './asset-library.js';
 import React,{useLayoutEffect,useRef,useState} from 'react';
 import {flushSync} from 'react-dom';
 import {t} from './i18n.js';
 import {pageObjectGeometry,ratios} from './render.js';
-import {pageScene,selectObject,changePage,toggleObjectFrame,objectSettings} from './page-model.js';
+import {pageScene,selectObject,changePage,toggleObjectFrame,objectSettings,setObjectBorder} from './page-model.js';
 import ImageHandles from './image-editor.jsx';
 export function toggleFrameAtCurrentSize(project,id){
   const before=pageScene(project),object=before.settings.pageObjects.find(item=>item.id===id);if(!object)return project;
@@ -12,6 +12,17 @@ export function toggleFrameAtCurrentSize(project,id){
   next=changePage(selectObject(next,id),{scale:Math.max(10,Math.min(300,target.pose.scale*old.height/Math.max(1,box.height)))});
   after=pageScene(next);target=after.settings.pageObjects.find(item=>item.id===id);box=pageObjectGeometry(after.settings,media,width,height,target);
   return changePage(next,{x:target.pose.x+(old.cx-box.cx)/width*100,y:target.pose.y+(old.cy-box.cy)/height*100});
+}
+// The share of an object's height taken by its photo (frames and borders add a margin around it).
+const photoShare=pose=>pose.device==='flat'&&pose.frameAspect&&pose.assetKind&&pose.assetKind!=='photo'?innerBox(pose.assetKind,pose,pose.frameAspect*1000,1000).height/1000:1;
+// Apply a Borders choice, then rescale and recentre so the photo itself keeps its size and place.
+export function applyBorderAtCurrentSize(project,id,choice,width){
+  const before=pageScene(project),object=before.settings.pageObjects.find(item=>item.id===id);if(!object)return project;
+  const media=before.source[object.index],[w,h]=ratios[before.settings.ratio],old=pageObjectGeometry(before.settings,media,w,h,object),oldPhoto=old.height*photoShare(object.pose);
+  let next=selectObject(setObjectBorder(project,id,choice,{width}),id),after=pageScene(next),target=after.settings.pageObjects.find(item=>item.id===id),box=pageObjectGeometry(after.settings,media,w,h,target);
+  next=changePage(next,{scale:Math.max(10,Math.min(300,target.pose.scale*oldPhoto/Math.max(1,box.height*photoShare(target.pose))))});
+  after=pageScene(next);target=after.settings.pageObjects.find(item=>item.id===id);box=pageObjectGeometry(after.settings,media,w,h,target);
+  return changePage(next,{x:target.pose.x+(old.cx-box.cx)/w*100,y:target.pose.y+(old.cy-box.cy)/h*100});
 }
 export default function PageObjects({settings,sources,onSelect,onDeselect,onUpdate,onDuplicate,onRemove,onFrame,onEdges,onShadow,onFill,onFillSpot,onDropIntoFrame,onCrop,onPattern}){
   const root=useRef(null),[bounds,setBounds]=useState({width:0,height:0}),[frameId,setFrameId]=useState(null),[dropId,setDropId]=useState(null);

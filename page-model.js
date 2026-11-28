@@ -1,6 +1,6 @@
-import {assetFor,isAssetFrame} from './asset-library.js';
+import {assetFor,isAssetFrame,frameAspectFor} from './asset-library.js';
 // Pages contain references to uploaded media; transforms never copy image data.
-export const objectKeys = ['locked','autoLayout','imageCrop','imageCropBasis','imagePattern','assetKind','assetEmpty','brightness','contrast','saturation','warmth','device','finish','angle','scale','x','y','roll','zoom','cleanup','top','bottom','fit','shadow','shadowStyle','shadowAngle','statusTone','statusStyle','statusTime','statusBattery','imageEdges','imageFlip','hideDevice','motion','trimStart','trimEnd','videoCuts','videoCutPoints'];
+export const objectKeys = ['locked','autoLayout','imageCrop','imageCropBasis','imagePattern','assetKind','assetEmpty','brightness','contrast','saturation','warmth','device','finish','angle','scale','x','y','roll','zoom','cleanup','top','bottom','fit','shadow','shadowStyle','shadowAngle','statusTone','statusStyle','statusTime','statusBattery','imageEdges','imageFlip','hideDevice','motion','trimStart','trimEnd','videoCuts','videoCutPoints','borderStyle','borderWidth','frameAspect'];
 const objectKeySet = new Set(objectKeys);
 
 export const defaultImagePattern={size:22,spacing:35,opacity:38,stagger:true,angle:0};
@@ -12,7 +12,7 @@ const PHONE_ASPECT = 1350/2760;
 const aspectOf = object => object.pose.device==='flat'?Math.max(.2,Math.min(5,Number(object.aspect)||1)):PHONE_ASPECT;
 const ratios = {square:1,story:9/16,wide:16/9,portrait:4/5};
 const uid = () => globalThis.crypto?.randomUUID?.() ?? 'object-'+Date.now().toString(36)+'-'+Math.random().toString(36).slice(2);
-const identityKeys=['assetKind','assetEmpty','frameAspect','lookSlot','imageCrop','imageCropBasis','locked','hideDevice','imageFlip','motion','imagePattern'];
+const identityKeys=['assetKind','assetEmpty','frameAspect','borderStyle','borderWidth','lookSlot','imageCrop','imageCropBasis','locked','hideDevice','imageFlip','motion','imagePattern'];
 // One object's full settings: the scene settings, then that object's own pose, with identity keys
 // never borrowed from whichever object the scene settings currently mirror.
 export const objectSettings=(settings,pose)=>({...settings,...Object.fromEntries(identityKeys.map(key=>[key,pose[key]])),...pose,imagePattern:pose.imagePattern??null});
@@ -342,4 +342,38 @@ export function pageScene(project,index) {
   const pageDefaults=Object.fromEntries(Object.entries(poseFor(page.settings)).filter(([key])=>!identityKeys.includes(key)));
   const pageObjects=ordered.map((object,index)=>({...object,pose:{...pageDefaults,...object.pose},index}));
   return {settings:{...page.settings,...selected?.pose,primaryVideoItemId:prior.items.find(item=>item.source.kind==='video'&&page.objects.some(object=>object.itemId===item.id))?.id,selectedLayerId:page.settings.selectedLayerId,editorMode:page.mode,pageObjects,layers:decorated},source,photo:page.photo??prior.photo,page};
+}
+
+// Borders tool: dress one photo in a plain border, a frame (browser, instant photo, film...) or
+// the iPhone, or remove whatever it has. Frames take the photo's own proportions, so nothing is
+// cropped; the photo keeps its place, size, rotation and lock.
+const borderKeys=['assetKind','assetEmpty','frameAspect','borderStyle','borderWidth'];
+export function setObjectBorder(project,id,choice,{width}={}){
+  const prior=ensurePages(project);
+  return updateCurrent(prior,page=>{
+    const objects=page.objects.map(object=>{
+      if(object.id!==id)return object;
+      const source=prior.items.find(item=>item.id===object.itemId)?.source,aspect=source?.width&&source?.height?source.width/source.height:1;
+      let {framedPose,...base}=object,pose=Object.fromEntries(Object.entries(object.pose).filter(([key])=>!borderKeys.includes(key)||(key==='assetKind'&&object.pose.assetKind==='phone')));
+      if(pose.assetKind==='phone'){delete pose.assetKind;}
+      const flat={...pose,device:'flat',cleanup:'off'};
+      if(choice==='phone'){
+        if(object.pose.device!=='flat')return object;
+        return {...base,pose:framedPose?{...framedPose,...Object.fromEntries(['locked','x','y','roll','scale','imageFlip'].filter(key=>key in pose).map(key=>[key,pose[key]]))}:{...pose,device:'iphone18',cleanup:'auto',fit:'cover'}};
+      }
+      const keep=object.pose.device!=='flat'?{framedPose:{...object.pose}}:framedPose?{framedPose}:{};
+      if(choice==='none')return {...base,...keep,pose:flat};
+      const style=['white','black','cream','line'].includes(choice)?choice:null,kind=style?'border':choice;
+      const next={...flat,assetKind:kind,assetEmpty:false,...(style?{borderStyle:style,borderWidth:width??object.pose.borderWidth??6}:{})};
+      return {...base,...keep,pose:{...next,frameAspect:frameAspectFor(kind,aspect,next)}};
+    });
+    const byId=new Map(objects.map(object=>[object.id,object]));
+    return {...page,objects,settings:{...page.settings,layers:(page.settings.layers??[]).map(layer=>byId.has(layer.id)?layerFor(byId.get(layer.id)):layer)}};
+  });
+}
+export function borderChoice(pose){
+  if(!pose)return 'none';
+  if(pose.device&&pose.device!=='flat')return 'phone';
+  if(pose.assetKind==='border')return pose.borderStyle??'white';
+  return pose.assetKind&&pose.assetKind!=='photo'&&pose.assetKind!=='phone'?pose.assetKind:'none';
 }
