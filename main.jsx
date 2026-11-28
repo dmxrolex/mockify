@@ -2,8 +2,8 @@ import {useStarPayments} from './payments-client.js';
 import {WelcomeCredits,DraftLimitSheet,PurchaseSuccessSheet} from './credits-ui.jsx';
 import {FREE_DRAFT_LIMIT,premiumActive} from './credit-model.js';
 import VideoTimeline from './video-timeline.jsx';
-import { LooksRow, ToolTabs, GroupPanel, MorePanel, AddSheet } from './editor-tabs.jsx';
-import { applyLook } from './looks.js';
+import { ToolTabs, GroupPanel, MorePanel, AddSheet } from './editor-tabs.jsx';
+
 import { captureTemplate, pageFromTemplate, projectFromPage, fillSpots, emptySpots, applyTemplateToPage, askedTexts, lookLimit } from './templates.js';
 import { starterLooks } from './starter-looks.js';
 import { loadLooks, saveLook as storeLook, deleteLook as removeLook } from './looks-client.js';
@@ -91,6 +91,7 @@ const paths = {
   text: <path d="M5.5 7V5h13v2M12 5v14m-3.5 0h7"/>,
   mark: <><rect x="3" y="4" width="18" height="16" rx="4"/><path d="m3.5 15 4.5-4.5 3.5 3.5" opacity=".55"/><rect x="11" y="13.5" width="7.5" height="3.5" rx="1.75" fill="currentColor" stroke="none"/></>,
   export: <path d="M12 3v13m-5-5 5 5 5-5m-12 6v4h14v-4"/>,
+  look: <><rect x="7.5" y="3.5" width="12" height="15" rx="3"/><path d="M4.5 7.5v10a3 3 0 0 0 3 3h7.5"/><path d="M13.5 8v6m-3-3h6"/></>,
   device: <><rect x="7" y="3" width="10" height="18" rx="2.5"/><path d="M11 6h2"/></>,
   background: <><rect x="4" y="4" width="16" height="16" rx="3"/><path d="M4 16 16 4M7 20 20 7M13 20l7-7"/></>,
   screen: <><rect x="4" y="4" width="16" height="16" rx="3"/><path d="M4 9h16m-12 6h3m3 0h2"/></>,
@@ -669,7 +670,6 @@ function Editor({ fillSpot, looks=[], onUseLook, onManageLook, onSaveLook, proje
     if(panel===key)return;
     switchControls(key);
   }
-  function applyChosenLook(look){if(timeline&&targetObject)update(look.settings);else mutateProject(prior=>applyLook(ensurePages(prior),look));}
   function controlsFor(key){
     const flat=!settings.pageObjects&&settings.device==='flat'&&['edges','image','shadow'].includes(key),locked=!hasSelectedObject&&['motion','device','image','edges','shadow','screen'].includes(key);
     return <fieldset className="control-fields" disabled={locked} {...(locked?{inert:''}:{})}><EditorControls panel={key} settings={flat?imageSettings(settings):settings} update={patch=>update(flat&&imageLayers(settings).some(layer=>layer.id===settings.selectedLayerId)?patchImage(settings,settings.selectedLayerId,patch):patch)} source={source} photo={photo} pickPhoto={pickPhoto} replaceSource={source?.kind==='video'?replaceVideoSource:replaceSource}
@@ -678,7 +678,7 @@ function Editor({ fillSpot, looks=[], onUseLook, onManageLook, onSaveLook, proje
   return <div className="editor page" data-typing={typing?'true':undefined} data-video={video?'true':undefined} data-sheet={sheet ?? undefined} data-panel={activePanel ?? undefined} data-free={settings.device==='flat'?'true':undefined} data-shadow-wheel={activePanel==='shadow'&&shadowWheel?'true':undefined}>
     <div className="preview" style={{'--canvas-ratio':{portrait:.8,story:.5625,wide:16/9}[visibleScene.settings.ratio]??1,'--canvas-cap':'100dvh'}} data-page-swipe={swipeEnabled?true:undefined} {...pageSwipe}>
       <Artboard key={currentPage?.id??'single'} effectLoop={effectLoop} peeking={peek>.001} onEmptyAdd={()=>chooseSource()} touchRecorder={liveTouches?{source:scene.source[targetObject.index],index:visibleScene.settings.pageObjects.findIndex(o=>o.id===targetObject.id),now:()=>currentRef.current,count:recordedCount,onTouch:touch=>{recorded.current.push(touch);setRecordedCount(recorded.current.length);}}:null} scene={artboardScene} mediaError={sequence.error} onRetryMedia={sequence.retry} ready={ready} time={video ? progress : 0} onAdd={()=>setAddOpen(true)} busy={busy||assetBusy} video={video} textEditing={sheet==='text'} onTextTyping={setTyping} typingHost={typingHost} onCrop={()=>switchControls('crop')} pickPhoto={pickPhoto} onBackgroundDuplicate={()=>{if(photo)mutateProject(prior=>appendItems(ensurePages(prior),[{id:itemId(),source:photo,settings:{...defaults,device:'flat',fit:'contain',cleanup:'off'}}],{overlay:true}));}} updateText={update} onSelectText={selectText} textFocus={textFocus} onSelectImage={selectImage} onImageEdges={openImageEdges} blurSession={activePanel==='blur'?blurSession:null} setBlurSession={setBlurSession} changeBlur={changeBlur} blurPreview={blurPreview} setBlurPreview={setBlurPreview} blurAdjusting={blurAdjusting} objectActions={objectActions} showcaseEditing={!!video&&!playing&&activePanel==='showcase'} showcasePlaying={!!video&&playing} showcaseEditor={timeline&&activePanel==='showcase'&&!playing&&placementMoment&&targetObject?{source:scene.source[targetObject.index],media:visibleScene.source,index:visibleScene.settings.pageObjects.findIndex(o=>o.id===targetObject.id),moment:placementMoment,onAdd:point=>addSequenceEffect('tap',point),onPatch:patchPlacement,disabled:false}:null}/>
-      {!settings.imagePattern&&(!video||activePanel==='phone')&&(video?videoSettings:settings).device!=='flat'&&settings.pageObjects?.length>0&&<PreviewZoom settings={video?videoSettings:settings} update={video?updateVideo:update}/>}
+      {video&&!settings.imagePattern&&activePanel==='phone'&&videoSettings.device!=='flat'&&settings.pageObjects?.length>0&&<PreviewZoom settings={videoSettings} update={updateVideo}/>}
       {!video&&settings.pageObjects&&<EditorContextRow disabled={busy||!project.items.length} index={pageIndex} count={count} onPage={goToPage} onManage={()=>setSheet('merge')} ratio={settings.ratio} onRatio={ratio=>update({ratio})}/>}
       {video&&count>1&&<EditorContextRow disabled={busy||!project.items.length} index={pageIndex} count={count} onPage={goToPage} onManage={()=>setSheet('merge')}/>}
       {timeline&&<VideoTimeline timeline={timeline} objects={baseSettings.pageObjects} sources={scene.source} current={current} duration={duration} playing={playing} selection={timelineTarget} editingEffects={activePanel==='showcase'}
@@ -698,7 +698,8 @@ function Editor({ fillSpot, looks=[], onUseLook, onManageLook, onSaveLook, proje
           </fieldset></div>
         </div>
       </> : <div className="editor-root">
-        <LooksRow settings={settings} onApply={applyChosenLook} onSave={onSaveLook} templates={looks} onUseTemplate={onUseLook} onManageTemplate={onManageLook} currentTemplate={settings.lookId}/>
+        {/* The zoom ruler sits where the Looks row was, right above the tools. */}
+        {!video&&<div className="editor-zoom-slot">{!settings.imagePattern&&settings.device!=='flat'&&settings.pageObjects?.length>0&&<PreviewZoom settings={settings} update={update}/>}</div>}
         <ToolTabs tabs={tabs} context={tabContext} onOpen={openGroup}/>
       </div>}
       </div>
@@ -737,6 +738,10 @@ function ProfilePage({profile,authStatus,telegram,config,onRetry}) {
 function projectSettings(preferences, template) {
   return { ...defaults, ...templates[template]?.settings, cleanup: preferences.cleanup };
 }
+
+// Holding a picture or link in a webview opens the browser's own menu (open image, copy link).
+// Block it app-wide, except in text fields where it offers paste.
+if(typeof document!=='undefined')document.addEventListener('contextmenu',event=>{if(!event.target.closest?.('input,textarea,[contenteditable="true"]'))event.preventDefault();},{capture:true});
 
 function App({initialTelegram=null,initialProfile=null}) {
   const [page, setPage] = useState(readPage);
@@ -1114,6 +1119,7 @@ function App({initialTelegram=null,initialProfile=null}) {
         <button className="round-action editor-back" type="button" aria-label={t("Back to Home")} onPointerDown={jellyPress} onClick={() => requestEditorExit()}><Icon name="arrowback"/></button>
         <span className="editor-title" aria-hidden="true"/>
         <span className="history-pill"><button className="editor-undo" type="button" aria-label={t('Undo')} disabled={!canUndo} onPointerDown={jellyPress} onClick={undo}><Icon name="undo"/></button><button className="editor-redo" type="button" aria-label={t('Redo')} disabled={!canRedo} onPointerDown={jellyPress} onClick={redo}><Icon name="redo"/></button></span>
+        <button className="round-action look-action" type="button" aria-label={t('Save look')} title={t('Save look')} onPointerDown={jellyPress} onClick={()=>openLookSave()} disabled={!activeSource||busy}><Icon name="look"/></button>
         <button className={'round-action draft-action'+(savedRevision===project?' is-saved':'')} type="button" aria-label={t("Save draft")} aria-pressed={savedRevision===project} title={savedRevision===project?'Remove saved draft':'Save draft'} aria-busy={saving} onPointerDown={jellyPress} disabled={saving || !project.items.length} onClick={toggleDraft}>
           <Icon name="save"/>
           {savedRevision===project&&saveBurst>0&&<span key={saveBurst} className="draft-sparkles" aria-hidden="true">{Array.from({length:6},(_,i)=><svg key={i} style={{'--spark':i}} viewBox="0 0 20 20"><path d="M10 0c1.2 7.1 2.9 8.8 10 10-7.1 1.2-8.8 2.9-10 10C8.8 12.9 7.1 11.2 0 10 7.1 8.8 8.8 7.1 10 0Z"/></svg>)}</span>}
