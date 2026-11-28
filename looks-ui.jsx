@@ -10,7 +10,8 @@ const ratioValue={square:1,story:9/16,wide:16/9,portrait:4/5};
 
 // A Look's card art: its saved snapshot, or a drawn preview of its layout for starter Looks.
 export function LookThumb({look}){
-  if(look.thumb)return <span className="look-thumb"><img src={look.thumb} alt="" draggable={false}/></span>;
+  const image=look.thumb||look.preview;
+  if(image)return <span className="look-thumb" style={{'--thumb-ratio':ratioValue[look.settings?.ratio]??1}}><img src={image} alt="" draggable={false} decoding="async"/></span>;
   const s=look.settings??{},r=ratioValue[s.ratio]??1,palette=backdrops[s.palette]??backdrops.aurora;
   const background=s.background==='solid'?s.color??'#f2f2f7':`linear-gradient(150deg,${palette.colors.join(',')})`;
   return <span className="look-thumb is-drawn" style={{'--thumb-ratio':r,background}}>
