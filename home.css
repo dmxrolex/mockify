@@ -74,3 +74,8 @@
  @keyframes create-breathe { 50% { transform:scale(1.04); box-shadow:inset 0 1px 1px #ffffff55,0 8px 26px #5a4bff66; } }
 }
 @media(max-height:700px) { .home-screen { padding-block-start:26px; gap:25px; } }
+
+/* The painter duck on the empty Looks card: a fixed box, so the card never shifts. */
+.home-look-duck { display:block; flex:none; inline-size:52px; block-size:52px; margin:-4px; opacity:0; transition:opacity .25s ease; }
+.home-look-duck[data-ready=true] { opacity:1; }
+.home-look-duck svg { inline-size:100% !important; block-size:100% !important; stroke:none; }

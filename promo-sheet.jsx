@@ -43,7 +43,7 @@ export default function PromoSheet({telegram,onClose,onAccount,onUseDiscount}){
     <button type="button" className="promo-close" aria-label={t('Close')} onClick={onClose}><Icon name="close"/></button>
     {state==='done'?<div className="promo-success" role="status">
       <span className="promo-burst" aria-hidden="true">{Array.from({length:10},(_,i)=><i key={i} style={{'--i':i}}/>)}</span>
-      <AnimatedSticker slot="success" className="promo-duck is-success" loop={false} fallback={<span className={'promo-reward-icon is-'+info.icon}>{info.icon==='stars'?<img src={telegramStar} alt=""/>:<Icon name={info.icon}/>}</span>}/>
+      <AnimatedSticker slot={{stars:'stars',premium:'premium',discount:'discount'}[result.reward.kind]??'stars'} className="promo-duck is-success" fallback={<span className={'promo-reward-icon is-'+info.icon}>{info.icon==='stars'?<img src={telegramStar} alt=""/>:<Icon name={info.icon}/>}</span>}/>
       <p className="promo-eyebrow"><Icon name="check"/>{t('Code applied')}</p>
       <h2 id="promo-title">{info.title}</h2>
       <p className="promo-detail">{info.detail}</p>
@@ -54,14 +54,14 @@ export default function PromoSheet({telegram,onClose,onAccount,onUseDiscount}){
     </div>:<form className="promo-form" onSubmit={submit} noValidate>
       <AnimatedSticker slot="promo" className="promo-duck" fallback={<span className="promo-hero" aria-hidden="true"><Icon name="gift"/></span>}/>
       <h2 id="promo-title">{t('Promo code')}</h2>
-      <p className="promo-detail">{t('Enter a code to get stars, Premium or a discount.')}</p>
-      <div className="promo-field" data-error={error?'':undefined} data-shake={shake%2} key={shake}>
+      <p className="promo-detail">{t('Get stars, Premium or a discount with a code.')}</p>
+      <div className="promo-field" data-error={error?'':undefined} key={shake}>
         <input ref={input} type="text" value={code} maxLength={32} autoComplete="off" autoCorrect="off" autoCapitalize="characters" spellCheck={false} enterKeyHint="go"
-          aria-label={t('Promo code')} aria-invalid={!!error} aria-describedby="promo-error" placeholder={t('ENTER CODE')} disabled={busy}
+          aria-label={t('Promo code')} aria-invalid={!!error} aria-describedby={error?'promo-error':undefined} placeholder={t('Enter code')} disabled={busy}
           onChange={event=>{setCode(event.target.value.toUpperCase().replace(/[^A-Z0-9_-]/g,''));if(error)setError('');}}/>
         {code&&!busy&&<button type="button" className="promo-clear" aria-label={t('Clear')} onClick={()=>{setCode('');setError('');input.current?.focus();}}><Icon name="close"/></button>}
       </div>
-      <p id="promo-error" className="promo-error" role="alert">{error}</p>
+      {error&&<p id="promo-error" className="promo-error" role="alert">{error}</p>}
       <button type="submit" className="promo-primary" disabled={!ready} aria-busy={busy}>{busy?<><span className="promo-spinner" aria-hidden="true"/>{t('Checking…')}</>:t('Redeem')}</button>
     </form>}
   </dialog>;

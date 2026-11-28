@@ -1,6 +1,7 @@
 import { t } from './i18n.js';
 import React, { useState } from 'react';
 import {LookThumb,useLookPress} from './looks-ui.jsx';
+import AnimatedSticker from './animated-sticker.jsx';
 import './home.css';
 
 function CreateIcon({ type }) {
@@ -50,7 +51,7 @@ export default function HomeScreen({ busy, onPick, onDrop, recent, onOpen, looks
         {looks.map(look=><LookCard key={look.id} look={look} name={look.name} {...press(look)}/>)}
       </div>
       :<button type="button" className="home-look-empty" onClick={()=>onPick()} disabled={busy}>
-        <span className="home-look-empty-art" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="7.5" y="3.5" width="12" height="15" rx="3"/><path d="M4.5 7.5v10a3 3 0 0 0 3 3h7.5"/><path d="M13.5 8v6m-3-3h6"/></svg></span>
+        <AnimatedSticker as="span" slot="looks" className="home-look-duck" fallback={<span className="home-look-empty-art" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="7.5" y="3.5" width="12" height="15" rx="3"/><path d="M4.5 7.5v10a3 3 0 0 0 3 3h7.5"/><path d="M13.5 8v6m-3-3h6"/></svg></span>}/>
         <span className="home-look-empty-text"><strong>{t('Save a look')}</strong><span>{t('Reuse any design with new screenshots')}</span></span>
         <span className="home-look-empty-go" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="m9 5 7 7-7 7"/></svg></span>
       </button>}

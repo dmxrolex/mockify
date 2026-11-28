@@ -4,17 +4,13 @@ let playerModule;
 const loadPlayer=()=>playerModule??=import('lottie-web/build/player/lottie_light.min.js');
 const reducedMotion=()=>matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-// Ducks from the emoji pack, by place in the app (served by the Worker from Telegram). Each
-// place may name a bundled animation to use when the pack can't be reached (dev, offline).
-const fallbacks={download:()=>import('./assets/download-duck.json'),files:()=>import('./assets/files-duck.json')};
-const loaded=new Map();
-export function slotSticker(slot){
-  if(!loaded.has(slot))loaded.set(slot,fetch('/api/sticker/'+slot,{credentials:'omit'})
-    .then(response=>response.ok&&response.headers.get('Content-Type')?.includes('json')?response.json():Promise.reject(new Error('unavailable')))
-    .then(data=>({default:data}))
-    .catch(error=>{loaded.delete(slot);return fallbacks[slot]?fallbacks[slot]():Promise.reject(error);}));
-  return loaded.get(slot);
-}
+// Utya ducks by place in the app, bundled and loaded only when that place shows.
+const ducks={
+  choose:()=>import('./assets/ducks/phone.json'),download:()=>import('./assets/ducks/upload.json'),done:()=>import('./assets/ducks/party.json'),sent:()=>import('./assets/ducks/sent.json'),error:()=>import('./assets/ducks/cry.json'),
+  files:()=>import('./assets/ducks/sleep.json'),looks:()=>import('./assets/ducks/painter.json'),
+  promo:()=>import('./assets/ducks/gift.json'),stars:()=>import('./assets/ducks/money.json'),premium:()=>import('./assets/ducks/trophy.json'),discount:()=>import('./assets/ducks/shopping.json'),
+};
+export const slotSticker=slot=>ducks[slot]?ducks[slot]():Promise.reject(new Error('Unknown sticker'));
 export function preloadStickers(){return Promise.all([loadPlayer(),slotSticker('files'),slotSticker('download')]).catch(()=>{});}
 
 export function MotionSticker({load,className}){
@@ -23,8 +19,8 @@ export function MotionSticker({load,className}){
   return motion?<AnimatedSticker as="span" className={className} load={load}/>:null;
 }
 
-// Plays a Lottie sticker with the light SVG player. `slot` loads a pack duck; `load` a bundled
-// one. Pauses off-screen and in background tabs, holds a still frame with reduced motion, and
+// Plays a Lottie sticker with the light SVG player. `slot` names a duck above; `load` loads any
+// other animation. Pauses off-screen and in background tabs, holds a still frame with reduced motion, and
 // shows `fallback` if nothing can be loaded.
 export default function AnimatedSticker({load,slot,fallback=null,className,loop=true,as:Tag='div'}) {
   const root=useRef(null),player=useRef(null);
