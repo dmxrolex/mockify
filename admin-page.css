@@ -111,3 +111,13 @@ dialog.admin-sheet { position:fixed; inset:auto 0 0; inline-size:min(100%,480px)
 .admin-line .admin-switch:checked { background:var(--tint,#0a84ff); }
 .admin-line .admin-switch:checked::before { translate:20px 0; }
 .admin-hint { margin:0 4px; color:#8e8e93; font-size:13px; line-height:1.4; }
+
+/* Ducks tab: live previews, played only while on screen. */
+.admin-duck { display:grid; place-items:center; flex:none; inline-size:44px; block-size:44px; }
+.admin-duck-player { display:block; inline-size:100%; block-size:100%; }
+.admin-duck-player svg { inline-size:100% !important; block-size:100% !important; stroke:none; }
+.admin-duck-missing { color:#636366; font-style:normal; }
+.admin-duck-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(72px,1fr)); gap:8px; padding:4px 16px 8px; }
+.admin-duck-grid button { display:grid; justify-items:center; gap:2px; padding:8px 4px 6px; border:0; border-radius:16px; background:#1c1c1e; color:#8e8e93; font-size:13px; }
+.admin-duck-grid button .admin-duck { inline-size:52px; block-size:52px; }
+.admin-duck-grid button[aria-pressed=true] { background:var(--select); box-shadow:var(--select-edge); color:#fff; }

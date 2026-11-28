@@ -62,3 +62,9 @@ dialog.promo-sheet[open] { display:grid; align-content:start; }
   .promo-burst i { animation:promo-burst .8s .1s cubic-bezier(.2,.8,.3,1) forwards; }
   @keyframes promo-burst { 0% { opacity:1; transform:rotate(calc(var(--i) * 36deg)) translateY(-20px); } 100% { opacity:0; transform:rotate(calc(var(--i) * 36deg)) translateY(-78px) scale(.4); } }
 }
+
+/* Pack ducks: fixed boxes so nothing shifts while they load; they fade in once drawn. */
+.promo-duck { inline-size:76px; block-size:76px; opacity:0; transition:opacity .25s ease; }
+.promo-duck.is-success { inline-size:104px; block-size:104px; }
+.promo-duck[data-ready=true] { opacity:1; }
+.promo-duck svg { inline-size:100% !important; block-size:100% !important; stroke:none; }
