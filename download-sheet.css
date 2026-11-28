@@ -46,13 +46,11 @@ dialog.download-sheet[open]:not([data-closing]) { opacity:1; translate:0 0; }
 .download-quality label:has(input:disabled) small { color:#ff9f0a; }
 .download-limit { margin:-6px 0 14px; color:#ff9f0a; text-align:center; font:500 13px/1.4 system-ui,sans-serif; }
 .download-primary:disabled { opacity:.45; }
-/* Balance: a small gold tab attached to the top of the Download button. */
-.download-pay { display:grid; justify-items:center; }
-.download-balance { position:relative; z-index:0; display:inline-flex; align-items:center; gap:6px; margin-block-end:-1px; padding:5px 14px 6px 8px; border-radius:14px 14px 0 0; background:linear-gradient(180deg,#ffe58a,#f5b82e); box-shadow:inset 0 1px 0 #fff9; color:#3a2400; font:600 12.5px/1 system-ui,sans-serif; font-variant-numeric:tabular-nums; }
-.download-balance strong { font-weight:800; }
+/* Balance: a full-width gold band tucked behind the top of the Download button, with rounder
+   corners than the button so it reads as one attached piece. */
+.download-pay { display:grid; }
+.download-balance { position:relative; z-index:0; display:flex; align-items:center; gap:7px; margin-block-end:-14px; padding:8px 16px 22px; border-radius:22px; background:linear-gradient(180deg,#ffe58a,#f5b82e); box-shadow:inset 0 1px 0 #fff9; color:#3a2400; font:600 13px/1 system-ui,sans-serif; font-variant-numeric:tabular-nums; }
+.download-balance strong { margin-inline-start:auto; font-size:14px; font-weight:800; }
 .download-balance .header-coin { display:grid; inline-size:18px; block-size:18px; }
 .download-balance .header-coin svg,.download-balance .header-coin img { inline-size:18px; block-size:18px; }
-.download-balance::before,.download-balance::after { content:''; position:absolute; inset:auto auto 0 -10px; inline-size:10px; block-size:10px; background:radial-gradient(circle at 0 0,transparent 9.5px,#f5b82e 10px); }
-.download-balance::after { inset:auto -10px 0 auto; background:radial-gradient(circle at 100% 0,transparent 9.5px,#f5b82e 10px); }
-.download-pay .download-primary { position:relative; z-index:1; }
-
+.download-pay .download-primary { position:relative; z-index:1; box-shadow:0 -2px 10px #0003; }
