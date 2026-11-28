@@ -3,6 +3,8 @@ import {loadMedia} from './media.js';
 export const assetGroups=[['frames','Frames'],['arrows','Arrows'],['marks','Marks'],['callouts','Callouts']];
 export const assetLibrary=[
   {id:'phone',group:'frames',name:'iPhone',frame:true,width:1206,height:2622},
+  // Empty photo spot in a Look: takes the saved photo's proportions, shows a placeholder until filled.
+  {id:'photo',group:'hidden',name:'Photo',frame:true,width:1000,height:1000},
   {id:'browser',group:'frames',name:'Browser',frame:true,width:1200,height:860},
   {id:'glass',group:'frames',name:'Glass card',frame:true,width:900,height:650},
   {id:'box',group:'frames',name:'Rounded box',frame:true,width:800,height:800},
@@ -29,7 +31,7 @@ const burst=Array.from({length:32},(_,i)=>{const a=-Math.PI/2+i*Math.PI/16,d=i%2
 const line='fill="none" stroke="#f7f7fa" stroke-linecap="round" stroke-linejoin="round"';
 export const assetFor=kind=>assetLibrary.find(asset=>asset.id===kind);
 export const isAssetFrame=pose=>!!assetFor(pose?.assetKind)?.frame;
-export const assetShape=(pose,media)=>{const asset=assetFor(pose.assetKind);return asset?.frame?{width:asset.width,height:asset.height}:media;};
+export const assetShape=(pose,media)=>{const asset=assetFor(pose.assetKind);if(asset?.frame&&pose.frameAspect>0)return {width:Math.round(1000*pose.frameAspect),height:1000};return asset?.frame?{width:asset.width,height:asset.height}:media;};
 export function assetSVG(kind,preview=false){
   const asset=assetFor(kind);if(!asset)throw Error('Unknown asset');
   const shapes={
@@ -53,6 +55,7 @@ export function assetSVG(kind,preview=false){
     rating:[0,1,2,3,4].map(i=>`<polygon points="${star(25+i*50,26,22)}" fill="#ffcc00"/>`).join(''),
     check:'<circle cx="50" cy="50" r="44" fill="#30d158"/><path d="m29 51 14 14 29-31" fill="none" stroke="#fff" stroke-linecap="round" stroke-linejoin="round" stroke-width="9"/>',
     heart:'<path d="M50 86C20 64 8 46 14 30c6-16 28-18 36-2 8-16 30-14 36 2 6 16-6 34-36 56Z" fill="#ff375f"/>',
+    photo:'<rect x="8" y="8" width="84" height="84" rx="14" fill="#ffffff22" stroke="#ffffff88" stroke-width="2" stroke-dasharray="6 5"/><path d="M50 36v28M36 50h28" stroke="#fff" stroke-width="4" stroke-linecap="round"/>',
     cursor:'<path d="M20 8v86l22-20 16 36 14-6-16-35h30Z" fill="#111" stroke="#fff" stroke-width="5" stroke-linejoin="round"/>',
   };
   const view=asset.view??'0 0 100 100';
@@ -66,6 +69,7 @@ export function loadAsset(kind){return loadMedia({kind:'image',name:assetFor(kin
 // clipped into a fixed frame, so fitting never changes the object's geometry.
 export function drawAssetFrame(ctx,pose,media,width,height){
   if(pose.assetKind==='browser')return drawBrowserFrame(ctx,pose,media,width,height);
+  if(pose.assetKind==='photo')return drawPhotoSpot(ctx,pose,media,width,height);
   const glass=pose.assetKind==='glass',pad=glass?width*.035:width*.025,radius=Math.min(width,height)*(glass?.075:.1);
   ctx.save();ctx.beginPath();ctx.roundRect(0,0,width,height,radius);ctx.clip();
   const fill=ctx.createLinearGradient(0,0,width,height);fill.addColorStop(0,glass?'rgba(212,233,255,.28)':'#434750');fill.addColorStop(1,glass?'rgba(92,116,157,.1)':'#181b21');ctx.fillStyle=fill;ctx.fillRect(0,0,width,height);
@@ -90,5 +94,14 @@ function drawBrowserFrame(ctx,pose,media,width,height){
     ctx.strokeStyle='#c1c8d080';ctx.lineWidth=width*.006;ctx.lineCap='round';ctx.lineJoin='round';const x=width*.4,y=top+inner*.33,w=width*.2,h=inner*.34;ctx.beginPath();ctx.roundRect(x,y,w,h,width*.02);ctx.moveTo(x+w*.12,y+h*.82);ctx.lineTo(x+w*.42,y+h*.45);ctx.lineTo(x+w*.62,y+h*.68);ctx.lineTo(x+w*.75,y+h*.55);ctx.lineTo(x+w*.9,y+h*.82);ctx.stroke();}
   ctx.restore();
   ctx.beginPath();ctx.roundRect(width*.0015,height*.0015,width*.997,height*.997,radius);ctx.strokeStyle='#ffffff26';ctx.lineWidth=Math.max(1,width*.003);ctx.stroke();ctx.restore();
+}
+
+// A Look's photo spot: the photo fills it edge to edge once added; until then a soft dashed card.
+function drawPhotoSpot(ctx,pose,media,width,height){
+  const radius=Math.min(width,height)*Math.max(0,Math.min(50,pose.imageEdges??4))/100;
+  ctx.save();ctx.beginPath();ctx.roundRect(0,0,width,height,radius);ctx.clip();
+  if(!pose.assetEmpty&&media?.element){const scale=Math.max(width/media.width,height/media.height),w=media.width*scale,h=media.height*scale;ctx.drawImage(media.element,(width-w)/2,(height-h)/2,w,h);ctx.restore();return;}
+  ctx.fillStyle='rgba(255,255,255,.14)';ctx.fillRect(0,0,width,height);ctx.restore();
+  ctx.save();ctx.setLineDash([width*.02,width*.016]);ctx.lineWidth=Math.max(2,width*.006);ctx.strokeStyle='rgba(255,255,255,.6)';ctx.beginPath();ctx.roundRect(ctx.lineWidth,ctx.lineWidth,width-ctx.lineWidth*2,height-ctx.lineWidth*2,radius);ctx.stroke();ctx.restore();
 }
 

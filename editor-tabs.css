@@ -103,4 +103,11 @@
 .toolstrip.tool-tabs button { flex:1 0 52px; min-inline-size:52px; scroll-snap-align:start; }
 .toolstrip.tool-tabs button > span { inline-size:46px; block-size:46px; }
 .toolstrip.tool-tabs button { font-size:10px; letter-spacing:-.02em; }
+/* Saved Looks in the row: their snapshot in a rounded square, then a thin divider before styles. */
+.look-face-template { border-radius:14px; background:#1c1c1e; }
+.look-face-template .look-thumb { inline-size:100%; block-size:100%; border-radius:0; box-shadow:none; aspect-ratio:auto; }
+.look-face-template .look-thumb.is-drawn { aspect-ratio:var(--thumb-ratio,1); block-size:100%; inline-size:auto; margin:auto; }
+.look-tile.is-template[aria-pressed=true] .look-face { box-shadow:0 0 0 2px #000,0 0 0 4px var(--select-ring); }
+.looks-divider { flex:none; align-self:center; inline-size:1px; block-size:34px; margin:0 4px 14px; background:#ffffff1f; }
+.look-tile { -webkit-touch-callout:none; -webkit-user-select:none; user-select:none; }
 
