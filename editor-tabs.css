@@ -96,3 +96,11 @@
 .editor[data-video=true] .toolstrip.tool-tabs button { font-size:10px; letter-spacing:-.02em; }
 /* Small phones (320–359px): slightly smaller discs and labels keep six tabs apart. */
 @media(max-width:359px) { .toolstrip.tool-tabs { padding-inline:2px; } .toolstrip.tool-tabs button > span { inline-size:44px; block-size:44px; } .toolstrip.tool-tabs button { font-size:9.5px; letter-spacing:-.025em; } }
+/* Seven tools: equal slots that fit a 375px phone; narrower screens scroll the row instead of
+   squeezing labels. */
+.toolstrip.tool-tabs { overflow-x:auto; scrollbar-width:none; overscroll-behavior-x:contain; scroll-snap-type:x proximity; }
+.toolstrip.tool-tabs::-webkit-scrollbar { display:none; }
+.toolstrip.tool-tabs button { flex:1 0 52px; min-inline-size:52px; scroll-snap-align:start; }
+.toolstrip.tool-tabs button > span { inline-size:46px; block-size:46px; }
+.toolstrip.tool-tabs button { font-size:10px; letter-spacing:-.02em; }
+

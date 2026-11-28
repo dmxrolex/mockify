@@ -5,7 +5,11 @@ const objectKeySet = new Set(objectKeys);
 
 export const defaultImagePattern={size:22,spacing:35,opacity:38,stagger:true,angle:0};
 const fullSlot = {x:0,y:0,width:1,height:1};
-const autoPlaced = object => object.pose.locked===true&&object.pose.autoLayout!==false&&object.pose.device!=='flat'&&!object.pose.assetKind&&!object.pose.hideDevice;
+// Auto-arranged: framed phones that are still locked, and photos added to the page, until the
+// user moves, resizes or rotates them once (autoLayout:false). Then they are left alone for good.
+const autoPlaced = object => !object.pose.assetKind&&!object.pose.hideDevice&&object.pose.autoLayout!==false&&(object.pose.device==='flat'?object.pose.autoLayout===true:object.pose.locked===true);
+const PHONE_ASPECT = 1350/2760;
+const aspectOf = object => object.pose.device==='flat'?Math.max(.2,Math.min(5,Number(object.aspect)||1)):PHONE_ASPECT;
 const ratios = {square:1,story:9/16,wide:16/9,portrait:4/5};
 const uid = () => globalThis.crypto?.randomUUID?.() ?? 'object-'+Date.now().toString(36)+'-'+Math.random().toString(36).slice(2);
 const poseFor = settings => Object.fromEntries(objectKeys.filter(key=>key in (settings??{})).map(key=>[key,settings[key]]));
@@ -36,8 +40,39 @@ function updateCurrent(project,change) {
   const next=change(page,prior);if(next===page)return prior;
   return syncSelection({...prior,pages:prior.pages.with(index,next)},index);
 }
+// Smart layout: try every number of rows, fill rows in order with balanced counts, and keep the
+// arrangement that gives the screens the most area. Each slot is centred in its row and padded,
+// because the renderer fits a phone or photo inside ~80% of its slot.
+export function smartSlots(aspects,ratio='square'){
+  const n=aspects.length;if(!n)return [];
+  const width=ratios[ratio]??1,margin=.07,gap=.035,pad=1/.8,availableWidth=width-2*margin;
+  let best=null;
+  for(let rows=1;rows<=n;rows++){
+    const counts=Array.from({length:rows},(_,row)=>Math.floor(n/rows)+(row<n%rows?1:0));
+    // Justified rows: each row is as tall as fills the width, then all rows shrink together to fit.
+    let start=0;const groups=counts.map(count=>{const group=aspects.slice(start,start+count);start+=count;return group;});
+    let heights=groups.map(group=>(availableWidth-(group.length-1)*gap)/group.reduce((sum,a)=>sum+a,0));
+    const room=1-2*margin-(rows-1)*gap,total=heights.reduce((sum,h)=>sum+h,0);
+    if(total>room)heights=heights.map(h=>h*room/total);
+    // Keep one row from towering over the rest (a lone portrait phone stays phone-sized).
+    const cap=room/Math.max(1,rows)*1.6;heights=heights.map(h=>Math.min(h,cap));
+    const area=groups.reduce((sum,group,i)=>sum+heights[i]*heights[i]*group.reduce((s2,a)=>s2+a,0),0);
+    if(!best||area>best.area*1.0001)best={area,heights,groups};
+  }
+  const {heights,groups}=best,slots=[];
+  let y=(1-(heights.reduce((sum,h)=>sum+h,0)+(groups.length-1)*gap))/2;
+  groups.forEach((group,row)=>{
+    const height=heights[row],rowWidth=group.reduce((sum,a)=>sum+a*height,0)+(group.length-1)*gap;let x=(width-rowWidth)/2;
+    for(const a of group){const w=a*height,cx=x+w/2,cy=y+height/2,sw=w*pad,sh=height*pad;
+      slots.push({x:(cx-sw/2)/width,y:cy-sh/2,width:sw/width,height:sh});x+=w+gap;}
+    y+=height+gap;
+  });
+  return slots;
+}
+
 function reflow(page) {
-  const slots=gridSlots(page.objects.filter(autoPlaced).length,page.settings.ratio);let index=0;
+  const placed=page.objects.filter(autoPlaced);
+  const slots=placed.length<=1?placed.map(()=>({...fullSlot})):smartSlots(placed.map(aspectOf),page.settings.ratio);let index=0;
   return {...page,objects:page.objects.map(object=>autoPlaced(object)?{...object,slot:slots[index++]}:object)};
 }
 function withObjects(page,objects,{reflowObjects=false}={}) {
@@ -77,7 +112,7 @@ function migratePage(project,items,index) {
         objects.push(object);layers.push(layerFor(object));
       }
     }else{
-      if(!effective.hideDevice){const object={id:unique(item.id),itemId:item.id,pose,slot:{...fullSlot}};objects.push(object);layers.push(layerFor(object));}
+      if(!effective.hideDevice){const object={id:unique(item.id),itemId:item.id,aspect:item.source?.width&&item.source?.height?item.source.width/item.source.height:undefined,pose:pose.device==='flat'&&!pose.assetKind&&pose.autoLayout===undefined?{...pose,autoLayout:true}:pose,slot:{...fullSlot}};objects.push(object);layers.push(layerFor(object));}
     }
   }
   if(!legacyLayers){
@@ -150,7 +185,8 @@ export function changePage(project,patch) {
     }
     const settings={...page.settings,...pagePatch};
     if(Array.isArray(patch.layers)&&settings.selectedLayerId&&!patch.layers.some(layer=>layer.id===settings.selectedLayerId))settings.selectedLayerId=selectedObjectId;
-    return {...page,objects,selectedObjectId,settings};
+    const next={...page,objects,selectedObjectId,settings};
+    return 'ratio' in pagePatch&&pagePatch.ratio!==page.settings.ratio?reflow(next):next;
   });
 }
 export function addPage(project) {
@@ -281,7 +317,7 @@ export function appendItems(project,imported,{overlay}={}) {
   prior={...prior,items:[...prior.items,...added]};
   if(prior.pages.length){
     return updateCurrent(prior,page=>{
-      const objects=[...page.objects,...added.map(item=>({id:uid(),itemId:item.id,pose:{...poseFor(item.settings??prior.settings),...(!item.settings.locked?{scale:60,x:0,y:0}:{})},slot:{...fullSlot}}))];
+      const objects=[...page.objects,...added.map(item=>({id:uid(),itemId:item.id,aspect:item.source?.width&&item.source?.height?item.source.width/item.source.height:undefined,pose:{...poseFor(item.settings??prior.settings),...(!item.settings.locked?{scale:overlay?60:100,x:0,y:0,...(overlay?{}:{autoLayout:true})}:{})},slot:{...fullSlot}}))];
       const next=withObjects(page,objects,{reflowObjects:true}),selectedObjectId=objects.at(-1).id;
       return {...next,selectedObjectId,settings:{...next.settings,selectedLayerId:selectedObjectId}};
     });

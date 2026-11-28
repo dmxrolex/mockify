@@ -416,6 +416,8 @@ function Editor({ lookId, lookAuto=false, onLookSaved, project, profile, telegra
     });
     switchControls('pattern');
   },onFill:(id,button)=>setFillTarget({id,anchor:{current:button}}),onDropIntoFrame:(sourceId,frameId)=>mutateProject(prior=>{const page=pageFor(prior),object=page.objects.find(object=>object.id===sourceId);return object?fillAssetFrame(prior,frameId,object.itemId,sourceId):prior;}),onSelect:id=>{if(timeline){const main=placedClips(timeline).find(c=>c.objectId===id&&current>=c.start&&current<c.end),overlay=timeline.overlays.find(c=>c.objectId===id&&current>=c.start&&current<c.start+c.out-c.in);if(main||overlay)setTimelineSelection({type:main?'clip':'overlay',id:(main??overlay).id});}mutateProject(prior=>selectObject(prior,id));if(sheet==='text'||sheet==='layers')switchPanel(controlStage.current,()=>setSheet(null));},onDeselect:()=>update({selectedLayerId:null}),onCrop:id=>{mutateProject(prior=>selectObject(prior,id));switchControls('crop');},onUpdate:(id,patch)=>{
+    // A manual move, resize or rotate makes the object the user's: auto layout leaves it alone from now on.
+    if(['x','y','scale','roll'].some(key=>key in patch)&&!patch._stack)patch={...patch,autoLayout:false};
     const main=timeline&&placedClips(timeline).find(c=>c.objectId===id&&current>=c.start&&current<c.end),overlay=timeline?.overlays.find(c=>c.objectId===id&&current>=c.start&&current<c.start+c.out-c.in),entry=main??overlay;
     if(entry){const type=main?'clip':'overlay';if(timelineSelection?.id!==entry.id)setTimelineSelection({type,id:entry.id});mutateProject(prior=>changePage(selectObject(prior,id),Object.keys(patch).length?{timeline:updateTimeline(timeline,type,entry.id,{pose:{...entry.pose,...patch}})}:{}));}
     else mutateProject(prior=>changePage(selectObject(prior,id),patch));
@@ -619,7 +621,7 @@ function Editor({ lookId, lookAuto=false, onLookSaved, project, profile, telegra
   }
   useEffect(()=>{if(!liveTouches&&recorded.current.length)commitRecorded();},[liveTouches]);
   const framed=settings.device!=='flat',selectedText=!!baseSettings.layers?.some(l=>l.id===baseSettings.selectedLayerId&&l.type==='text');
-  const tabContext=sheet==='mark'?'mark':sheet==='text'||selectedText?'watermark':activePanel==='motion'?'motion':hasSelectedObject?'phone':null;
+  const tabContext=sheet==='mark'?'mark':sheet==='text'||selectedText?'watermark':activePanel==='shadow'?'shadow':activePanel==='motion'?'more':hasSelectedObject?'phone':null;
   const phoneChips=[{key:framed?'device':'image',label:framed?'Phone':source?.kind==='video'?'Video':'Image'},{key:'screen',label:'Status bar',disabled:!framed}];
   const canvasChips=[{key:'background',label:'Background'}];
   const firstPhoneTool=phoneChips[0].key,phoneTool=phoneChips.find(chip=>chip.key===groupTool.phone&&!chip.disabled)?.key??(groupTool.phone==='device'||groupTool.phone==='image'?firstPhoneTool:firstPhoneTool),canvasTool=canvasChips.some(chip=>chip.key===groupTool.canvas)?groupTool.canvas:'background';
@@ -634,11 +636,11 @@ function Editor({ lookId, lookAuto=false, onLookSaved, project, profile, telegra
     frame=requestAnimationFrame(step);return()=>cancelAnimationFrame(frame);
   },[statusPeek]);
   const artboardScene=peek>.001&&visibleScene.settings.pageObjects?{...visibleScene,settings:{...visibleScene.settings,pageObjects:visibleScene.settings.pageObjects.map(item=>item.id===settings.selectedLayerId?{...item,pose:{...item.pose,zoom:zoomLevel(item.pose.zoom)+(80-zoomLevel(item.pose.zoom))*peek}}:item)}}:visibleScene;
-  const tabs=[{key:'phone',label:framed?'Phone':source?.kind==='video'?'Video':'Image',icon:<Icon name={framed?'device':source?.kind==='video'?'video':'image'}/>,disabled:!settings.pageObjects?.length},{key:'canvas',label:'Background',icon:<Icon name="background"/>},{key:'watermark',label:'Text',icon:<Icon name="text"/>},{key:'mark',label:'Watermark',icon:<Icon name="mark"/>},{key:'motion',label:'Effects',icon:<Icon name="motion"/>,disabled:!settings.pageObjects?.length},{key:'more',label:'More',icon:<Icon name="more"/>}];
+  const tabs=[{key:'phone',label:framed?'Phone':source?.kind==='video'?'Video':'Image',icon:<Icon name={framed?'device':source?.kind==='video'?'video':'image'}/>,disabled:!settings.pageObjects?.length},{key:'canvas',label:'Background',icon:<Icon name="background"/>},{key:'watermark',label:'Text',icon:<Icon name="text"/>},{key:'mark',label:'Watermark',icon:<Icon name="mark"/>},{key:'shadow',label:'Shadow',icon:<Icon name="shadow"/>,disabled:!settings.pageObjects?.length},{key:'more',label:'More',icon:<Icon name="more"/>}];
   const moreItems=[
     {key:'adjust',label:'Adjust',icon:<Icon name="adjust"/>,disabled:!hasSelectedObject,action:()=>{mutateProject(prior=>ensurePages(prior));switchControls('adjust');}},
     {key:'blur',label:'Blur',icon:<Icon name="blur"/>,action:openBlur},
-    {key:'shadow',label:'Shadow',icon:<Icon name="shadow"/>,disabled:!hasSelectedObject,action:()=>switchControls('shadow')},
+    {key:'motion',label:'Effects',icon:<Icon name="motion"/>,disabled:!settings.pageObjects?.length,action:()=>openGroup('motion')},
     {key:'layers',label:'Layers',icon:<Icon name="layers"/>,action:()=>switchControls(null,'layers')},
     {key:'tools',label:'Assets',icon:<Icon name="tools"/>,action:()=>setSheet('tools')},
   ];
@@ -659,7 +661,7 @@ function Editor({ lookId, lookAuto=false, onLookSaved, project, profile, telegra
     if(key==='showcase')return openShowcase();
     if(key==='watermark')return openText();
     if(key==='mark'){sequence.seek(current);return switchControls(null,'mark');}
-    if((key==='phone'||key==='motion')&&!hasSelectedObject){const first=currentPage?.objects.find(object=>!object.pose.hideDevice&&!object.pose.assetKind);if(first)mutateProject(prior=>selectObject(prior,first.id));}
+    if((key==='phone'||key==='motion'||key==='shadow')&&!hasSelectedObject){const first=currentPage?.objects.find(object=>!object.pose.hideDevice&&!object.pose.assetKind);if(first)mutateProject(prior=>selectObject(prior,first.id));}
     if(panel===key)return;
     switchControls(key);
   }
