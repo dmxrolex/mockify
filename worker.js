@@ -3,7 +3,6 @@ import { looksRequest } from './looks-api.js';
 import {WELCOME_CREDITS,exportCreditCost,accountFromRow,premiumActive} from './credit-model.js';
 import {handlePayments} from './payments.js';
 import {ensureSchema,isAdmin,redeemPromo,adminRequest} from './promo-api.js';
-import {stickerRequest,stickerAdmin} from './sticker-api.js';
 const encoder = new TextEncoder();
 const telegramPublicKey = 'e7bf03a2fa4602af4580703d88dda5bb59f32ed8b02a56c187fe7d34caed242d';
 
@@ -168,7 +167,6 @@ export default {
         return json({account:await accountFor(env,user.id)});
       }catch{return json({error:'Account service unavailable. Please retry.'},503);}
     }
-    if(url.pathname.startsWith('/api/sticker/'))return stickerRequest(request,env,url.pathname.slice(13));
     if(url.pathname==='/api/promo/redeem'||url.pathname==='/api/admin'){
       if(request.method!=='POST')return json({error:'Method not allowed'},405);
       if(request.headers.get('Origin')!==url.origin)return json({error:'Origin rejected'},403);
@@ -176,7 +174,7 @@ export default {
       const admin=url.pathname==='/api/admin';
       if(admin&&!isAdmin(env,user))return json({error:'Not found'},404);
       let body;try{const raw=await request.text();if(raw.length>4096)return json({error:'Too large'},413);body=JSON.parse(raw||'{}');if(!body||typeof body!=='object')throw Error();}catch{return json({error:'Invalid request'},400);}
-      try{const result=admin?(String(body.action).startsWith('stickers')?await stickerAdmin(env,body):await adminRequest(env,body)):await redeemPromo(env,user,body.code,accountFor);return json(result.body,result.status);}
+      try{const result=admin?await adminRequest(env,body):await redeemPromo(env,user,body.code,accountFor);return json(result.body,result.status);}
       catch{return json({error:'Something went wrong. Please retry.'},503);}
     }
     if(url.pathname==='/api/looks'){

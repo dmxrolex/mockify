@@ -3,7 +3,6 @@ import React,{useCallback,useEffect,useRef,useState} from 'react';
 import {adminCall} from './promo-client.js';
 import {PROMO_LIMITS} from './promo-model.js';
 import {telegramStar} from './brand-icons.jsx';
-import AnimatedSticker from './animated-sticker.jsx';
 import './admin-page.css';
 
 const icons={
@@ -121,38 +120,6 @@ function Promos({telegram,initial}){
   </>;
 }
 
-// Ducks: every pack item, and which one plays in each place of the app.
-const itemLoaders=new Map();
-const itemLoader=id=>{if(!itemLoaders.has(id))itemLoaders.set(id,()=>fetch('/api/sticker/item/'+id).then(response=>response.ok?response.json():Promise.reject(new Error('unavailable'))).then(data=>({default:data})));return itemLoaders.get(id);};
-function LazyDuck({id,className}){
-  const ref=useRef(null),[seen,setSeen]=useState(false);
-  useEffect(()=>{const observer=new IntersectionObserver(([entry])=>{if(entry.isIntersecting){setSeen(true);observer.disconnect();}},{rootMargin:'120px'});observer.observe(ref.current);return()=>observer.disconnect();},[]);
-  return <span ref={ref} className={'admin-duck '+(className??'')}>{seen&&id&&<AnimatedSticker as="span" load={itemLoader(id)} className="admin-duck-player" fallback={<i className="admin-duck-missing">?</i>}/>}</span>;
-}
-function Ducks({telegram}){
-  const [data,setData]=useState(null),[error,setError]=useState(''),[picking,setPicking]=useState(null),[busy,setBusy]=useState(false);
-  async function call(body){setBusy(true);setError('');try{setData(await adminCall(telegram,body));return true;}catch(failure){setError(failure.message);return false;}finally{setBusy(false);}}
-  useEffect(()=>{call({action:'stickers'});},[]);
-  if(error&&!data)return <div className="admin-card admin-failed"><p>{error}</p><p className="admin-hint">The bot token is needed to read the emoji pack.</p><button type="button" onClick={()=>call({action:'stickers'})}>Try again</button></div>;
-  if(!data)return <div className="admin-skeleton admin-skeleton-tall"/>;
-  const slot=picking&&data.slots.find(entry=>entry.slot===picking);
-  return <>
-    <p className="admin-hint">Animations come from the <b>{data.pack}</b> pack ({data.items.length} ducks). Tap a place to choose its duck.</p>
-    <section className="admin-card"><ul className="admin-list">{data.slots.map(entry=><li key={entry.slot}><button type="button" className="admin-row" onClick={()=>{haptic();setPicking(entry.slot);}}>
-      <LazyDuck id={entry.id}/><span className="admin-row-main"><strong>{entry.label}</strong><small>{entry.custom?'Chosen by you':'Automatic'}</small></span><span className="admin-row-side"><small>Change ›</small></span></button></li>)}</ul></section>
-    {error&&<p className="admin-error" role="alert">{error}</p>}
-    {slot&&<DuckPicker slot={slot} items={data.items} busy={busy} onClose={()=>setPicking(null)} onPick={async id=>{if(await call({action:'stickers.assign',slot:slot.slot,id}))setPicking(null);}}/>}
-  </>;
-}
-function DuckPicker({slot,items,busy,onPick,onClose}){
-  const ref=useRef(null);
-  useEffect(()=>{const element=ref.current;element.showModal();return()=>{if(element.open)element.close();};},[]);
-  return <dialog ref={ref} className="admin-sheet" aria-labelledby="duck-title" onCancel={event=>{event.preventDefault();onClose();}}>
-    <header><button type="button" onClick={onClose}>Cancel</button><h2 id="duck-title">{slot.label}</h2><button type="button" className="is-primary" disabled={busy||!slot.custom} onClick={()=>onPick(null)}>Automatic</button></header>
-    <div className="admin-duck-grid">{items.map(item=><button key={item.id} type="button" aria-pressed={item.id===slot.id} aria-label={item.emoji||'Duck'} disabled={busy} onClick={()=>onPick(item.id)}><LazyDuck id={item.id}/><small>{item.emoji}</small></button>)}</div>
-  </dialog>;
-}
-
 export default function AdminPage({telegram,onBack}){
   const [tab,setTab]=useState('overview'),[data,setData]=useState(null),[error,setError]=useState(''),[loading,setLoading]=useState(false);
   const load=useCallback(async()=>{setLoading(true);setError('');try{setData(await adminCall(telegram,{action:'overview'}));}catch(failure){setError(failure.message);}finally{setLoading(false);}},[telegram]);
@@ -163,12 +130,11 @@ export default function AdminPage({telegram,onBack}){
       <h1>Dashboard</h1>
       <button type="button" className="round-action admin-refresh" aria-label="Refresh" data-loading={loading||undefined} onClick={()=>{haptic();load();}}><Icon name="refresh"/></button>
     </header>
-    <div className="admin-tabs" role="tablist">{[['overview','Overview'],['users','Users'],['promos','Promos'],['ducks','Ducks']].map(([key,label])=><button key={key} type="button" role="tab" aria-selected={tab===key} onClick={()=>{haptic();setTab(key);}}>{label}</button>)}</div>
+    <div className="admin-tabs" role="tablist">{[['overview','Overview'],['users','Users'],['promos','Promos']].map(([key,label])=><button key={key} type="button" role="tab" aria-selected={tab===key} onClick={()=>{haptic();setTab(key);}}>{label}</button>)}</div>
     {error&&<div className="admin-card admin-failed"><p>{error}</p><button type="button" onClick={load}>Try again</button></div>}
     {!data&&!error&&<><div className="admin-tiles">{Array.from({length:6},(_,i)=><div key={i} className="admin-tile admin-skeleton"/>)}</div><div className="admin-skeleton admin-skeleton-tall"/></>}
     {data&&tab==='overview'&&<Overview data={data}/>}
     {data&&tab==='users'&&<Users telegram={telegram}/>}
     {data&&tab==='promos'&&<Promos telegram={telegram} initial={data.promos}/>}
-    {data&&tab==='ducks'&&<Ducks telegram={telegram}/>}
   </div>;
 }
