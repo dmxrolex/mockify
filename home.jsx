@@ -12,6 +12,15 @@ function CreateIcon({ type }) {
   </svg>;
 }
 
+const ratioLabel={square:'1:1',story:'9:16',wide:'16:9',portrait:'4:5'};
+// Preview with its size badge, and the name in a small bar attached underneath.
+function LookCard({look,name,...events}){
+  return <button type="button" className="home-look-card" aria-label={name} {...events}>
+    <span className="home-look-art"><LookThumb look={look}/><b className="home-look-ratio">{ratioLabel[look.settings?.ratio]??'1:1'}</b></span>
+    <span className="home-look-label">{name}</span>
+  </button>;
+}
+
 export default function HomeScreen({ busy, onPick, onDrop, recent, onOpen, looks, lookLimit, starters, onUseLook, onManageLook }) {
   const [dragging,setDragging] = useState(false);
   const last=recent?.[0],press=useLookPress(onUseLook,onManageLook),pressStarter=useLookPress(onUseLook);
@@ -36,22 +45,22 @@ export default function HomeScreen({ busy, onPick, onDrop, recent, onOpen, looks
 
     {/* Your Looks: saved designs to reuse. Tap to start, long-press for more. */}
     <section className="home-looks" aria-labelledby="home-looks-heading">
-      <header><h2 id="home-looks-heading">{t('Your looks')}</h2>{looks&&<small className="home-count">{looks.length}/{lookLimit}</small>}</header>
-      {looks?.length?<div className="home-look-row">
-        {looks.map(look=><button key={look.id} type="button" className="home-look" aria-label={look.name} {...press(look)}><LookThumb look={look}/><span className="home-look-name">{look.name}</span></button>)}
+      <header><h2 id="home-looks-heading" className="home-label">{t('Your looks')}</h2>{looks&&<small className="home-count">{looks.length}/{lookLimit}</small>}</header>
+      {looks?.length?<div className="home-look-grid">
+        {looks.map(look=><LookCard key={look.id} look={look} name={look.name} {...press(look)}/>)}
       </div>
       :<button type="button" className="home-look-empty" onClick={()=>onPick()} disabled={busy}>
-        <span className="home-look-empty-art" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M7 3.5h10a1.5 1.5 0 0 1 1.5 1.5v15.5L12 16.5l-6.5 4V5A1.5 1.5 0 0 1 7 3.5Z"/><path d="M12 7.5v5m-2.5-2.5h5"/></svg></span>
-        <span className="home-look-empty-text"><strong>{t('Save your first look')}</strong><span>{t('Design once, then reuse it with new screenshots.')}</span></span>
+        <span className="home-look-empty-art" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="7.5" y="3.5" width="12" height="15" rx="3"/><path d="M4.5 7.5v10a3 3 0 0 0 3 3h7.5"/><path d="M13.5 8v6m-3-3h6"/></svg></span>
+        <span className="home-look-empty-text"><strong>{t('Save a look')}</strong><span>{t('Reuse any design with new screenshots')}</span></span>
         <span className="home-look-empty-go" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="m9 5 7 7-7 7"/></svg></span>
       </button>}
     </section>
 
-    {/* Quick start: ready-made designs, previewed with real renders. */}
+    {/* Quick start: ready-made designs, previewed with real renders, in two columns. */}
     <section className="home-looks home-quick" aria-labelledby="home-quick-heading">
-      <header><h2 id="home-quick-heading">{t('Quick start')}</h2><small>{t('Tap a design, add your screenshots')}</small></header>
-      <div className="home-look-row">
-        {starters.map(look=><button key={look.id} type="button" className="home-look home-quick-card" aria-label={t(look.name)} {...pressStarter(look)}><LookThumb look={look}/><span className="home-look-name">{t(look.name)}</span><small>{look.tag}</small></button>)}
+      <header><h2 id="home-quick-heading" className="home-label is-red">{t('Quick start')}</h2></header>
+      <div className="home-look-grid">
+        {starters.map(look=><LookCard key={look.id} look={look} name={t(look.name)} {...pressStarter(look)}/>)}
       </div>
     </section>
   </div>;
