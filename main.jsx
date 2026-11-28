@@ -615,7 +615,9 @@ function Editor({ fillSpot, looks=[], onUseLook, onManageLook, onSaveLook, proje
   // Touches are kept while the video plays and added together when it pauses or the panel closes.
   const [recordedCount,setRecordedCount]=useState(0),recorded=useRef([]),currentRef=useRef(current);
   currentRef.current=current;
-  const liveTouches=activePanel==='showcase'&&playing&&!!targetObject;
+  // Touches are added with the Tap / Hold / Swipe / Zoom buttons under the timeline; playing
+  // the video never records them.
+  const liveTouches=false;
   function gestureFrom(track,touch){
     const parent=placedClips(track).find(c=>touch.time>=c.start&&touch.time<c.end);if(!parent)return null;
     const time=parent.in+touch.time-parent.start,room=Math.max(.001,parent.out-time);

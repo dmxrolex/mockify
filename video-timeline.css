@@ -169,3 +169,13 @@
   @keyframes effect-push { to { scale:1.22; } }
 }
 
+
+/* Added touches and zooms stay visible and tappable after the effects menu closes:
+   the same capsules with icons, slightly quieter, and their lane icons. */
+.sequence-timeline:not([data-effects=true]) .sequence-lane-icon { visibility:visible; opacity:.7; }
+.sequence-timeline:not([data-effects=true]) .sequence-effect { pointer-events:auto; }
+.sequence-timeline:not([data-effects=true]) .sequence-effect-body { inset:2px -12px; }
+.sequence-timeline:not([data-effects=true]) .sequence-effect-capsule { display:flex; align-items:center; inline-size:calc(var(--effect-length) + 24px); block-size:22px; padding-inline-start:4px; border-radius:11px; background:#ffffff24; color:#fff; box-shadow:inset 0 0 0 1px #ffffff1f; }
+.sequence-timeline:not([data-effects=true]) .sequence-effect-capsule svg { display:block; inline-size:14px; block-size:14px; flex:none; }
+.sequence-timeline:not([data-effects=true]) .is-dot .sequence-effect-capsule { inline-size:22px; translate:0 -50%; border-radius:50%; justify-content:center; padding:0; }
+.sequence-timeline:not([data-effects=true]) .sequence-cluster { inline-size:22px; block-size:22px; background:#ffffff24; font-size:11px; pointer-events:auto; }

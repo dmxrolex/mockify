@@ -36,7 +36,7 @@ export default function TimelineInspector({timeline,selection,onPatch,onDelete,o
       <button type="button" className="ios-text-done controls-back" onClick={onDone}>{t('Done')}</button>
     </header>
     {/* What to do next for the selected item: everything else is direct manipulation. */}
-    <p className="sequence-hint">{t(kind?hints[kind]:playing?'Tap, hold or slide on the screen as it plays':'Add Tap, Hold, Swipe or Zoom under the timeline')}</p>
+    <p className="sequence-hint">{t(kind?hints[kind]:'Add Tap, Hold, Swipe or Zoom under the timeline')}</p>
     {type==='gesture'&&item?<div className="ios-segment sequence-ring" role="radiogroup" aria-label={t('Ring colour')} style={{'--segment':item.ring==='blue'?1:0}}>
       {[['clear','Clear'],['blue','Blue']].map(([ring,label])=><button key={ring} type="button" role="radio" aria-checked={(item.ring??'clear')===ring} onClick={()=>{if((item.ring??'clear')===ring)return;hapticSelection();patch({ring});}}>{t(label)}</button>)}
     </div>:null}
