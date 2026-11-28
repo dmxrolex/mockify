@@ -48,3 +48,8 @@
 .editor.page.page[data-video=true]:not([data-typing=true])[data-panel="shadow"],
 .editor.page.page[data-video=true]:not([data-typing=true])[data-panel="blur"] { grid-template-rows:minmax(120px,1fr) auto; }
 .editor[data-panel="adjust"] .control-stage,.editor[data-panel="shadow"] .control-stage,.editor[data-panel="blur"] .control-stage { block-size:auto; overflow:visible; }
+/* The back control in every panel header is just the chevron: no circle, no fill. */
+.tune-heading > .tune-round:first-child { inline-size:34px; block-size:44px; margin-inline-start:-6px; border-radius:12px; background:none; box-shadow:none; color:#f5f5f7; transition:scale .2s var(--spring),opacity .2s; }
+.tune-heading > .tune-round:first-child svg { inline-size:22px; block-size:22px; stroke-width:2.3; }
+.tune-heading > .tune-round:first-child:active { scale:.86; opacity:.6; }
+.tune-heading > .tune-round:first-child:focus-visible { outline:2px solid #fff; outline-offset:-2px; }
