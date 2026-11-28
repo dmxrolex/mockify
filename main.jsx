@@ -621,7 +621,7 @@ function Editor({ lookId, lookAuto=false, onLookSaved, project, profile, telegra
   }
   useEffect(()=>{if(!liveTouches&&recorded.current.length)commitRecorded();},[liveTouches]);
   const framed=settings.device!=='flat',selectedText=!!baseSettings.layers?.some(l=>l.id===baseSettings.selectedLayerId&&l.type==='text');
-  const tabContext=sheet==='mark'?'mark':sheet==='text'||selectedText?'watermark':activePanel==='motion'||activePanel==='shadow'?activePanel:hasSelectedObject?'phone':null;
+  const tabContext=sheet==='mark'?'mark':sheet==='text'||selectedText?'watermark':activePanel==='shadow'?'shadow':activePanel==='motion'?'more':hasSelectedObject?'phone':null;
   const phoneChips=[{key:framed?'device':'image',label:framed?'Phone':source?.kind==='video'?'Video':'Image'},{key:'screen',label:'Status bar',disabled:!framed}];
   const canvasChips=[{key:'background',label:'Background'}];
   const firstPhoneTool=phoneChips[0].key,phoneTool=phoneChips.find(chip=>chip.key===groupTool.phone&&!chip.disabled)?.key??(groupTool.phone==='device'||groupTool.phone==='image'?firstPhoneTool:firstPhoneTool),canvasTool=canvasChips.some(chip=>chip.key===groupTool.canvas)?groupTool.canvas:'background';
@@ -636,10 +636,11 @@ function Editor({ lookId, lookAuto=false, onLookSaved, project, profile, telegra
     frame=requestAnimationFrame(step);return()=>cancelAnimationFrame(frame);
   },[statusPeek]);
   const artboardScene=peek>.001&&visibleScene.settings.pageObjects?{...visibleScene,settings:{...visibleScene.settings,pageObjects:visibleScene.settings.pageObjects.map(item=>item.id===settings.selectedLayerId?{...item,pose:{...item.pose,zoom:zoomLevel(item.pose.zoom)+(80-zoomLevel(item.pose.zoom))*peek}}:item)}}:visibleScene;
-  const tabs=[{key:'phone',label:framed?'Phone':source?.kind==='video'?'Video':'Image',icon:<Icon name={framed?'device':source?.kind==='video'?'video':'image'}/>,disabled:!settings.pageObjects?.length},{key:'canvas',label:'Background',icon:<Icon name="background"/>},{key:'watermark',label:'Text',icon:<Icon name="text"/>},{key:'mark',label:'Watermark',icon:<Icon name="mark"/>},{key:'shadow',label:'Shadow',icon:<Icon name="shadow"/>,disabled:!settings.pageObjects?.length},{key:'motion',label:'Effects',icon:<Icon name="motion"/>,disabled:!settings.pageObjects?.length},{key:'more',label:'More',icon:<Icon name="more"/>}];
+  const tabs=[{key:'phone',label:framed?'Phone':source?.kind==='video'?'Video':'Image',icon:<Icon name={framed?'device':source?.kind==='video'?'video':'image'}/>,disabled:!settings.pageObjects?.length},{key:'canvas',label:'Background',icon:<Icon name="background"/>},{key:'watermark',label:'Text',icon:<Icon name="text"/>},{key:'mark',label:'Watermark',icon:<Icon name="mark"/>},{key:'shadow',label:'Shadow',icon:<Icon name="shadow"/>,disabled:!settings.pageObjects?.length},{key:'more',label:'More',icon:<Icon name="more"/>}];
   const moreItems=[
     {key:'adjust',label:'Adjust',icon:<Icon name="adjust"/>,disabled:!hasSelectedObject,action:()=>{mutateProject(prior=>ensurePages(prior));switchControls('adjust');}},
     {key:'blur',label:'Blur',icon:<Icon name="blur"/>,action:openBlur},
+    {key:'motion',label:'Effects',icon:<Icon name="motion"/>,disabled:!settings.pageObjects?.length,action:()=>openGroup('motion')},
     {key:'layers',label:'Layers',icon:<Icon name="layers"/>,action:()=>switchControls(null,'layers')},
     {key:'tools',label:'Assets',icon:<Icon name="tools"/>,action:()=>setSheet('tools')},
   ];

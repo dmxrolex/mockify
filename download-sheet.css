@@ -29,7 +29,6 @@ dialog.download-sheet[open]:not([data-closing]) { opacity:1; translate:0 0; }
 .download-primary,.download-home { display:block; inline-size:100%; min-block-size:50px; padding:12px 16px; border:0; border-radius:13px; font:600 17px/1.3 system-ui,sans-serif; }
 .download-primary { background:#0a84ff; color:#fff; }
 .download-priced { display:flex; align-items:center; justify-content:space-between; gap:12px; }
-.download-credit-balance { margin:-3px 0 16px; text-align:center; color:#9b9ba3; font:400 13px/1.4 system-ui,sans-serif; }
 .download-premium { display:flex; align-items:center; justify-content:center; gap:6px; inline-size:100%; min-block-size:44px; margin-block-start:8px; padding:4px; background:none; border:0; color:#66acff; font:450 13px/1.3 system-ui,sans-serif; }.download-premium svg { inline-size:15px; block-size:15px; }
 .download-home { background:none; color:#66acff; margin-block-start:4px; font-weight:450; }
 .download-working { padding:15px 0 20px; }
@@ -39,27 +38,21 @@ dialog.download-sheet[open]:not([data-closing]) { opacity:1; translate:0 0; }
 .download-complete { display:flex; align-items:center; justify-content:center; gap:8px; margin:4px 0 22px; }.download-complete svg { inline-size:25px; block-size:25px; color:#30d158; stroke-width:2.3; }.download-complete h3,.download-state-title { margin:0; font:600 24px/1.3 system-ui,sans-serif; letter-spacing:-.03em; text-align:center; }.download-state-title { margin-block-end:20px; }
 .download-error { margin:12px 0 0; color:#ffaaa7; text-align:center; font:400 13px/1.4 system-ui,sans-serif; }
 @media(prefers-reduced-motion:reduce) { dialog.download-sheet { translate:none; transition-duration:100ms; }.download-sheet::backdrop { transition-duration:100ms; }@starting-style { dialog.download-sheet[open]:not([data-closing]) { translate:none; } } }
-/* After a Telegram export: one line on where the file went, then Share / Save rows. */
+/* After a Telegram export: one line on where the file went. */
 .download-sent { margin:-14px 0 18px; color:#9b9ba3; text-align:center; font:400 14px/1.4 system-ui,sans-serif; }
-.download-actions { display:grid; margin:0 0 6px; border-radius:14px; background:#1c1c1e; overflow:hidden; }
-.download-actions button { position:relative; display:flex; align-items:center; gap:12px; min-block-size:52px; padding:8px 14px; border:0; background:none; color:#f5f5f7; font:400 16px/1.3 system-ui,sans-serif; text-align:start; transition:background-color .15s; }
-.download-actions button + button::before { content:''; position:absolute; inset:0 0 auto 56px; block-size:1px; background:#ffffff1f; }
-.download-actions button > span:nth-child(2) { flex:1; }
-.download-actions button:not(:disabled):active { background:#ffffff0f; }
-.download-actions button:disabled { opacity:.55; }
-.download-actions button:focus-visible { outline:2px solid #fff; outline-offset:-3px; border-radius:14px; }
-.download-actions .ios-setting-icon { display:grid; place-items:center; flex:none; inline-size:30px; block-size:30px; border-radius:9px; color:#fff; }
-.download-actions .ios-setting-icon svg { inline-size:18px; block-size:18px; fill:none; stroke:currentColor; stroke-width:1.9; stroke-linecap:round; stroke-linejoin:round; }
-.download-actions .download-tile-share { background:#0a84ff; }
-.download-actions .download-tile-save { background:#30d158; }
-.download-chevron { inline-size:16px; block-size:16px; flex:none; fill:none; stroke:#5b5b61; stroke-width:2.2; stroke-linecap:round; stroke-linejoin:round; }
-/* Reserved line, so a status message never shifts the buttons below. */
-.download-notice { min-block-size:20px; margin:4px 0 10px; color:#9b9ba3; text-align:center; font:400 13px/1.5 system-ui,sans-serif; }
-@media(prefers-reduced-motion:reduce) { .download-actions button { transition:none; } }
 /* Sizes Telegram cannot deliver stay visible but disabled, with how to fix them. */
 .download-quality label:has(input:disabled) { cursor:default; }
 .download-quality label:has(input:disabled) strong,.download-quality label:has(input:disabled) > :not(span:first-child) { opacity:.45; }
 .download-quality label:has(input:disabled) small { color:#ff9f0a; }
 .download-limit { margin:-6px 0 14px; color:#ff9f0a; text-align:center; font:500 13px/1.4 system-ui,sans-serif; }
 .download-primary:disabled { opacity:.45; }
+/* Balance: a small gold tab attached to the top of the Download button. */
+.download-pay { display:grid; justify-items:center; }
+.download-balance { position:relative; z-index:0; display:inline-flex; align-items:center; gap:6px; margin-block-end:-1px; padding:5px 14px 6px 8px; border-radius:14px 14px 0 0; background:linear-gradient(180deg,#ffe58a,#f5b82e); box-shadow:inset 0 1px 0 #fff9; color:#3a2400; font:600 12.5px/1 system-ui,sans-serif; font-variant-numeric:tabular-nums; }
+.download-balance strong { font-weight:800; }
+.download-balance .header-coin { display:grid; inline-size:18px; block-size:18px; }
+.download-balance .header-coin svg,.download-balance .header-coin img { inline-size:18px; block-size:18px; }
+.download-balance::before,.download-balance::after { content:''; position:absolute; inset:auto auto 0 -10px; inline-size:10px; block-size:10px; background:radial-gradient(circle at 0 0,transparent 9.5px,#f5b82e 10px); }
+.download-balance::after { inset:auto -10px 0 auto; background:radial-gradient(circle at 100% 0,transparent 9.5px,#f5b82e 10px); }
+.download-pay .download-primary { position:relative; z-index:1; }
 
