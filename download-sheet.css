@@ -49,8 +49,9 @@ dialog.download-sheet[open]:not([data-closing]) { opacity:1; translate:0 0; }
 /* Balance: a full-width gold band tucked behind the top of the Download button, with rounder
    corners than the button so it reads as one attached piece. */
 .download-pay { display:grid; }
-.download-balance { position:relative; z-index:0; display:flex; align-items:center; gap:7px; margin-block-end:-14px; padding:8px 16px 22px; border-radius:22px; background:linear-gradient(180deg,#ffe58a,#f5b82e); box-shadow:inset 0 1px 0 #fff9; color:#3a2400; font:600 13px/1 system-ui,sans-serif; font-variant-numeric:tabular-nums; }
-.download-balance strong { margin-inline-start:auto; font-size:14px; font-weight:800; }
+.download-balance { position:relative; z-index:0; display:flex; align-items:center; gap:7px; margin-block-end:-16px; padding:9px 16px 25px; border-radius:18px 18px 0 0; background:linear-gradient(180deg,#ffe58a,#f5b82e); box-shadow:inset 0 1px 0 #fff9; color:#3a2400; font:600 13px/1 system-ui,sans-serif; font-variant-numeric:tabular-nums; }
+.download-balance strong { display:flex; align-items:center; gap:5px; margin-inline-start:auto; font-size:15px; font-weight:800; }
 .download-balance .header-coin { display:grid; inline-size:18px; block-size:18px; }
 .download-balance .header-coin svg,.download-balance .header-coin img { inline-size:18px; block-size:18px; }
-.download-pay .download-primary { position:relative; z-index:1; box-shadow:0 -2px 10px #0003; }
+.download-pay .download-primary { position:relative; z-index:1; }
+.credit-free { font-size:15px; font-weight:600; opacity:.9; }
