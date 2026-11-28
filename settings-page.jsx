@@ -38,7 +38,7 @@ function Toggle({icon,label,caption,checked,onChange,disabled=false}){
     <input type="checkbox" switch="" role="switch" disabled={disabled} checked={checked} onChange={event=>{hapticSelection();onChange(event.target.checked);}}/></label>;
 }
 
-export default function SettingsPage({preferences,update,onBalance,onSubscription,profile,botUsername,draftCount=0,telegram,onAccount}) {
+export default function SettingsPage({preferences,update,onBalance,onSubscription,profile,botUsername,draftCount=0,telegram,onAccount,nativeBack=false,onSubpage}) {
   const [view,setView]=useState('main'),[terms,setTerms]=useState(false),[costs,setCosts]=useState(false),[promo,setPromo]=useState(false),root=useRef(null);
   useEffect(()=>{if(!('switch' in HTMLInputElement.prototype))import('input-switch-polyfill').catch(()=>{});},[]);
   const status=subscriptionInfo(profile?.subscription),premium=status.active,balance=profile?.credits??0;
@@ -47,14 +47,17 @@ export default function SettingsPage({preferences,update,onBalance,onSubscriptio
   const app=window.Telegram?.WebApp;
   function go(next){switchPanel(root.current,()=>setView(next)).then(()=>root.current?.querySelector(next==='main'?'.settings-language-link':'.settings-subpage-back')?.focus({preventScroll:true}));}
   const discount=profile?.discount;
+  // Tell the app a sub-page is open so Telegram's back arrow returns here.
+  useEffect(()=>{onSubpage?.(view==='main'?null:()=>go('main'));},[view]);
+  useEffect(()=>()=>onSubpage?.(null),[]);
   function openTelegram(event,href){if(app?.initData&&typeof app.openTelegramLink==='function'){event.preventDefault();app.openTelegramLink(href);}}
   const shareHref=botUsername?'https://t.me/share/url?url='+encodeURIComponent('https://t.me/'+botUsername)+'&text='+encodeURIComponent(t('Turn screenshots into beautiful mockups right in Telegram.')):undefined;
   const drafts=premium?null:Math.min(draftCount,FREE_DRAFT_LIMIT);
   const costRows=[['photo','Photo export',starCount(exportCreditCost('photo'))],['video','Video export',starCount(exportCreditCost('video'))],['quality','High quality',starCount(exportCreditCost('photo','high')-exportCreditCost('photo'),'+')]];
   return <section ref={root} className="page app-settings" aria-label={t('Settings')}>
-    {view==='admin'?<Suspense fallback={<div className="settings-loading" role="status" aria-label={t('Loading…')}/>}><AdminPage telegram={telegram} onBack={()=>go('main')}/></Suspense>:view==='language'?<div className="settings-subpage">
+    {view==='admin'?<Suspense fallback={<div className="settings-loading" role="status" aria-label={t('Loading…')}/>}><AdminPage telegram={telegram} onBack={nativeBack?null:()=>go('main')}/></Suspense>:view==='language'?<div className="settings-subpage">
       <header className="settings-subpage-heading">
-        <button type="button" className="round-action settings-subpage-back" aria-label={t('Back to Settings')} onClick={()=>go('main')}><Glyph name="back"/></button>
+        {!nativeBack&&<button type="button" className="round-action settings-subpage-back" aria-label={t('Back to Settings')} onClick={()=>go('main')}><Glyph name="back"/></button>}
         <h1>{t('Language')}</h1>
       </header>
       <div className="ios-settings-group settings-group" role="radiogroup" aria-label={t('Language')}>
@@ -63,7 +66,6 @@ export default function SettingsPage({preferences,update,onBalance,onSubscriptio
           <span className="settings-check"><Glyph name="check"/></span>
         </button>)}
       </div>
-      <p className="settings-footnote">{t('The app, prices and Terms switch language instantly. Your designs are not changed.')}</p>
     </div>:<>
       <div className="settings-profile">
         <span className="settings-avatar">{profile?.photoUrl?<img src={profile.photoUrl} alt="" referrerPolicy="no-referrer"/>:<Glyph name="person"/>}</span>

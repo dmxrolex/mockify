@@ -126,7 +126,7 @@ export default function AdminPage({telegram,onBack}){
   useEffect(()=>{load();},[load]);
   return <div className="admin-page">
     <header className="settings-subpage-heading admin-heading">
-      <button type="button" className="round-action settings-subpage-back" aria-label="Back to Settings" onClick={onBack}><Icon name="back"/></button>
+      {onBack&&<button type="button" className="round-action settings-subpage-back" aria-label="Back to Settings" onClick={onBack}><Icon name="back"/></button>}
       <h1>Dashboard</h1>
       <button type="button" className="round-action admin-refresh" aria-label="Refresh" data-loading={loading||undefined} onClick={()=>{haptic();load();}}><Icon name="refresh"/></button>
     </header>

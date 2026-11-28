@@ -734,3 +734,5 @@ img { pointer-events:none; -webkit-user-drag:none; -webkit-touch-callout:none; }
 a,button,canvas,svg { -webkit-touch-callout:none; -webkit-user-drag:none; }
 .app-shell { -webkit-user-select:none; user-select:none; }
 .app-shell :is(input,textarea,[contenteditable="true"]) { -webkit-user-select:text; user-select:text; -webkit-touch-callout:default; }
+/* Sub-pages inside Telegram: Telegram's back arrow replaces the header, so only the safe area stays. */
+.header.is-bare { min-block-size:0; block-size:calc(var(--safe-top) + 8px); padding:0; }
