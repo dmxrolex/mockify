@@ -587,7 +587,7 @@ export function createRenderer(canvas,{cacheScene=true}={}) {
       const shapeMedia=assetShape(pose,media),crop=cropRect(shapeMedia,pose.imageCrop),box=imageGeometry(pose,shapeMedia,width,height);
       const resolution=Math.min(1,4096/Math.max(crop.width,crop.height));
       const tw=Math.max(1,Math.round(crop.width*resolution)),th=Math.max(1,Math.round(crop.height*resolution));
-      const key=[tw,th,settings.assetKind,settings.assetEmpty,JSON.stringify(settings.imageCrop),adjustmentKey(settings),settings.imageEdges,original.kind==='video'?original.element.currentTime:0,JSON.stringify(settings.blurEffects?.[target])].join(':');
+      const key=[tw,th,settings.assetKind,settings.assetEmpty,settings.borderStyle,settings.borderWidth,JSON.stringify(settings.imageCrop),adjustmentKey(settings),settings.imageEdges,original.kind==='video'?original.element.currentTime:0,JSON.stringify(settings.blurEffects?.[target])].join(':');
       if(flatMedia!==original||flatKey!==key){
         resize(texture,tw,th);textureContext.clearRect(0,0,tw,th);textureContext.save();
         rounded(textureContext,0,0,tw,th,Math.min(tw,th)*Math.max(0,Math.min(50,settings.imageEdges??4))/100);textureContext.clip();

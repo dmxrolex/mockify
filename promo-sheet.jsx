@@ -29,7 +29,7 @@ function describe(reward,account,lang){
 export default function PromoSheet({telegram,onClose,onAccount,onUseDiscount}){
   const ref=useRef(null),input=useRef(null);
   const [code,setCode]=useState(''),[state,setState]=useState('idle'),[error,setError]=useState(''),[result,setResult]=useState(null),[shake,setShake]=useState(0);
-  useLayoutEffect(()=>{const element=ref.current;element.showModal();input.current?.focus({preventScroll:true});return()=>{if(element.open)element.close();};},[]);
+  useLayoutEffect(()=>{const element=ref.current;element.showModal();return()=>{if(element.open)element.close();};},[]);
   const lang=document.documentElement.lang||'en',busy=state==='checking',ready=code.trim().length>=3&&!busy;
   async function submit(event){
     event?.preventDefault();if(!ready)return;
