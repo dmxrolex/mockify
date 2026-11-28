@@ -16,9 +16,20 @@ export function PageNavigation({index,count,onChange,onManage,disabled=false}){
   const total=Math.max(1,count);
   return <nav className="page-navigation" aria-label={t('Pages')}><button type="button" aria-label={t('Previous page')} onPointerDown={jellyPress} disabled={disabled||index===0} onClick={()=>onChange(index-1)}><PageIcon name="left"/></button><button type="button" className="page-count" aria-label={t('Manage pages')} disabled={disabled} onPointerDown={jellyPress} onClick={onManage}><PageIcon name="pages"/><span><strong>{index+1}</strong><span aria-hidden="true"> / </span>{total}</span></button><button type="button" aria-label={t('Next page')} onPointerDown={jellyPress} disabled={disabled||index>=total-1} onClick={()=>onChange(index+1)}><PageIcon name="right"/></button></nav>;
 }
-export function EditorContextRow({index,count,onPage,onManage,disabled=false}){
-  return <div className="editor-context-row"><PageNavigation index={index} count={count} onChange={onPage} onManage={onManage} disabled={disabled}/><button className="merge-action" type="button" disabled={disabled} onPointerDown={jellyPress} onClick={onManage}><PageIcon name="pages"/>{t('Page')}</button></div>;
+// Small pills under the canvas: page switcher and page manager, plus the canvas size menu.
+const formats=[['square','1:1',[6,6,12,12]],['portrait','4:5',[6.5,5,11,14]],['story','9:16',[8,3.5,8,17]],['wide','16:9',[3.5,8,17,8]]];
+export function EditorContextRow({index,count,onPage,onManage,disabled=false,ratio,onRatio}){
+  const sizeButton=useRef(null),[sizeOpen,setSizeOpen]=useState(false),current=formats.find(([key])=>key===ratio)??formats[0];
+  return <div className="editor-context-row">
+    {count>1&&<PageNavigation index={index} count={count} onChange={onPage} onManage={onManage} disabled={disabled}/>}
+    <button className="merge-action" type="button" disabled={disabled} onPointerDown={jellyPress} onClick={onManage}><PageIcon name="pages"/>{t(count>1?'Pages':'Page')}</button>
+    {onRatio&&<button ref={sizeButton} className="merge-action size-action" type="button" aria-haspopup="menu" aria-expanded={sizeOpen} aria-label={t('Canvas size')+', '+current[1]} onPointerDown={jellyPress} onClick={()=>setSizeOpen(!sizeOpen)}><FormatGlyph box={current[2]}/>{current[1]}</button>}
+    {sizeOpen&&<Picker anchor={sizeButton} label={t('Canvas size')} className="size-picker" onClose={()=>setSizeOpen(false)}>
+      <div className="size-picker-options" role="menu">{formats.map(([key,label,box])=><button key={key} type="button" role="menuitemradio" aria-checked={key===ratio} onClick={()=>{onRatio(key);setSizeOpen(false);}}><FormatGlyph box={box}/><span>{label}</span></button>)}</div>
+    </Picker>}
+  </div>;
 }
+function FormatGlyph({box:[x,y,w,h]}){return <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="1.7"><rect x={x} y={y} width={w} height={h} rx="2"/></svg>;}
 export function pageSwipeMargin(preview,event){
   if(event.target.closest('button,input,textarea,a,.artboard-frame,.video-timeline,.preview-zoom,.editor-context-row'))return false;
   const artboard=preview.querySelector('.artboard');

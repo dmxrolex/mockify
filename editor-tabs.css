@@ -80,11 +80,9 @@
 .canvas-empty-add svg { inline-size:24px; block-size:24px; stroke-width:2.2; }
 .canvas-empty-add:active { scale:.95; }
 
-/* The canvas row is exactly as tall as the canvas, so canvas and zoom ruler sit together,
-   centred, instead of leaving dead bands above and between them. */
-@supports (inline-size:1cqw) {
-  .editor:not([data-video=true]) .preview { container-type:inline-size; grid-template-rows:minmax(0,min(calc(100cqw / var(--canvas-ratio,1)),var(--canvas-cap,44dvh))) auto auto; align-content:center; row-gap:6px; }
-}
+/* The canvas fills the space above the tools and centres inside it, so the pills and zoom
+   ruler under it stay in the same place whatever the canvas format. */
+.editor:not([data-video=true]) .preview { grid-template-rows:minmax(0,1fr) auto auto; align-content:stretch; row-gap:6px; }
 
 /* Colour name while swiping a locked phone. */
 .colour-flash { position:absolute; z-index:6; translate:-50% 0; padding:6px 12px; border-radius:999px; background:var(--glass-fill),#1c1c1fd9; box-shadow:var(--glass-edge),0 6px 18px #0008; color:#fff; font:600 13px/1 -apple-system,BlinkMacSystemFont,system-ui,sans-serif; white-space:nowrap; pointer-events:none; -webkit-backdrop-filter:var(--glass-blur); backdrop-filter:var(--glass-blur); }
