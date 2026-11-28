@@ -1,3 +1,4 @@
+import {objectSettings} from './page-model.js';
 import {drawMark,markOf} from './watermark.js';
 import {drawRecordedGesture} from './gesture-render.js';
 import {keptVideoSegments,containsVideoTime} from './video-edits.js';
@@ -178,7 +179,9 @@ export function mediaMapping(settings,media,width,height,index=0,count=1) {
 export function pageObjectPlacement(settings,item,width,height){
   const slot=item.slot??{x:0,y:0,width:1,height:1};
   const {pageObjects,...base}=settings;
-  return {pose:{...base,...item.pose,imagePattern:item.pose.imagePattern??null,x:(item.pose.x??0)/slot.width,y:(item.pose.y??0)/slot.height},bounds:{x:slot.x*width,y:slot.y*height,width:slot.width*width,height:slot.height*height}};
+  // Page settings mirror the selected object's pose; keys that define what an object *is* must come
+  // from the object alone, or a selected frame would turn the photo beside it into a frame too.
+  return {pose:{...objectSettings(base,item.pose),x:(item.pose.x??0)/slot.width,y:(item.pose.y??0)/slot.height},bounds:{x:slot.x*width,y:slot.y*height,width:slot.width*width,height:slot.height*height}};
 }
 export function pageObjectGeometry(settings,media,width,height,item){
   const placed=pageObjectPlacement(settings,item,width,height),b=placed.bounds,moved=movedPose(placed.pose,settings.renderProgress??0),pose=moved.pose;
