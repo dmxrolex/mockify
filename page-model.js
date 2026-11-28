@@ -12,6 +12,10 @@ const PHONE_ASPECT = 1350/2760;
 const aspectOf = object => object.pose.device==='flat'?Math.max(.2,Math.min(5,Number(object.aspect)||1)):PHONE_ASPECT;
 const ratios = {square:1,story:9/16,wide:16/9,portrait:4/5};
 const uid = () => globalThis.crypto?.randomUUID?.() ?? 'object-'+Date.now().toString(36)+'-'+Math.random().toString(36).slice(2);
+const identityKeys=['assetKind','assetEmpty','frameAspect','lookSlot','imageCrop','imageCropBasis','locked','hideDevice','imageFlip','motion','imagePattern'];
+// One object's full settings: the scene settings, then that object's own pose, with identity keys
+// never borrowed from whichever object the scene settings currently mirror.
+export const objectSettings=(settings,pose)=>({...settings,...Object.fromEntries(identityKeys.map(key=>[key,pose[key]])),...pose,imagePattern:pose.imagePattern??null});
 const poseFor = settings => Object.fromEntries(objectKeys.filter(key=>key in (settings??{})).map(key=>[key,settings[key]]));
 const layerFor = object => ({id:object.id,locked:object.pose.locked,type:object.pose.device==='flat'?'image':'device'});
 const clampIndex = (index,count) => Math.max(0,Math.min(count-1,Math.trunc(Number(index)||0)));
@@ -333,6 +337,9 @@ export function pageScene(project,index) {
   const layers=page.settings.layers??page.objects.map(layerFor),ordered=layers.filter(layer=>byId.has(layer.id)).map(layer=>byId.get(layer.id)).filter(object=>items.has(object.itemId));
   const selected=selection(page),source=ordered.map(object=>items.get(object.itemId).source);
   const decorated=layers.map(layer=>byId.has(layer.id)?{...layer,...byId.get(layer.id).pose,...layerFor(byId.get(layer.id))}:layer);
-  const pageObjects=ordered.map((object,index)=>({...object,index}));
+  // Settings an object doesn't store itself come from the page, never from the selected object's
+  // pose that the scene settings mirror below. Identity keys (frame kind, lock, crop...) never fill in.
+  const pageDefaults=Object.fromEntries(Object.entries(poseFor(page.settings)).filter(([key])=>!identityKeys.includes(key)));
+  const pageObjects=ordered.map((object,index)=>({...object,pose:{...pageDefaults,...object.pose},index}));
   return {settings:{...page.settings,...selected?.pose,primaryVideoItemId:prior.items.find(item=>item.source.kind==='video'&&page.objects.some(object=>object.itemId===item.id))?.id,selectedLayerId:page.settings.selectedLayerId,editorMode:page.mode,pageObjects,layers:decorated},source,photo:page.photo??prior.photo,page};
 }
