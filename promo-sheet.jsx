@@ -43,7 +43,7 @@ export default function PromoSheet({telegram,onClose,onAccount,onUseDiscount}){
     <button type="button" className="promo-close" aria-label={t('Close')} onClick={onClose}><Icon name="close"/></button>
     {state==='done'?<div className="promo-success" role="status">
       <span className="promo-burst" aria-hidden="true">{Array.from({length:10},(_,i)=><i key={i} style={{'--i':i}}/>)}</span>
-      <AnimatedSticker slot="success" className="promo-duck is-success" fallback={<span className={'promo-reward-icon is-'+info.icon}>{info.icon==='stars'?<img src={telegramStar} alt=""/>:<Icon name={info.icon}/>}</span>}/>
+      <AnimatedSticker slot={{stars:'stars',premium:'premium',discount:'discount'}[result.reward.kind]??'stars'} className="promo-duck is-success" fallback={<span className={'promo-reward-icon is-'+info.icon}>{info.icon==='stars'?<img src={telegramStar} alt=""/>:<Icon name={info.icon}/>}</span>}/>
       <p className="promo-eyebrow"><Icon name="check"/>{t('Code applied')}</p>
       <h2 id="promo-title">{info.title}</h2>
       <p className="promo-detail">{info.detail}</p>
