@@ -1,4 +1,5 @@
-import React,{useRef,useState} from 'react';
+import React,{useLayoutEffect,useRef,useState} from 'react';
+import {createPortal} from 'react-dom';
 import {Picker} from './editor-controls.jsx';
 import {t} from './i18n.js';
 export function SelectionIcon({name}){
@@ -21,9 +22,31 @@ export function SelectionIcon({name}){
   };
   return <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">{shapes[name]??shapes.more}</svg>;
 }
-export default function SelectionToolbar({children,style,label,items=[],locked=false,onLock}){
-  const anchor=useRef(null),[open,setOpen]=useState(false);
-  return <><div className="text-floating-toolbar" role="toolbar" aria-label={t(label)} style={style} onPointerDown={e=>{e.stopPropagation();e.preventDefault();}}>
+// Floating actions for the selected object, placed like Canva's: in the stage around the canvas,
+// above the object when there is room, otherwise below it, and pinned to the stage's top edge
+// only when the object fills the stage. Never over the middle of the object.
+// `target` is {host, top, bottom, cx}: the object's extent in `host`'s coordinates.
+const GAP=20,BAR=46,EDGE=6;
+export function placeToolbar({host,top,bottom,cx},width,{avoid=[]}={}){
+  const stage=host.closest('.artboard')??host.parentElement,stageRect=stage.getBoundingClientRect(),hostRect=host.getBoundingClientRect();
+  const dy=hostRect.top-stageRect.top,dx=hostRect.left-stageRect.left,half=width/2;
+  const x=Math.max(EDGE+half,Math.min(stageRect.width-EDGE-half,cx+dx));
+  const fits=y=>y>=EDGE&&y+BAR<=stageRect.height-EDGE&&!avoid.some(r=>x+half>r.left-stageRect.left&&x-half<r.right-stageRect.left&&y+BAR>r.top-stageRect.top&&y<r.bottom-stageRect.top);
+  const above=top+dy-GAP-BAR,below=bottom+dy+GAP,lower=bottom+dy+GAP+40;
+  const y=[above,below,lower].find(fits)??Math.max(EDGE,Math.min(above,stageRect.height-EDGE-BAR));
+  return {stage,left:x,top:y};
+}
+export default function SelectionToolbar({children,style,label,items=[],locked=false,onLock,target}){
+  const anchor=useRef(null),bar=useRef(null),[open,setOpen]=useState(false),[place,setPlace]=useState(null);
+  const key=target?[target.top,target.bottom,target.cx].map(Math.round).join(','):'';
+  useLayoutEffect(()=>{
+    if(!target?.host?.isConnected)return;
+    const avoid=[...(target.host.closest('.preview')?.querySelectorAll('.add-media,.image-transform-control.is-rotate,.text-other-handle')??[])].map(element=>element.getBoundingClientRect());
+    setPlace(placeToolbar(target,bar.current?.offsetWidth||200,{avoid}));
+  },[key,target?.host]);
+  const toolbar=<div ref={bar} className="text-floating-toolbar" role="toolbar" aria-label={t(label)} style={target?(place?{left:place.left,top:place.top}:{visibility:'hidden'}):style} onPointerDown={e=>{e.stopPropagation();e.preventDefault();}}>
     {onLock&&<button type="button" className="selection-lock" aria-label={t(locked?'Unlock':'Lock')} aria-pressed={locked} onClick={onLock}><SelectionIcon name={locked?'lock':'unlock'}/></button>}{children}<button ref={anchor} type="button" aria-label={t('More actions')} aria-haspopup="menu" aria-expanded={open} onKeyDown={event=>{if(event.key==='ArrowDown'){event.preventDefault();setOpen(true);}}} onClick={()=>setOpen(!open)}><SelectionIcon name="more"/></button>
-  </div>{open&&<Picker menu anchor={anchor} placement="above" label={t('More actions')} className="selection-more-menu action-menu" onClose={()=>setOpen(false)}>{items.map(item=><button key={item.label} type="button" disabled={item.disabled} onClick={()=>{anchor.current?.focus({preventScroll:true});setOpen(false);item.action();}}><SelectionIcon name={item.icon}/><span>{t(item.label)}</span></button>)}</Picker>}</>;
+  </div>;
+  return <>{target&&place?.stage?createPortal(toolbar,place.stage):toolbar}
+  {open&&<Picker menu anchor={anchor} placement="above" label={t('More actions')} className="selection-more-menu action-menu" onClose={()=>setOpen(false)}>{items.map(item=><button key={item.label} type="button" disabled={item.disabled} onClick={()=>{anchor.current?.focus({preventScroll:true});setOpen(false);item.action();}}><SelectionIcon name={item.icon}/><span>{t(item.label)}</span></button>)}</Picker>}</>;
 }

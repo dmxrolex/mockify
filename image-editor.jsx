@@ -106,22 +106,9 @@ export default function ImageHandles({settings:scene,media,update:save,onSelect,
   const cropAvailable=!settings.imagePattern&&!background&&settings.device==='flat'&&!settings.assetKind&&
     Math.min(box.width,box.height)>=minEdgeCropSize-.01;
   const imageTop=box.cy-extentY;
-  let toolbarTop=imageTop+(imageTop>=52?-52:8),toolbarX=Math.max(98,Math.min(bounds.width-98,box.cx));
-  // Keep the floating actions clear of the canvas's top-right Add button,
-  // while retaining an image-relative position as the image leaves the canvas.
-  if(box.cx>bounds.width-126&&toolbarTop<56&&toolbarTop+44>0){
-    // Slide left only while the whole toolbar stays on the canvas; otherwise drop below the Add button.
-    if(imageTop>=52)toolbarTop=imageTop+8;else if(toolbarX-72>=98)toolbarX-=72;else toolbarTop=Math.max(toolbarTop,54);
-  }
   const cornerPoint=(x,y)=>({x:box.cx+x*Math.cos(box.angle)-y*Math.sin(box.angle),y:box.cy+x*Math.sin(box.angle)+y*Math.cos(box.angle)});
   const corners=[['nw',-1,-1],['ne',1,-1],['sw',-1,1],['se',1,1]].map(([name,x,y])=>({name,...cornerPoint(x*box.width/2,y*box.height/2)}));
   const edgePoints=cropEdges.map(([edge,x,y,label])=>({edge,label,...cornerPoint(x*box.width/2,y*box.height/2)}));
-  if(cropAvailable&&edgePoints.some(point=>Math.abs(point.x-toolbarX)<104&&point.y>=toolbarTop-22&&point.y<=toolbarTop+70)){
-    const below=box.cy+extentY+18;
-    if(below+48<=bounds.height)toolbarTop=below;
-    else if(imageTop>=66)toolbarTop=imageTop-66;
-    else toolbarTop=Math.max(0,Math.min(bounds.height-48,imageTop+24));
-  }
   const rotatePoint=cornerPoint(-box.width/2-32,box.height/2+32);
   if(!bounds.width)return <div className="image-handle-layer" ref={root}/>;
   return <div className="image-handle-layer" ref={root} data-image-id={objectId} data-frame-selected={frameSelected?'true':undefined}>
@@ -135,7 +122,7 @@ export default function ImageHandles({settings:scene,media,update:save,onSelect,
         aria-label={t(point.label)} {...events('crop',point.edge)}><span/></button>
     ))}
     {visible&&onSelectFrame&&<button type="button" className="mockup-frame-target" aria-label={t('Select mockup frame')} aria-pressed={frameSelected} style={{left:box.cx,top:box.cy,width:box.width,height:box.height,transform:`translate(-50%,-50%) rotate(${box.angle}rad)`}} onPointerDown={event=>event.stopPropagation()} onClick={event=>{event.stopPropagation();onSelectFrame();}}><svg viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"><rect className="mockup-frame-hit" x="1.5" y=".75" width="97" height="98.5" rx="15" ry={15*box.width/Math.max(1,box.height)}/><rect className="mockup-frame-outline" x="1.5" y=".75" width="97" height="98.5" rx="15" ry={15*box.width/Math.max(1,box.height)}/></svg></button>}
-    {selected&&visible&&!dragging&&<SelectionToolbar label="Selected image" locked={!!settings.locked} onLock={()=>update({locked:!settings.locked,...(settings.locked?{autoLayout:false}:{})})} style={{left:toolbarX,top:toolbarTop}} items={[
+    {selected&&visible&&!dragging&&<SelectionToolbar label="Selected image" locked={!!settings.locked} onLock={()=>update({locked:!settings.locked,...(settings.locked?{autoLayout:false}:{})})} target={{host:root.current,top:imageTop,bottom:box.cy+extentY,cx:box.cx}} items={[
       {label:'Flip image',icon:'flip',disabled:frameSelected||settings.locked,action:()=>update({imageFlip:!settings.imageFlip})},
       ...(onFill?[{label:'Fill image',icon:'fill',action:()=>onFill({currentTarget:root.current})}]:[]),
       ...(onSelectFrame?[{label:settings.device==='flat'?'Add frame':'Remove frame',icon:settings.device==='flat'?'frame':'frameoff',action:()=>onSelectFrame('toggle')}]:[]),...onMore]}>
