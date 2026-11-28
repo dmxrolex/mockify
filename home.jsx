@@ -44,23 +44,16 @@ export default function HomeScreen({ busy, onPick, onDrop, recent, onOpen, looks
       <span className="home-continue-go" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="m9 5 7 7-7 7"/></svg></span>
     </button>}
 
-    {/* Your Looks: saved designs to reuse. Tap to start, long-press for more. */}
-    <section className="home-looks" aria-labelledby="home-looks-heading">
-      <header><h2 id="home-looks-heading" className="home-label">{t('Your looks')}</h2>{looks&&<small className="home-count">{looks.length}/{lookLimit}</small>}</header>
-      {looks?.length?<div className="home-look-grid">
-        {looks.map(look=><LookCard key={look.id} look={look} name={look.name} {...press(look)}/>)}
-      </div>
-      :<button type="button" className="home-look-empty" onClick={()=>onPick()} disabled={busy}>
-        <AnimatedSticker as="span" slot="looks" className="home-look-duck" fallback={<span className="home-look-empty-art" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="7.5" y="3.5" width="12" height="15" rx="3"/><path d="M4.5 7.5v10a3 3 0 0 0 3 3h7.5"/><path d="M13.5 8v6m-3-3h6"/></svg></span>}/>
-        <span className="home-look-empty-text"><strong>{t('Save a look')}</strong><span>{t('Reuse any design with new screenshots')}</span></span>
-        <span className="home-look-empty-go" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="m9 5 7 7-7 7"/></svg></span>
-      </button>}
-    </section>
-
-    {/* Quick start: ready-made designs, previewed with real renders, in two columns. */}
-    <section className="home-looks home-quick" aria-labelledby="home-quick-heading">
-      <header><h2 id="home-quick-heading" className="home-label is-red">{t('Quick start')}</h2></header>
+    {/* One grid, no section labels: a "Save a look" tile, then the user's Looks, then ready-made
+        starters. Tap to start, long-press a Look for more. */}
+    <section className="home-looks" aria-label={t('Looks')}>
       <div className="home-look-grid">
+        <button type="button" className="home-save-tile" onClick={()=>onPick()} disabled={busy}>
+          <AnimatedSticker as="span" slot="looks" className="home-look-duck" fallback={<span className="home-look-empty-art" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="7.5" y="3.5" width="12" height="15" rx="3"/><path d="M4.5 7.5v10a3 3 0 0 0 3 3h7.5"/><path d="M13.5 8v6m-3-3h6"/></svg></span>}/>
+          <strong>{t('Save a look')}</strong>
+          {looks&&<small>{looks.length}/{lookLimit}</small>}
+        </button>
+        {looks?.map(look=><LookCard key={look.id} look={look} name={look.name} {...press(look)}/>)}
         {starters.map(look=><LookCard key={look.id} look={look} name={t(look.name)} {...pressStarter(look)}/>)}
       </div>
     </section>
