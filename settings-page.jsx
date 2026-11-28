@@ -52,7 +52,6 @@ export default function SettingsPage({preferences,update,onBalance,onSubscriptio
   useEffect(()=>{onSubpage?.(view==='main'?null:()=>go('main'));},[view]);
   useEffect(()=>()=>onSubpage?.(null),[]);
   function openTelegram(event,href){if(app?.initData&&typeof app.openTelegramLink==='function'){event.preventDefault();app.openTelegramLink(href);}}
-  const shareHref=botUsername?'https://t.me/share/url?url='+encodeURIComponent('https://t.me/'+botUsername)+'&text='+encodeURIComponent(t('Turn screenshots into beautiful mockups right in Telegram.')):undefined;
   const drafts=premium?null:Math.min(draftCount,FREE_DRAFT_LIMIT);
   const costRows=[['photo','Photo export',starCount(exportCreditCost('photo'))],['video','Video export',starCount(exportCreditCost('video'))],['quality','High quality',starCount(exportCreditCost('photo','high')-exportCreditCost('photo'),'+')]];
   return <section ref={root} className="page app-settings" aria-label={t('Settings')}>
@@ -113,7 +112,6 @@ export default function SettingsPage({preferences,update,onBalance,onSubscriptio
 
       <div className="ios-settings-group settings-group">
         <Row icon="support" label="Contact support" href="https://t.me/DMX_ROLEX" onClick={event=>openTelegram(event,'https://t.me/DMX_ROLEX')}/>
-        <Row icon="share" label="Share Mockify" href={shareHref} disabled={!shareHref} onClick={event=>{if(!shareHref){event.preventDefault();return;}openTelegram(event,shareHref);}}/>
         <Row icon="terms" label="Terms & Privacy" onClick={()=>setTerms(true)}/>
       </div>
       {profile?.admin&&<div className="ios-settings-group settings-group"><Row icon="dashboard" label="Owner dashboard" onClick={()=>go('admin')}/></div>}
