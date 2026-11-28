@@ -6,6 +6,7 @@ import {cameraAt,anchoredZoom,orderedMoments,sourceSignature} from './showcase-m
 import {evaluateTimeline,timelineDuration} from './timeline-model.js';
 import {assetShape,drawAssetFrame,isAssetFrame} from './asset-library.js';
 import {motionAt,movedPose,turnedDirection} from './motion-effects.js';
+import {statusGap} from './status-gap.js';
 import {createAdjuster,adjustmentKey} from './adjustments.js';
 import { drawTextOverlay } from './text-model.js';
 import { imageGeometry, imageSettings, cropRect, backgroundGeometry } from './image-model.js';
@@ -218,6 +219,9 @@ function softenStatusBar(ctx, bounds, media, settings, sample, blend, cleanSourc
   }
   const image=graphics.getImageData(0,0,sampleWidth,sampleHeight);
   const pixels=image.data;
+  // Stop in the quiet gap under the old status bar, so app content right below it
+  // (coin rows, back buttons) is never sliced half-cleaned.
+  const gap=statusGap(pixels,sampleWidth,sampleHeight),rowHeight=stripHeight/sampleHeight;
   // Reconstruct a background profile instead of averaging the old glyphs into it.
   // A status glyph occupies a minority of each column; the median rejects both
   // light and dark lettering, unlike a stronger blur which retains their glow.
@@ -228,8 +232,11 @@ function softenStatusBar(ctx, bounds, media, settings, sample, blend, cleanSourc
   blended.clearRect(0,0,width,stripHeight);
   blended.drawImage(sample,0,0,width,stripHeight);
   blended.globalCompositeOperation='destination-in';
-  const fade=blended.createLinearGradient(0,Math.max(0,band-feather),0,band);
-  fade.addColorStop(0,'#fff');fade.addColorStop(1,'#fff0');
+  // A real iPhone draws its status bar over the app without blurring it, so the cleaned
+  // band ends where the old glyphs end and fades out gently instead of on a hard line.
+  const from=gap?gap.start*rowHeight:Math.max(0,band-feather*2.5),to=gap?Math.min(gap.end*rowHeight,from+feather*2.5):band;
+  const fade=blended.createLinearGradient(0,from,0,Math.max(from+1,to));
+  [[0,1],[.25,.9],[.5,.6],[.75,.25],[1,0]].forEach(([stop,alpha])=>fade.addColorStop(stop,`rgba(255,255,255,${alpha})`));
   blended.fillStyle=fade;blended.fillRect(0,0,width,stripHeight);
   blended.globalCompositeOperation='source-over';
   ctx.drawImage(blend,x,y);
