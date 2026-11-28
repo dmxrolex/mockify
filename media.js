@@ -100,36 +100,56 @@ export function setDraftOwner(id) {
 }
 function openDatabase() {
   if (opening) return opening;
-  opening = new Promise((resolve, reject) => {
+  const pending = new Promise((resolve, reject) => {
+    let settled=false;
+    const timer=setTimeout(()=>{
+      settled=true;
+      reject(new DOMException('Draft storage did not open in time.','TimeoutError'));
+    },10000);
     const request = indexedDB.open(draftOwner ? 'styleit-user-' + draftOwner : 'styleit-studio', 1);
     request.onupgradeneeded = () => request.result.createObjectStore('drafts', { keyPath: 'id' });
     request.onsuccess = () => {
       const db = request.result;
-      db.onversionchange = () => { db.close(); opening = null; };
+      if(settled){db.close();return;}
+      settled=true;clearTimeout(timer);
+      const invalidate = () => { db.close(); if(opening===pending)opening=null; };
+      db.onversionchange = invalidate;
+      db.onclose = invalidate;
       resolve(db);
     };
-    request.onerror = () => reject(request.error);
+    request.onerror = () => {settled=true;clearTimeout(timer);reject(request.error);};
   }).catch(error => {
-    opening = null;
+    if(opening===pending)opening = null;
     throw error;
   });
-  return opening;
+  opening=pending;
+  return pending;
 }
 
-async function withDrafts(mode, operation) {
+async function withDrafts(mode, operation, retry=true, owner=draftOwner) {
+  if(owner!==draftOwner)throw new DOMException('Draft account changed.','AbortError');
   const database = await openDatabase();
-  return new Promise((resolve, reject) => {
+  if(owner!==draftOwner)throw new DOMException('Draft account changed.','AbortError');
+  try{return await new Promise((resolve, reject) => {
     const transaction = database.transaction('drafts', mode);
     const request = operation(transaction.objectStore('drafts'));
     transaction.oncomplete = () => resolve(request.result);
     transaction.onabort = () => reject(transaction.error ?? new Error('Storage transaction aborted.'));
     transaction.onerror = () => reject(transaction.error ?? request.error);
-  });
+  });}catch(error){
+    // Retry reads only. A write may already have reached storage.
+    if(mode!=='readonly'||!retry||owner!==draftOwner||!['InvalidStateError','AbortError','UnknownError'].includes(error?.name))throw error;
+    database.close();
+    opening=null;
+    return withDrafts(mode,operation,false,owner);
+  }
 }
 
 export const drafts = {
   save: async (draft,{limit=Infinity}={}) => {
+    const owner=draftOwner;
     const database=await openDatabase();
+    if(owner!==draftOwner)throw new DOMException('Draft account changed.','AbortError');
     return new Promise((resolve,reject)=>{
       const transaction=database.transaction('drafts','readwrite'),store=transaction.objectStore('drafts');let limited=false;
       const found=store.getKey(draft.id);

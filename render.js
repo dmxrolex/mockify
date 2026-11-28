@@ -209,6 +209,12 @@ function softenStatusBar(ctx, bounds, media, settings, sample, blend, cleanSourc
   // 1206 screen units); the clean band covers it fully, so app content can't sit half under it.
   const unit = width/1206, island = 151*unit, reach = 48*unit;
   const stripHeight = Math.ceil(Math.max(band,island+reach)+feather*3);
+  // While a video plays, the cleaned strip changes little between frames: reuse it for up to
+  // 0.2 s of video time instead of reading pixels back every frame. Paused frames, seeks and
+  // exports-in-progress at new sizes always recompute.
+  const video=media.kind==='video'&&media.element&&!media.element.paused?media.element:null,key=[width,height,stripHeight,settings.fit,settings.top].join(':');
+  if(video&&blend._key===key&&Math.abs(video.currentTime-blend._at)<.2){ctx.drawImage(blend,x,y);return;}
+  blend._key=key;blend._at=video?video.currentTime:-1;
   const sampleWidth = 240;
   const sampleHeight = Math.max(1,Math.ceil(stripHeight*sampleWidth/width));
   resize(sample,sampleWidth,sampleHeight);
@@ -631,7 +637,9 @@ export function createRenderer(canvas,{cacheScene=true}={}) {
       width: Math.round(availableHeight * Math.min(3, Math.max(.2, media.width / media.height))),
       height: availableHeight, radius: 18, bezel: 0,
     };
-    const previewHeight=Math.max(width,height)*Math.max(settings._timelineScale??1,1)*(original.kind==='video'?Math.max(2.5,1+Math.abs(zoomLevel(settings.zoom))*.018):interactivePreview?1:2);
+    // Preview only (exports draw at full size): a little above on-screen pixels, times any camera
+    // zoom, keeps video sharp while drawing ~4x fewer pixels per frame than the old 2.5x margin.
+    const previewHeight=Math.max(width,height)*Math.max(settings._timelineScale??1,1)*(original.kind==='video'?Math.max(1.25,1+Math.abs(zoomLevel(settings.zoom))*.018):interactivePreview?1:2);
     const textureScale=cacheScene?Math.min(1,previewHeight/shape.height):1;
     const textureHeight=Math.round(shape.height*textureScale);
     const motion = motionAt(settings, progress);

@@ -49,10 +49,28 @@ export function inpaintStatusRows(pixels,width,height,busy){
 export function widenRows(busy){const out=new Uint8Array(busy.length);for(let y=0;y<busy.length;y++)if(busy[y]||busy[y-1]||busy[y+1])out[y]=1;return out;}
 // Detailed backgrounds (photos) have no plain rows to rebuild from: frost them instead.
 export function frostSample(pixels,width,height,radius=10){
+  // Two passes of a separable box blur with running sums: linear time however wide the radius
+  // (it runs on every video frame), same result as averaging each clamped window.
   const temp=new Float32Array(pixels.length);
   for(let pass=0;pass<2;pass++){
-    for(let y=0;y<height;y++)for(let x=0;x<width;x++)for(let c=0;c<3;c++){let sum=0,n=0;for(let k=Math.max(0,x-radius);k<=Math.min(width-1,x+radius);k++){sum+=pixels[(y*width+k)*4+c];n++;}temp[(y*width+x)*4+c]=sum/n;}
-    for(let y=0;y<height;y++)for(let x=0;x<width;x++)for(let c=0;c<3;c++){let sum=0,n=0;for(let k=Math.max(0,y-radius);k<=Math.min(height-1,y+radius);k++){sum+=temp[(k*width+x)*4+c];n++;}pixels[(y*width+x)*4+c]=Math.round(sum/n);}
+    for(let y=0;y<height;y++)for(let c=0;c<3;c++){
+      const row=y*width;let sum=0,lo=0,hi=-1;
+      for(let x=0;x<width;x++){
+        const from=Math.max(0,x-radius),to=Math.min(width-1,x+radius);
+        while(hi<to){hi++;sum+=pixels[(row+hi)*4+c];}
+        while(lo<from){sum-=pixels[(row+lo)*4+c];lo++;}
+        temp[(row+x)*4+c]=sum/(to-from+1);
+      }
+    }
+    for(let x=0;x<width;x++)for(let c=0;c<3;c++){
+      let sum=0,lo=0,hi=-1;
+      for(let y=0;y<height;y++){
+        const from=Math.max(0,y-radius),to=Math.min(height-1,y+radius);
+        while(hi<to){hi++;sum+=temp[(hi*width+x)*4+c];}
+        while(lo<from){sum-=temp[(lo*width+x)*4+c];lo++;}
+        pixels[(y*width+x)*4+c]=Math.round(sum/(to-from+1));
+      }
+    }
   }
   for(let i=3;i<pixels.length;i+=4)pixels[i]=255;
 }
