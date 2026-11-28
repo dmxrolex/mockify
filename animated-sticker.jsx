@@ -6,7 +6,7 @@ const reducedMotion=()=>matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 // Utya ducks by place in the app, bundled and loaded only when that place shows.
 const ducks={
-  choose:()=>import('./assets/ducks/phone.json'),download:()=>import('./assets/ducks/upload.json'),done:()=>import('./assets/ducks/party.json'),error:()=>import('./assets/ducks/cry.json'),
+  choose:()=>import('./assets/ducks/phone.json'),download:()=>import('./assets/ducks/upload.json'),done:()=>import('./assets/ducks/party.json'),sent:()=>import('./assets/ducks/sent.json'),error:()=>import('./assets/ducks/cry.json'),
   files:()=>import('./assets/ducks/sleep.json'),looks:()=>import('./assets/ducks/painter.json'),
   promo:()=>import('./assets/ducks/gift.json'),stars:()=>import('./assets/ducks/money.json'),premium:()=>import('./assets/ducks/trophy.json'),discount:()=>import('./assets/ducks/shopping.json'),
 };
