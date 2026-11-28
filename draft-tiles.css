@@ -19,3 +19,8 @@
 .draft-video-badge { position:absolute; inset:auto auto 6px 6px; display:grid; place-items:center; inline-size:23px; block-size:23px; border-radius:50%; background:#202023a8; color:#fff; pointer-events:none; }
 .draft-video-badge svg { inline-size:14px; block-size:14px; fill:currentColor; stroke:none; }
 @media(prefers-reduced-motion:no-preference) { .draft-tile:not(.draft-tile-empty) { transition:transform .18s,opacity .18s; }.draft-tile:not(.draft-tile-empty):active { transform:scale(.95); opacity:.85; }.draft-tile-options:active { animation:zoom-jelly .28s ease-out; } }
+.draft-storage-notice { display:flex; align-items:center; gap:12px; margin:12px; padding:8px 14px; border-radius:18px; background:#1c1c1e; color:#d6d6dc; font:400 13px/1.4 system-ui,sans-serif; }
+.draft-storage-notice span { flex:1; }
+.draft-storage-notice button { min-block-size:44px; min-inline-size:44px; border:0; border-radius:12px; background:none; color:#66acff; font:600 14px/1.2 system-ui,sans-serif; }
+.draft-storage-notice button:disabled { opacity:.4; }
+.draft-storage-notice button:focus-visible { outline:2px solid #83bdff; outline-offset:2px; }
