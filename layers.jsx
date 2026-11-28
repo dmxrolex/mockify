@@ -1,15 +1,16 @@
 import {captureCanvasGesture,releaseCanvasGesture} from './canvas-gesture.js';
-import {assetFor} from './asset-library.js';
+import {assetFor,assetPreview} from './asset-library.js';
 import { t } from './i18n.js';
+import { hapticSelection } from './haptics.js';
 import React, { useLayoutEffect, useRef, useState } from 'react';
 import { sceneLayers } from './text-model.js';
 
 function Icon({name}) {
-  const paths={glass:'M3 5h18v14H3Zm3 3 4 4m4-5 4 4',box:'M5 3h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2Z',arrow:'M3 12h18m-7-7 7 7-7 7',curve:'M4 20C1 9 9 3 20 8m-5-6 6 6-6 5',circle:'M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0',back:'M15 5 8 12l7 7',grip:'M5 7h14M5 12h14M5 17h14',text:'M5 5h14M12 5v15',device:'M8 3h8a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2Zm2 3h4',image:'M3 5h18v14H3ZM3 16l6-6 5 5 3-3 4 4',trash:'M4 7h16M9 4h6M6 7l1 13h10l1-13M10 10v7m4-7v7'};
+  const paths={lock:'M7 11V8a5 5 0 0 1 10 0v3M6 11h12a1 1 0 0 1 1 1v8a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1v-8a1 1 0 0 1 1-1Z',unlock:'M7 11V8a5 5 0 0 1 9.6-1.9M6 11h12a1 1 0 0 1 1 1v8a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1v-8a1 1 0 0 1 1-1Z',glass:'M3 5h18v14H3Zm3 3 4 4m4-5 4 4',box:'M5 3h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2Z',arrow:'M3 12h18m-7-7 7 7-7 7',curve:'M4 20C1 9 9 3 20 8m-5-6 6 6-6 5',circle:'M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0',back:'M15 5 8 12l7 7',grip:'M5 7h14M5 12h14M5 17h14',text:'M5 5h14M12 5v15',device:'M8 3h8a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2Zm2 3h4',image:'M3 5h18v14H3ZM3 16l6-6 5 5 3-3 4 4',trash:'M4 7h16M9 4h6M6 7l1 13h10l1-13M10 10v7m4-7v7'};
   return <svg viewBox="0 0 24 24" aria-hidden="true"><path d={paths[name]}/></svg>;
 }
 
-export default function Layers({settings,update,onEdit,onDone}) {
+export default function Layers({settings,update,onEdit,onDone,onLock,onSelectLayer}) {
   const layers=sceneLayers(settings),display=[...layers].reverse();
   const root=useRef(null),list=useRef(null),drag=useRef(null),frame=useRef(0),previous=useRef(null),focus=useRef(null);
   const [announcement,setAnnouncement]=useState('');
@@ -69,8 +70,10 @@ export default function Layers({settings,update,onEdit,onDone}) {
     <ol className="layer-list" ref={list}>{display.map((layer,index)=>{
       const type=layer.type==='device'?((settings.pageObjects?layer.device:settings.device)==='flat'?'image':'device'):layer.type;
       const name=layer.type==='text'?layer.text||'Text':t(assetFor(layer.assetKind)?.name??(type==='image'?'Image':'Phone'));
-      return <li key={layer.id} data-id={layer.id} className={settings.selectedLayerId===layer.id?'is-selected':''}>
-        <button type="button" className="layer-select" aria-label={layer.type==='text'?'Edit layer '+name:name+' layer'} onClick={()=>{if(layer.type==='text'){update({layers,selectedLayerId:layer.id,textOverlay:null,watermark:'none'});onEdit('text');}else{update({selectedLayerId:layer.id});onEdit('image');}}}><span className={'layer-type '+type}><Icon name={layer.assetKind==='phone'?'device':layer.assetKind??(type==='text'?'text':type==='image'?'image':'device')}/></span><span>{name}</span></button>
+      const object=settings.pageObjects?.find(item=>item.id===layer.id),locked=!!(object?object.pose.locked:layer.locked);
+      return <li key={layer.id} data-id={layer.id} className={settings.selectedLayerId===layer.id?'is-selected':''} data-locked={locked||undefined}>
+        <button type="button" className="layer-select" aria-label={layer.type==='text'?'Edit layer '+name:name+' layer'} onClick={()=>{hapticSelection();if(onSelectLayer&&settings.selectedLayerId!==layer.id){onSelectLayer(layer.id);return;}if(layer.type==='text'){update({layers,selectedLayerId:layer.id,textOverlay:null,watermark:'none'});onEdit('text');}else{update({selectedLayerId:layer.id});onEdit('image');}}}><span className={'layer-type '+type}>{layer.assetKind&&layer.assetKind!=='phone'?<img src={assetPreview(layer.assetKind)} alt=""/>:<Icon name={layer.assetKind==='phone'?'device':type==='text'?'text':type==='image'?'image':'device'}/>}</span><span>{name}</span></button>
+        {onLock&&<button type="button" className="layer-lock" aria-label={t(locked?'Unlock':'Lock')+' '+name} aria-pressed={locked} onClick={()=>{hapticSelection();onLock(layer.id,!locked);}}><Icon name={locked?'lock':'unlock'}/></button>}
         <button type="button" className="layer-delete" aria-label={'Delete layer '+name} onClick={()=>remove(layer)}><Icon name="trash"/></button>
         <button type="button" className="layer-grip" aria-label={'Reorder '+name+'. Drag or use Alt and arrow keys.'} onKeyDown={event=>keyboard(event,layer.id,index)} onPointerDown={event=>begin(event,layer.id,index)} onPointerMove={event=>{if(drag.current?.pointer===event.pointerId){drag.current.y=event.clientY;locate(event.clientY);}}} onPointerUp={event=>end(event)} onPointerCancel={event=>end(event,true)}><Icon name="grip"/></button>
       </li>;

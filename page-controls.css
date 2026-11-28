@@ -107,3 +107,13 @@
 .editor.page[data-panel="adjust"] { grid-template-rows:minmax(100px,1fr) auto; }
 
 @media(prefers-reduced-motion:no-preference) { .merge-page-card[data-new="true"].page-entry-fallback { animation:new-page-enter .3s cubic-bezier(.2,.8,.2,1); }@keyframes new-page-enter { from{opacity:0;translate:12px 0;scale:.84;}to{opacity:1;translate:0 0;scale:1;} } }
+/* Size pill and its menu: round, compact, the current format highlighted in green. */
+.editor-context-row .size-action { flex:0 0 72px; inline-size:72px; font-variant-numeric:tabular-nums; }
+.editor-context-row .size-action[aria-expanded=true]::before { background:var(--select); box-shadow:var(--select-edge); }
+.size-picker-options { display:grid; grid-template-columns:repeat(4,58px); gap:6px; padding:6px; }
+.size-picker-options button { display:grid; justify-items:center; gap:4px; min-block-size:58px; padding:8px 0 6px; border:0; border-radius:16px; background:#2c2c2e; color:#d1d1d6; font:600 11.5px/1 system-ui,sans-serif; font-variant-numeric:tabular-nums; transition:scale .2s var(--spring),background-color .15s; }
+.size-picker-options button svg { inline-size:22px; block-size:22px; }
+.size-picker-options button[aria-checked=true] { background:var(--select); color:var(--select-ink); box-shadow:var(--select-edge); }
+.size-picker-options button:active { scale:.92; }
+.size-picker-options button:focus-visible { outline:2px solid #fff; outline-offset:2px; }
+

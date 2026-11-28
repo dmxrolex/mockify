@@ -250,6 +250,10 @@ export function duplicateObject(project,id) {
     return {...page,objects,selectedObjectId:copy.id,settings:{...page.settings,layers:layers.toSpliced(layerIndex+1,0,layerFor(copy)),selectedLayerId:copy.id,...(effect?{blurEffects:{...page.settings.blurEffects,[copy.id]:structuredClone(effect)}}:{})}};
   });
 }
+// Lock or unlock one object without changing the selection, its position, size or rotation.
+export function setObjectLock(project,id,locked){
+  return updateCurrent(project,page=>page.objects.some(object=>object.id===id)?{...page,objects:page.objects.map(object=>object.id===id?{...object,pose:{...object.pose,locked,...(locked?{}:{autoLayout:false})}}:object)}:page);
+}
 export function removeObject(project,id) {
   return updateCurrent(project,page=>page.objects.some(object=>object.id===id)?withObjects(page,page.objects.filter(object=>object.id!==id),{reflowObjects:true}):page);
 }
