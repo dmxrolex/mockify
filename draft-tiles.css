@@ -1,24 +1,28 @@
-.draft-gallery-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:8px; }
-.page.files-grid { align-content:start; gap:10px; padding:18px 16px calc(110px + var(--safe-bottom)); }
-.draft-tile-wrap { position:relative; min-inline-size:0; aspect-ratio:1; }
-.draft-tile { position:relative; display:grid; place-items:center; inline-size:100%; min-inline-size:0; aspect-ratio:1; padding:0; border:0; border-radius:15px; background:#202126; overflow:hidden; }
-.draft-tile img,.draft-tile-fallback { display:block; inline-size:100%; block-size:100%; min-block-size:0; object-fit:cover; border-radius:inherit; }
-.draft-tile-fallback { display:grid; place-items:center; color:#9e9ea9; }
-.draft-tile-fallback svg { inline-size:24px; block-size:24px; }
-.draft-tile-empty { border:1px solid #ffffff06; background:linear-gradient(150deg,#ffffff03,#ffffff01); color:#ffffff12; }
-.draft-tile-empty svg { inline-size:21px; block-size:21px; stroke-width:1.2; }
-.draft-tile:focus-visible { outline:2px solid #91e5d8; outline-offset:3px; }
-.draft-tile-options { position:absolute; inset:0 0 auto auto; display:grid; place-items:center; inline-size:44px; block-size:44px; padding:0; border:0; border-radius:50%; background:none; }
-.draft-tile-options > span { display:grid; place-items:center; inline-size:29px; block-size:29px; border:1px solid #ffffff19; border-radius:50%; background:#242426dd; box-shadow:0 1px 7px #0003; color:#f1f1f5; }
-.draft-tile-options svg { inline-size:19px; block-size:19px; }
-.draft-options-picker { inline-size:225px; padding:4px; border-radius:17px; }
-.draft-options-picker button { display:flex; align-items:center; gap:10px; inline-size:100%; min-block-size:48px; padding:10px 12px; border:0; border-radius:12px; background:none; font-size:14px; text-align:start; }
-.draft-options-picker button + button { border-block-start:1px solid #ffffff0d; }
-.draft-options-picker .draft-delete-choice { color:#ff736c; }
-.draft-options-picker svg { inline-size:19px; block-size:19px; }
-.draft-video-badge { position:absolute; inset:auto auto 6px 6px; display:grid; place-items:center; inline-size:23px; block-size:23px; border-radius:50%; background:#202023a8; color:#fff; pointer-events:none; }
-.draft-video-badge svg { inline-size:14px; block-size:14px; fill:currentColor; stroke:none; }
-@media(prefers-reduced-motion:no-preference) { .draft-tile:not(.draft-tile-empty) { transition:transform .18s,opacity .18s; }.draft-tile:not(.draft-tile-empty):active { transform:scale(.95); opacity:.85; }.draft-tile-options:active { animation:zoom-jelly .28s ease-out; } }
+/* Saved drafts: a calm grid of rounded thumbnails. Holding one shows only its delete button. */
+.draft-gallery-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:10px; }
+.page.files-grid { align-content:start; padding:18px 16px calc(110px + var(--safe-bottom)); }
+.draft-tile-wrap { position:relative; min-inline-size:0; aspect-ratio:1; transition:opacity .2s ease,scale .25s var(--spring); }
+.draft-tile { position:relative; display:grid; place-items:center; inline-size:100%; block-size:100%; padding:0; overflow:hidden; border:0; border-radius:18px; background:#1c1c1e; box-shadow:inset 0 0 0 .5px #ffffff1f,0 6px 16px #0007; -webkit-touch-callout:none; -webkit-user-select:none; user-select:none; touch-action:manipulation; }
+.draft-tile img,.draft-tile-fallback { display:block; inline-size:100%; block-size:100%; object-fit:cover; }
+.draft-tile-fallback { display:grid; place-items:center; color:#8e8e93; }
+.draft-tile-fallback svg { inline-size:26px; block-size:26px; }
+.draft-tile:focus-visible { outline:2px solid #fff; outline-offset:3px; }
+.draft-video-badge { position:absolute; inset:auto auto 7px 7px; display:grid; place-items:center; inline-size:24px; block-size:24px; border-radius:50%; background:#000000a0; color:#fff; pointer-events:none; }
+.draft-video-badge svg { inline-size:12px; block-size:12px; fill:currentColor; stroke:none; }
+/* While one draft is held, the others step back. */
+.files-grid[data-armed] .draft-tile-wrap:not([data-armed]) { opacity:.35; }
+.draft-tile-wrap[data-armed] { scale:.94; z-index:1; }
+.draft-delete { position:absolute; inset:-8px -8px auto auto; z-index:2; display:flex; align-items:center; justify-content:center; gap:6px; min-inline-size:36px; block-size:36px; padding:0 9px; border:0; border-radius:18px; background:#ff3b30; color:#fff; box-shadow:0 0 0 3px #000,0 6px 16px #000a; font:650 15px/1 -apple-system,BlinkMacSystemFont,system-ui,sans-serif; }
+.draft-delete::before { content:''; position:absolute; inset:-6px; }
+.draft-delete svg { inline-size:19px; block-size:19px; flex:none; fill:none; stroke:currentColor; stroke-width:2; stroke-linecap:round; stroke-linejoin:round; }
+.draft-delete[data-confirm] { padding-inline:12px 14px; }
+.draft-delete:focus-visible { outline:2px solid #fff; outline-offset:2px; }
+@media(prefers-reduced-motion:no-preference) {
+  .draft-tile { transition:scale .2s var(--spring); }
+  .draft-tile:active { scale:.95; }
+  .draft-delete { animation:draft-delete-in .32s cubic-bezier(.3,1.5,.6,1) both; }
+  @keyframes draft-delete-in { from { scale:.3; opacity:0; } }
+}
 .draft-storage-notice { display:flex; align-items:center; gap:12px; margin:12px; padding:8px 14px; border-radius:18px; background:#1c1c1e; color:#d6d6dc; font:400 13px/1.4 system-ui,sans-serif; }
 .draft-storage-notice span { flex:1; }
 .draft-storage-notice button { min-block-size:44px; min-inline-size:44px; border:0; border-radius:12px; background:none; color:#66acff; font:600 14px/1.2 system-ui,sans-serif; }
