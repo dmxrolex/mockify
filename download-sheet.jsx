@@ -15,7 +15,6 @@ import {CreditAmount} from './credits-ui.jsx';
 import {HeaderCoin} from './coin-motion.jsx';
 
 
-const loadDownloadSticker=()=>import('./assets/download-duck.json');
 
 export default function DownloadSheet({project,telegram,onClose,onAbandon,account,onAccount=()=>{},onPremium}) {
   const dialog=useRef(null),body=useRef(null),task=useRef(null),urls=useRef([]),prepared=useRef(null),closing=useRef(false);
@@ -66,7 +65,8 @@ export default function DownloadSheet({project,telegram,onClose,onAbandon,accoun
     <span className="download-grabber" aria-hidden="true"/>
     <header className="download-heading"><h2 id="download-title" className="visually-hidden">{t("Download")}</h2><button type="button" aria-label={t("Close download")} onClick={()=>close()}><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M6 18 18 6"/></svg></button></header>
     <div ref={body} className="download-body" data-phase={phase}>
-      <AnimatedSticker load={loadDownloadSticker} className="download-animation" loop/>
+      {/* A duck for each moment: preparing, finished, or something went wrong. */}
+      {(sticker=>sticker==='download'?<AnimatedSticker key={sticker} slot="download" className="download-animation" loop/>:<AnimatedSticker key={sticker} slot={sticker} className="download-animation" loop={sticker!=='done'} fallback={<AnimatedSticker slot="download" className="download-animation" loop/>}/>)(phase==='done'?'done':error?'error':'download')}
       {phase==='choose'&&<>
         <fieldset className="download-quality"><legend className="visually-hidden">{t("Download quality")}</legend>
           {/* Named by outcome: what the file will be, not an abstract quality level. */}

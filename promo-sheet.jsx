@@ -4,6 +4,7 @@ import {redeemCode} from './promo-client.js';
 import {dismissBackdrop} from './dialog-dismiss.js';
 import {subscriptionDate} from './subscription-model.js';
 import {telegramStar} from './brand-icons.jsx';
+import AnimatedSticker from './animated-sticker.jsx';
 import './promo-sheet.css';
 
 const haptic=type=>{try{window.Telegram?.WebApp?.HapticFeedback?.notificationOccurred?.(type);}catch{}};
@@ -42,7 +43,7 @@ export default function PromoSheet({telegram,onClose,onAccount,onUseDiscount}){
     <button type="button" className="promo-close" aria-label={t('Close')} onClick={onClose}><Icon name="close"/></button>
     {state==='done'?<div className="promo-success" role="status">
       <span className="promo-burst" aria-hidden="true">{Array.from({length:10},(_,i)=><i key={i} style={{'--i':i}}/>)}</span>
-      <span className={'promo-reward-icon is-'+info.icon}>{info.icon==='stars'?<img src={telegramStar} alt=""/>:<Icon name={info.icon}/>}</span>
+      <AnimatedSticker slot="success" className="promo-duck is-success" loop={false} fallback={<span className={'promo-reward-icon is-'+info.icon}>{info.icon==='stars'?<img src={telegramStar} alt=""/>:<Icon name={info.icon}/>}</span>}/>
       <p className="promo-eyebrow"><Icon name="check"/>{t('Code applied')}</p>
       <h2 id="promo-title">{info.title}</h2>
       <p className="promo-detail">{info.detail}</p>
@@ -51,7 +52,7 @@ export default function PromoSheet({telegram,onClose,onAccount,onUseDiscount}){
         <button type="button" className={result.reward.kind==='discount'&&onUseDiscount?'promo-secondary':'promo-primary'} onClick={onClose}>{t('Done')}</button>
       </div>
     </div>:<form className="promo-form" onSubmit={submit} noValidate>
-      <span className="promo-hero" aria-hidden="true"><Icon name="gift"/></span>
+      <AnimatedSticker slot="promo" className="promo-duck" fallback={<span className="promo-hero" aria-hidden="true"><Icon name="gift"/></span>}/>
       <h2 id="promo-title">{t('Promo code')}</h2>
       <p className="promo-detail">{t('Enter a code to get stars, Premium or a discount.')}</p>
       <div className="promo-field" data-error={error?'':undefined} data-shake={shake%2} key={shake}>

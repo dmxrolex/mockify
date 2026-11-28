@@ -63,7 +63,6 @@ import './styles.css';
 import './navigation.css';
 import './text-editor.css';
 
-const loadFilesSticker=()=>import('./assets/files-duck.json');
 // New touches keep the ring style the user last chose.
 const ringOf=gesture=>gesture?.ring?{ring:gesture.ring}:{};
 
@@ -718,7 +717,7 @@ function Editor({ fillSpot, looks=[], onUseLook, onManageLook, onSaveLook, proje
 
 function DraftPage({ list, onOpen, onRemove }) {
   if (!list) return <section className="page files-empty" aria-label={t("Loading saved work")} aria-busy="true"/>;
-  if (!list.length) return <section className="page files-empty" aria-label={t("Saved work")}><AnimatedSticker load={loadFilesSticker} className="files-animation"/><p>{t("Your saved work will appear here.")}</p></section>;
+  if (!list.length) return <section className="page files-empty" aria-label={t("Saved work")}><AnimatedSticker slot="files" className="files-animation"/><p>{t("Your saved work will appear here.")}</p></section>;
   return <div className="page draft-gallery-grid files-grid" aria-label={t("Saved work")}>{Array.from({length:Math.max(9,list.length)},(_,index)=><DraftTile key={list[index]?.id??'empty-'+index} draft={list[index]} onOpen={onOpen} onRemove={onRemove}/>)}</div>;
 }
 
