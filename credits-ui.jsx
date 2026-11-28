@@ -6,7 +6,8 @@ import {telegramStar} from './brand-icons.jsx';
 import {accountRequest} from './account-client.js';
 import {t} from './i18n.js';
 import './credits-ui.css';
-export function CreditAmount({value,included=false}){return <span className="credit-cost">{included?<span>{t('Included')}</span>:<><img src={telegramStar} alt="" width="21" height="21"/><strong>{value}</strong><span className="visually-hidden">{t('stars')}</span></>}</span>;}
+// With Premium, exports cost nothing: say so plainly instead of a star price.
+export function CreditAmount({value,included=false,freeLabel='No charge'}){return <span className="credit-cost">{included?<span className="credit-free">{t(freeLabel)}</span>:<><img src={telegramStar} alt="" width="21" height="21"/><strong>{value}</strong><span className="visually-hidden">{t('stars')}</span></>}</span>;}
 function CreditSheet({children,title,onClose,locked=false,className=''}){
   const ref=useRef(null),id=useId();
   useLayoutEffect(()=>{const element=ref.current;element.showModal();return()=>{if(element.open)element.close();};},[]);

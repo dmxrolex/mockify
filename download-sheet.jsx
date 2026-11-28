@@ -75,8 +75,8 @@ export default function DownloadSheet({project,telegram,onClose,onAbandon,accoun
         {nothingFits&&<p className="download-limit">{t('This video is too long to send. Trim it to under {time} in the editor, then export.').replace('{time}',maxClip('standard'))}</p>}
         {/* Balance rides on top of the Download button as a small gold tab. */}
         <div className="download-pay">
-          {account&&<span className="download-balance"><HeaderCoin/><span>{t('Balance')}</span><strong>{(account.credits??0).toLocaleString(document.documentElement.lang)}</strong></span>}
-        <button type="button" className="download-primary download-priced" autoFocus aria-label={t('Download')} disabled={nothingFits||tooLarge(quality)} onClick={download}><span>{t("Download")}</span><CreditAmount included={included} value={price(quality,account,remaining)}/></button>
+          {account&&<span className="download-balance"><span>{t('Your star balance')}</span><strong><HeaderCoin/>{(account.credits??0).toLocaleString(document.documentElement.lang)}</strong></span>}
+        <button type="button" className="download-primary download-priced" autoFocus aria-label={t('Download')} disabled={nothingFits||tooLarge(quality)} onClick={download}><span>{t("Download")}</span><CreditAmount included={included} freeLabel="Free with Premium" value={price(quality,account,remaining)}/></button>
         </div>
         {!included&&onPremium&&<button type="button" className="download-premium" onClick={onPremium}>{t('Unlimited exports with Premium')}<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 5 7 7-7 7"/></svg></button>}
       </>}
