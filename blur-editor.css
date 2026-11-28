@@ -1,25 +1,4 @@
-.blur-inspector { margin:0 10px; padding:8px 10px 10px; border-radius:26px; background:#1c1c1e; color:#f5f5f7; font-family:-apple-system,BlinkMacSystemFont,system-ui,sans-serif; }
-.blur-inspector button { touch-action:manipulation; }
 .blur-fields { display:contents; border:0; margin:0; padding:0; }
-.blur-inspector svg,.blur-target-picker svg,.blur-size-picker svg,.blur-delete svg { inline-size:21px; block-size:21px; fill:none; stroke:currentColor; stroke-width:1.65; stroke-linecap:round; stroke-linejoin:round; flex:none; }
-.blur-heading { display:flex; align-items:center; gap:4px; min-block-size:48px; }
-.blur-heading h2 { flex:1; margin:0 6px; font-size:17px; font-weight:600; letter-spacing:-.025em; }
-.blur-heading .controls-back { inline-size:44px; block-size:44px; margin:0; flex:none; background:#303033; border:0; box-shadow:none; }
-.blur-heading .controls-back svg { inline-size:18px; block-size:18px; stroke-width:1.8; }
-.blur-icon { display:grid; place-items:center; inline-size:44px; block-size:44px; flex:none; padding:0; border:0; border-radius:50%; background:none; color:#d4d4db; }
-.blur-done { min-block-size:44px; padding:0 6px; background:none; border:0; color:#0a84ff; font-size:16px; font-weight:550; }
-.blur-mode-row { display:flex; align-items:center; gap:8px; margin-block:4px; min-inline-size:0; }
-.blur-target { display:flex; align-items:center; gap:6px; min-block-size:44px; min-inline-size:0; flex:1 1 50%; padding:0 10px; border:0; border-radius:13px; background:#303033; color:#f5f5f7; font-size:13px; font-weight:500; }
-.blur-target span { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-.blur-target svg:last-child { margin-inline-start:auto; inline-size:15px; }
-.blur-segment { display:flex; flex:1 0 auto; padding:3px; border-radius:13px; background:#303033; }
-.blur-segment button { flex:1; min-block-size:38px; padding:0 12px; border:0; border-radius:10px; background:none; color:#e0e0e5; font-size:13px; }
-.blur-segment button[aria-pressed="true"] { background:#0a84ff; color:white; }
-.blur-tools { display:flex; align-items:center; gap:4px; padding:2px; margin-block:6px; border-radius:13px; background:#29292c; }
-.blur-tools button { display:flex; align-items:center; justify-content:center; gap:7px; flex:1; min-inline-size:44px; min-block-size:44px; padding:0 8px; border:0; border-radius:11px; background:none; color:#e1e1e7; font-size:13px; }
-.blur-tools button:nth-child(-n+2) { flex:2; }
-.blur-tools button[aria-pressed="true"] { background:#0a84ff24; color:#62adff; box-shadow:inset 0 0 0 1px #0a84ff; }
-.blur-inspector button:disabled { opacity:.3; }
 .blur-strength-row { display:flex; align-items:center; min-inline-size:0; }
 .blur-strength-row .text-range { flex:1; min-inline-size:0; margin:0; padding:0 0 0 4px; background:none; grid-template-columns:auto minmax(30px,1fr) 36px; gap:10px; min-block-size:48px; }
 .blur-strength-row .text-range span { font-size:13px; }
@@ -27,15 +6,6 @@
 .blur-strength-row .text-range input { --text-progress:0%; block-size:44px; border-radius:20px; touch-action:pan-y; }
 .blur-strength-row .text-range input:focus-visible { outline:2px solid #d5d5de; outline-offset:0; }
 .blur-strength-row .text-range input[data-pointer-focus]:focus-visible { outline:none; }
-.blur-target-picker { inline-size:240px; padding:4px; border-radius:18px; background:#29292c; }
-.blur-target-picker button { display:flex; align-items:center; gap:10px; inline-size:100%; min-block-size:48px; padding:8px 12px; background:none; border:0; border-radius:12px; color:#f5f5f7; font-size:14px; text-align:start; }
-.blur-target-picker button+button { border-block-start:1px solid #ffffff0c; }
-.blur-target-picker button[aria-checked="true"] { color:#64adff; }
-.blur-check { margin-inline-start:auto; }
-.blur-size-picker { inline-size:220px; padding:12px; border-radius:18px; background:#29292c; }
-.blur-size-picker label { display:flex; align-items:center; gap:12px; min-block-size:44px; }
-.blur-size-picker svg:first-child { inline-size:12px; }
-.blur-size-picker input { min-inline-size:0; inline-size:100%; accent-color:#0a84ff; }
 .editor[data-panel="blur"] { grid-template-rows:minmax(0,1fr) auto; }
 .editor.has-multiple[data-panel="blur"] { grid-template-rows:minmax(0,1fr) auto auto; }
 .editor[data-panel="blur"] .control-sheet { padding-block:6px 12px; overflow:visible; }
@@ -57,3 +27,29 @@
  .blur-inspector button:active:not(:disabled),.blur-delete:active { animation:zoom-jelly .28s ease-out; }
 }
 @media(max-width:350px) { .blur-inspector { margin-inline:5px; padding-inline:7px; } .blur-segment button { padding-inline:9px; } .blur-target { padding-inline:7px; gap:4px; } .blur-tools button { padding-inline:5px; gap:5px; } }
+/* Redesigned Blur panel: round chips and pills, no dropdowns. */
+.blur-inspector { display:grid; gap:10px; padding:4px 14px calc(10px + var(--safe-bottom)); color:#f5f5f7; font-family:-apple-system,BlinkMacSystemFont,system-ui,sans-serif; }
+.blur-inspector svg { inline-size:18px; block-size:18px; fill:none; stroke:currentColor; stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round; }
+.blur-undo:disabled,.blur-inspector .tune-round:disabled { opacity:.35; }
+.blur-targets { display:flex; gap:8px; overflow-x:auto; overscroll-behavior-x:contain; scrollbar-width:none; margin-inline:-14px; padding:2px 14px; }
+.blur-targets::-webkit-scrollbar { display:none; }
+.blur-targets button { position:relative; display:flex; align-items:center; gap:7px; flex:none; min-block-size:40px; padding:0 14px 0 11px; border:0; border-radius:20px; background:#1c1c1e; box-shadow:inset 0 0 0 1px #ffffff12; color:#d1d1d6; font:600 13px/1 inherit; font-family:inherit; white-space:nowrap; transition:background-color .2s,color .2s,scale .2s var(--spring); }
+.blur-targets button[aria-checked=true] { background:var(--select); color:var(--select-ink); box-shadow:var(--select-edge); }
+.blur-targets button[data-blurred]::after { content:''; position:absolute; inset:5px 6px auto auto; inline-size:6px; block-size:6px; border-radius:50%; background:#0a84ff; }
+.blur-targets button:active { scale:.95; }
+.blur-mode button { min-block-size:36px; font-size:13.5px; }
+.blur-tools { display:flex; align-items:center; gap:6px; }
+.blur-tools > button { display:flex; align-items:center; justify-content:center; gap:6px; flex:1; min-block-size:40px; padding:0 10px; border:0; border-radius:20px; background:#1c1c1e; box-shadow:inset 0 0 0 1px #ffffff12; color:#d1d1d6; font:600 13px/1 inherit; font-family:inherit; transition:background-color .2s,color .2s,scale .2s var(--spring); }
+.blur-tools > button[aria-pressed=true] { background:var(--select); color:var(--select-ink); box-shadow:var(--select-edge); }
+.blur-tools > button:active { scale:.95; }
+/* Brush size: a dot that grows with the value, next to a short slider. */
+.blur-size { display:flex; align-items:center; gap:6px; flex:1.3; min-inline-size:0; }
+.blur-size i { flex:none; inline-size:calc(8px + var(--size) * 14px); block-size:calc(8px + var(--size) * 14px); border-radius:50%; background:#f5f5f7; }
+.blur-size input { flex:1; min-inline-size:0; accent-color:#30d158; }
+.blur-strength-row { display:flex; align-items:center; gap:8px; padding:4px 6px 4px 14px; border-radius:20px; background:#1c1c1e; }
+.blur-strength-row .text-range { flex:1; min-inline-size:0; margin:0; padding:0; background:none; grid-template-columns:auto minmax(30px,1fr) 38px; gap:10px; min-block-size:48px; }
+.blur-strength-row .text-range span { font-size:14px; font-weight:550; }
+.blur-strength-row .text-range input { touch-action:pan-y; }
+.blur-hint { margin:-2px 0 0; color:#8e8e93; font-size:12.5px; text-align:center; }
+.editor[data-panel="blur"] .control-sheet { padding:0; background:none; overflow:visible; }
+

@@ -7,6 +7,7 @@ import './page-controls.css';
 import {jellyPress} from './ui-motion.js';
 import {Picker} from './editor-controls.jsx';
 import {SelectionIcon} from './selection-toolbar.jsx';
+import TunePanel from './tune-panel.jsx';
 
 export function PageIcon({name}){
   const paths={merge:'M3 7h7v10H3ZM14 7h7v10h-7ZM10 12h4',pages:'M8 3h10a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2ZM3 8v11a3 3 0 0 0 3 3h9',page:'M6 3h9l4 4v14H6Zm9 0v5h4',left:'m14 6-6 6 6 6',right:'m10 6 6 6-6 6',plus:'M12 5v14M5 12h14',check:'m5 12 4 4L19 6',trash:'M4 7h16M9 4h6M6 7l1 13h10l1-13M10 10v7m4-7v7',split:'M3 5h6v14H3ZM15 5h6v14h-6M12 3v3m0 3v3m0 3v3m0 3v1'};
@@ -62,9 +63,27 @@ export function usePageSwipe({index,count,onPage,onTap,disabled}){
   };
 }
 
+const adjustIcons={
+  brightness:<><circle cx="12" cy="12" r="4"/><path d="M12 3v2m0 14v2M3 12h2m14 0h2M5.6 5.6 7 7m10 10 1.4 1.4M5.6 18.4 7 17m10-10 1.4-1.4"/></>,
+  contrast:<><circle cx="12" cy="12" r="8"/><path d="M12 4a8 8 0 0 1 0 16Z" fill="currentColor"/></>,
+  saturation:<path d="M12 3.5c-3 4-6.5 7.2-6.5 10.7a6.5 6.5 0 0 0 13 0c0-3.5-3.5-6.7-6.5-10.7Z"/>,
+  warmth:<path d="M10 5a2 2 0 0 1 4 0v8.6a4 4 0 1 1-4 0ZM12 9v7"/>,
+};
+const shadowStyles=[['none','None',<path d="M5 5l14 14M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18Z"/>],['soft','Soft',<><rect x="5" y="4" width="11" height="14" rx="3"/><path d="M9 21h8a3 3 0 0 0 3-3V9" opacity=".45"/></>],['hard','Hard',<><rect x="4" y="4" width="11" height="14" rx="3"/><path d="M8 21h9a3 3 0 0 0 3-3V8" strokeWidth="2.6"/></>],['long','Long',<><rect x="4" y="3" width="9" height="12" rx="2.5"/><path d="M13 9l7 7v5h-7l-7-6"/></>]];
+// Shadow as its own tool: a style row, then Intensity and Direction on the shared slider.
+export function ShadowInspector({settings,update,onDone}){
+  const none=settings.shadowStyle==='none';
+  const items=[
+    {key:'shadow',label:'Intensity',icon:<><circle cx="12" cy="12" r="8"/><path d="M12 4a8 8 0 0 1 0 16Z" fill="currentColor" opacity=".6"/></>,min:0,max:100,initial:55,value:settings.shadow??55,suffix:'%',display:(settings.shadow??55)+'%',disabled:none,onChange:value=>update({shadow:value})},
+    {key:'shadowAngle',label:'Direction',icon:<path d="M12 4v16m0 0-5-5m5 5 5-5" style={{transform:`rotate(${(settings.shadowAngle??45)-90}deg)`,transformOrigin:'12px 12px'}}/>,min:0,max:359,initial:45,value:settings.shadowAngle??45,display:(settings.shadowAngle??45)+'°',disabled:none,tint:'#64d2ff',onChange:value=>update({shadowAngle:value})},
+  ];
+  return <TunePanel title="Shadow" items={items} changed={(settings.shadowStyle??'soft')!=='soft'} onDone={onDone} onReset={()=>update({shadow:55,shadowAngle:45,shadowStyle:'soft'})}>
+    <div className="shadow-styles" role="radiogroup" aria-label={t('Shadow style')}>{shadowStyles.map(([key,label,icon])=><button key={key} type="button" role="radio" aria-checked={(settings.shadowStyle??'soft')===key} onClick={()=>update({shadowStyle:key,...(key!=='none'&&!settings.shadow?{shadow:55}:{})})}><svg viewBox="0 0 24 24" aria-hidden="true">{icon}</svg>{t(label)}</button>)}</div>
+  </TunePanel>;
+}
 export function AdjustInspector({settings,update,onDone,disabled=false}){
-  const controls=[['brightness','Brightness','M12 3v2m0 14v2M3 12h2m14 0h2M5.6 5.6 7 7m10 10 1.4 1.4M5.6 18.4 7 17m10-10 1.4-1.4'],['contrast','Contrast','M12 4a8 8 0 0 1 0 16Z'],['saturation','Saturation','M12 3c-3 4-7 7.5-7 11a7 7 0 0 0 14 0c0-3.5-4-7-7-11Z'],['warmth','Warmth','M10 5a2 2 0 0 1 4 0v9a4 4 0 1 1-4 0ZM12 8v9']];
-  return <section className="text-inspector adjust-inspector" aria-label={t('Adjust')}><header className="text-inspector-heading"><button type="button" className="ios-text-back" aria-label={t('Back to editor controls')} onClick={onDone}><PageIcon name="left"/></button><h2>{t('Adjust')}</h2><button type="button" className="ios-text-done" disabled={disabled||!controls.some(([key])=>settings[key])} onClick={()=>update(Object.fromEntries(controls.map(([key])=>[key,0])))}>{t('Reset')}</button><button type="button" className="ios-text-done" onClick={onDone}>{t('Done')}</button></header><div className="ios-settings-group">{controls.map(([key,label,path])=><label className="adjust-row" key={key}><span className={'ios-setting-icon '+key}><svg viewBox="0 0 24 24" aria-hidden="true">{['brightness','contrast'].includes(key)&&<circle cx="12" cy="12" r={key==='brightness'?4:8}/>}<path d={path} fill={key==='contrast'?'currentColor':'none'}/></svg></span><span className="adjust-value">{t(label)}<output>{settings[key]>0?'+':''}{settings[key]??0}</output></span><input type="range" className="polished-range" aria-label={t(label)} min="-100" max="100" step="1" value={settings[key]??0} disabled={disabled} style={{'--fill':((settings[key]??0)+100)/2+'%'}} onChange={event=>update({[key]:event.target.valueAsNumber})}/></label>)}</div></section>;
+  const items=[['brightness','Brightness','#ff9f0a'],['contrast','Contrast','#8e9aaf'],['saturation','Saturation','#bf5af2'],['warmth','Warmth','#ff6b4a']].map(([key,label,tint])=>({key,label,tint,icon:adjustIcons[key],min:-100,max:100,initial:0,value:settings[key]??0,disabled,onChange:value=>update({[key]:value})}));
+  return <TunePanel title="Adjust" items={items} onDone={onDone} onReset={()=>update({brightness:0,contrast:0,saturation:0,warmth:0})}/>;
 }
 export function ToolsSheet({onClose,onInsert,getCanvasRect}){
   const dialog=useRef(null),closing=useRef(false),drag=useRef(null),[ghost,setGhost]=useState(null),[pending,setPending]=useState(null),[group,setGroup]=useState(()=>{try{return assetGroups.some(([key])=>key===sessionStorage.getItem('mockify.assetGroup'))?sessionStorage.getItem('mockify.assetGroup'):'frames';}catch{return 'frames';}});

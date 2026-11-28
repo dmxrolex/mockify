@@ -27,48 +27,47 @@ export default function WatermarkSheet({mark,onChange,onDone,profile,ratio='squa
     const chosen=event.target.files?.[0];event.target.value='';if(!chosen)return;
     setBusy(true);try{set({kind:'image',image:await prepareMarkImage(chosen),shape:'original'});}finally{setBusy(false);}
   }
+  const hasContent=markVisible({...mark,on:true});
+  function clearMark(){hapticImpact('light');onChange(mark.kind==='image'?{image:'',on:false}:{text:'',photo:false,on:false});}
+  function removeProfile(){hapticSelection();onChange(mark.kind==='image'?{image:''}:{text:'',photo:false,badge:'',initials:''});}
+  const photoShown=mark.photo&&!!(mark.badge||mark.initials);
   return <section className="mark-sheet" aria-label={t('Watermark')}>
     <span className="mark-grabber" aria-hidden="true"/>
     <header className="mark-header">
-      <button type="button" className="mark-toggle" role="switch" aria-checked={mark.on} aria-label={t('Watermark')} onClick={()=>{hapticSelection();onChange({on:!mark.on});}}><i/><span>{t(mark.on?'On':'Off')}</span></button>
+      {/* Adding text or an image turns the watermark on; Clear takes it off. */}
+      <button type="button" className="mark-clear" disabled={!hasContent} aria-label={t('Remove watermark')} title={t('Remove watermark')} onClick={clearMark}><Svg><path d="M4.5 6.5h15M9.5 6.5V5a1.5 1.5 0 0 1 1.5-1.5h2A1.5 1.5 0 0 1 14.5 5v1.5m-8 0 .8 12.1A2 2 0 0 0 9.3 20.5h5.4a2 2 0 0 0 2-1.9l.8-12.1"/></Svg></button>
       <h2>{t('Watermark')}</h2>
       <button type="button" className="ios-text-done mark-done" onClick={onDone}>{t('Done')}</button>
     </header>
-    <div className="ios-segment mark-tabs" role="tablist" aria-label={t('Watermark settings')} style={{'--count':3,'--segment':['content','position','look'].indexOf(tab)}}>
-      {[['content','Content'],['position','Position'],['look','Look']].map(([key,label])=><button key={key} type="button" role="tab" aria-selected={tab===key} aria-checked={tab===key} onClick={()=>{if(tab!==key){hapticSelection();setTab(key);}}}>{t(label)}</button>)}
-    </div>
-    {/* Three short tabs instead of one long scroll, so no control hides below the fold. */}
-    <div className="mark-scroll" key={tab}>
-      {tab==='content'&&<>
+    <div className="mark-top">
       <div className="ios-segment" role="radiogroup" aria-label={t('Watermark type')} style={{'--segment':mark.kind==='image'?1:0}}>
-          {[['text','Text'],['image','Image']].map(([kind,label])=><button key={kind} type="button" role="radio" aria-checked={mark.kind===kind} onClick={()=>{hapticSelection();set({kind});}}>{t(label)}</button>)}
-        </div>
-
-        <button type="button" className="mark-profile" aria-pressed={usingProfile} disabled={!profile||(mark.kind==='image'&&!profile.avatar)} onClick={useProfile}>
+        {[['text','Text'],['image','Image']].map(([kind,label])=><button key={kind} type="button" role="radio" aria-checked={mark.kind===kind} onClick={()=>{if(mark.kind!==kind){hapticSelection();onChange({kind});}}}>{t(label)}</button>)}
+      </div>
+      <div className="ios-segment mark-tabs" role="tablist" aria-label={t('Watermark settings')} style={{'--count':3,'--segment':['content','position','look'].indexOf(tab)}}>
+        {[['content','Content'],['position','Position'],['look','Look']].map(([key,label])=><button key={key} type="button" role="tab" aria-selected={tab===key} aria-checked={tab===key} onClick={()=>{if(tab!==key){hapticSelection();setTab(key);}}}>{t(label)}</button>)}
+      </div>
+    </div>
+    <div className="mark-scroll" key={tab+mark.kind}>
+      {tab==='content'&&<>
+        {/* Telegram profile: one tap to use it, one tap on the cross to take it off. */}
+        <div className="mark-profile" data-active={usingProfile||undefined}>
           <span className="mark-avatar">{profile?.avatar?<img src={profile.avatar} alt=""/>:<b>{profile?.initials??'?'}</b>}</span>
-          <span className="mark-profile-text"><strong>{profile?.name||t('Your Telegram')}</strong><small>{profile?(mark.kind==='image'?t('Use my profile photo'):profile.handle):t('Open Mockify in Telegram to use your profile')}</small></span>
-          <span className="mark-use">{usingProfile?<Svg><path d="m5 12 5 5 9-10"/></Svg>:t('Use')}</span>
-        </button>
-
-        {mark.kind==='text'?<div className="mark-group">
-          <input className="mark-input" type="text" maxLength={40} enterKeyHint="done" placeholder={t('@yourchannel or any text')} aria-label={t('Watermark text')} value={mark.text} onChange={event=>set({text:event.target.value})} onKeyDown={event=>{if(event.key==='Enter')event.currentTarget.blur();}}/>
-          <div className="mark-chips">
-            <button type="button" aria-pressed={mark.photo} disabled={!mark.badge&&!profile} onClick={()=>{hapticSelection();set(mark.photo?{photo:false}:{photo:true,badge:mark.badge||profile?.avatar||'',initials:mark.initials||profile?.initials||''});}}>{t('Show photo')}</button>
-          </div>
-        </div>:<div className="mark-group">
-          <div className="mark-image-row">
-            <button type="button" className="mark-upload" aria-busy={busy} onClick={()=>file.current.click()}>
+          <span className="mark-profile-text"><strong>{profile?.name||t('Your Telegram')}</strong><small>{profile?(mark.kind==='image'?t('Profile photo'):profile.handle):t('Open Mockify in Telegram to use your profile')}</small></span>
+          {mark.kind==='text'&&<button type="button" className="mark-icon-toggle" aria-pressed={photoShown} disabled={!mark.badge&&!profile} aria-label={t(photoShown?'Hide photo':'Show photo')} title={t(photoShown?'Hide photo':'Show photo')} onClick={()=>{hapticSelection();set(photoShown?{photo:false}:{photo:true,badge:mark.badge||profile?.avatar||'',initials:mark.initials||profile?.initials||''});}}><Svg><circle cx="12" cy="9" r="3.2"/><path d="M5.5 19.5a7 7 0 0 1 13 0"/>{!photoShown&&<path d="M4 4l16 16"/>}</Svg></button>}
+          {usingProfile
+            ?<button type="button" className="mark-use is-on" aria-label={t('Stop using my profile')} onClick={removeProfile}><Svg><path d="m6 6 12 12M18 6 6 18"/></Svg></button>
+            :<button type="button" className="mark-use" disabled={!profile||(mark.kind==='image'&&!profile.avatar)} onClick={useProfile}>{t('Use')}</button>}
+        </div>
+        {mark.kind==='text'
+          ?<input className="mark-input" type="text" maxLength={40} enterKeyHint="done" placeholder={t('@yourchannel or any text')} aria-label={t('Watermark text')} value={mark.text} onChange={event=>set({text:event.target.value})} onKeyDown={event=>{if(event.key==='Enter')event.currentTarget.blur();}}/>
+          :<div className="mark-upload">
+            <button type="button" className="mark-upload-main" aria-busy={busy} onClick={()=>file.current.click()}>
               <span className="mark-thumb" data-shape={mark.shape}>{mark.image?<img src={mark.image} alt=""/>:<Svg><path d="M12 5v14M5 12h14"/></Svg>}</span>
               <span><strong>{t(mark.image?'Change image':'Choose image')}</strong><small>{t('A logo with a transparent background works best')}</small></span>
             </button>
-          </div>
-          <div className="mark-chips">
-            <button type="button" aria-pressed={mark.shape==='original'} onClick={()=>{hapticSelection();set({shape:'original'});}}>{t('Original')}</button>
-            <button type="button" aria-pressed={mark.shape==='circle'} onClick={()=>{hapticSelection();set({shape:'circle'});}}>{t('Circle')}</button>
-          </div>
-          <input ref={file} type="file" accept="image/png,image/jpeg,image/webp" hidden onChange={upload}/>
-        </div>}
-
+            <button type="button" className="mark-icon-toggle" disabled={!mark.image} aria-label={t(mark.shape==='circle'?'Circle':'Original')} title={t(mark.shape==='circle'?'Circle':'Original')} onClick={()=>{hapticSelection();set({shape:mark.shape==='circle'?'original':'circle'});}}><Svg>{mark.shape==='circle'?<circle cx="12" cy="12" r="7.5"/>:<rect x="4.5" y="4.5" width="15" height="15" rx="3.5"/>}</Svg></button>
+            <input ref={file} type="file" accept="image/png,image/jpeg,image/webp" hidden onChange={upload}/>
+          </div>}
       </>}
       {tab==='position'&&<>
         <div className="mark-place-row">
@@ -89,7 +88,7 @@ export default function WatermarkSheet({mark,onChange,onDone,profile,ratio='squa
         <Range label={t('Opacity')} min={10} max={100} value={mark.opacity} display={mark.opacity+'%'} onChange={opacity=>set({opacity})}/>
         <div className="mark-density" data-disabled={mark.placement!=='tiled'||undefined} inert={mark.placement!=='tiled'?'':undefined}><Range label={t('Density')} min={1} max={5} value={mark.density} display={t(['','Airy','Light','Balanced','Dense','Packed'][mark.density]??'')} onChange={density=>set({density})}/></div>
       </div>}
-      {!markVisible(mark)&&mark.on&&<p className="mark-hint">{t(mark.kind==='image'?'Choose an image or use your profile photo.':'Type something or use your Telegram profile.')}</p>}
+      {!hasContent&&tab==='content'&&<p className="mark-hint">{t(mark.kind==='image'?'Choose an image or use your profile photo.':'Type something or use your Telegram profile.')}</p>}
     </div>
   </section>;
 }

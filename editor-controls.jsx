@@ -70,18 +70,18 @@ export function Picker({anchor,label,onClose,className='',children,placement='ab
 // Automatic motion for the selected phone or image. The chosen effect's preview phone moves,
 // so each choice shows what it does without extra text.
 const effectMarks={
-  still:<><circle cx="12" cy="12" r="8"/><path d="m6.5 17.5 11-11"/></>,
-  spin:<path d="M19.5 12a7.5 7.5 0 1 1-2.2-5.3M19.5 4v3.5H16"/>,
-  float:<path d="M8 21.2h8" opacity=".6"/>,
-  sway:<path d="M4.5 9.5c-1 1.6-1 3.4 0 5M19.5 9.5c1 1.6 1 3.4 0 5"/>,
-  push:<path d="M4 8V4h4M20 16v4h-4"/>,
+  still:<><circle cx="12" cy="12" r="8.5"/><path d="m6 18 12-12"/></>,
+  spin:<><rect className="effect-phone" x="9" y="6" width="6" height="12" rx="1.8" transform="rotate(-18 12 12)"/><path d="M20.2 9.5A8.8 8.8 0 0 0 5.6 6"/><path d="m20.6 5.6-.3 4-3.9-.6"/><path d="M3.8 14.5A8.8 8.8 0 0 0 18.4 18" opacity=".45"/></>,
+  float:<><rect className="effect-phone" x="9" y="3" width="6" height="12" rx="1.8"/><ellipse cx="12" cy="20" rx="4.5" ry="1.2" opacity=".5"/><path d="M5 8v4m14-6v4" opacity=".45"/></>,
+  sway:<><path className="effect-phone" d="M9 6.5 15 5v14l-6-1.5Z"/><path d="M5 9.5c-1.4 1.6-1.4 3.4 0 5M19 9.5c1.4 1.6 1.4 3.4 0 5"/><path d="m3.6 13.2 1.4 1.3 1.3-1.4M20.4 10.8 19 9.5l-1.3 1.4" opacity=".6"/></>,
+  push:<><rect className="effect-phone" x="9.5" y="7.5" width="5" height="9" rx="1.5"/><path d="M4 8V5a1 1 0 0 1 1-1h3m8 0h3a1 1 0 0 1 1 1v3m0 8v3a1 1 0 0 1-1 1h-3m-8 0H5a1 1 0 0 1-1-1v-3"/></>,
 };
 export function EffectsControls({settings,update,disabled=false,video=false}){
   const current=effectOf(settings);
   return <fieldset className="effect-options" disabled={disabled}><legend className="visually-hidden">{t('Effects')}</legend>
     <div className="effect-row" role="radiogroup" aria-label={t('Effects')}>
       {motionEffects.map(({id,label})=><button key={id} type="button" role="radio" aria-checked={current===id} className={'effect-choice effect-'+id} onClick={()=>{if(current===id)return;hapticSelection();update({motion:id});}}>
-        <span className="effect-symbol"><svg viewBox="0 0 24 24" aria-hidden="true">{id!=='still'&&<rect className="effect-phone" x="8.75" y="4.5" width="6.5" height="13.5" rx="2"/>}{effectMarks[id]}</svg></span>
+        <span className="effect-symbol"><svg viewBox="0 0 24 24" aria-hidden="true">{effectMarks[id]}</svg></span>
         <span className="effect-label">{t(label)}</span>
       </button>)}
     </div>

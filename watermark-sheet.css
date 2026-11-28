@@ -14,7 +14,7 @@
 .mark-profile { display:flex; align-items:center; gap:12px; inline-size:100%; min-block-size:62px; padding:10px 12px; border:0; border-radius:18px; background:linear-gradient(135deg,#2a2550,#1c1c1f 70%); box-shadow:var(--glass-edge); color:#fff; text-align:start; transition:scale .22s var(--spring); }
 .mark-profile:not(:disabled):active { scale:.97; }
 .mark-profile:disabled { opacity:.5; }
-.mark-profile[aria-pressed=true] { box-shadow:inset 0 0 0 2px var(--select-ring); }
+.mark-profile[data-active] { box-shadow:inset 0 0 0 2px var(--select-ring); }
 .mark-avatar { display:grid; place-items:center; flex:none; inline-size:42px; block-size:42px; overflow:hidden; border-radius:50%; background:#0a84ff; font-weight:700; }
 .mark-avatar img { inline-size:100%; block-size:100%; object-fit:cover; }
 .mark-profile-text { display:grid; flex:1; min-inline-size:0; gap:2px; }
@@ -31,11 +31,9 @@
 .mark-chips button[aria-pressed=true] { background:var(--select); color:var(--select-ink); box-shadow:var(--select-edge); }
 .mark-chips button:disabled { opacity:.35; }
 .mark-chips button:not(:disabled):active { scale:.94; }
-.mark-upload { display:flex; align-items:center; gap:12px; inline-size:100%; min-block-size:64px; padding:10px 12px; border:0; border-radius:18px; background:#1c1c1e; box-shadow:inset 0 0 0 1px #ffffff12; color:#fff; text-align:start; }
-.mark-upload > span:last-child { display:grid; gap:2px; }
-.mark-upload strong { font-size:15px; font-weight:650; }
-.mark-upload small { color:#8e8e93; font-size:12px; }
-.mark-upload[aria-busy=true] { opacity:.6; }
+.mark-upload-main strong { font-size:15px; font-weight:650; }
+.mark-upload-main small { color:#8e8e93; font-size:12px; }
+.mark-upload-main[aria-busy=true] { opacity:.6; }
 .mark-thumb { display:grid; place-items:center; flex:none; inline-size:44px; block-size:44px; overflow:hidden; border-radius:12px; background:repeating-conic-gradient(#2c2c2e 0 25%,#1f1f21 0 50%) 0 0/10px 10px; }
 .mark-thumb[data-shape=circle] { border-radius:50%; }
 .mark-thumb img { inline-size:100%; block-size:100%; object-fit:contain; }
@@ -73,15 +71,9 @@
 .mark-ranges .text-range output { text-align:end; white-space:nowrap; }
 .mark-sheet .mark-input:focus-visible { outline:none; box-shadow:inset 0 0 0 1.5px var(--select-ring); }
 
-/* Header switch: one iOS-green pill, no browser or polyfill colours. */
-.mark-toggle { display:flex; align-items:center; gap:8px; justify-self:start; min-block-size:44px; padding:0; border:0; background:none; color:#8e8e93; font:500 13px/1 inherit; font-family:inherit; }
-.mark-toggle i { position:relative; flex:none; inline-size:46px; block-size:28px; border-radius:14px; background:#39393d; transition:background-color .22s; }
-.mark-toggle i::after { content:''; position:absolute; inset:2px auto auto 2px; inline-size:24px; block-size:24px; border-radius:50%; background:#fff; box-shadow:0 2px 6px #0005; transition:translate .3s var(--spring); }
-.mark-toggle[aria-checked=true] i { background:#30d158; }
-.mark-toggle[aria-checked=true] i::after { translate:18px 0; }
-.mark-toggle[aria-checked=true] span { color:#f5f5f7; }
 /* Tabs: Content / Position / Look. */
-.mark-tabs { margin:2px 14px 4px; }
+.mark-top { display:grid; gap:8px; padding:2px 14px 6px; }
+.mark-tabs { margin:0; }
 .mark-tabs button { min-block-size:36px; font-size:13.5px; }
 @media(prefers-reduced-motion:no-preference) { .mark-scroll { animation:mark-tab-in .24s var(--ease-out); } @keyframes mark-tab-in { from { opacity:0; translate:0 6px; } } }
 /* Position: a round-cornered mini canvas plus pill options. */
@@ -93,4 +85,25 @@
 .mark-layer { border-radius:22px; } .mark-layer::before { border-radius:19px; } .mark-layer button { min-block-size:38px; font-size:13px; }
 .mark-place-caption { margin:0 4px; color:#8e8e93; font-size:12px; text-align:center; }
 .mark-density[data-disabled] { opacity:.35; }
+/* Header: round Clear button where the switch was. */
+.mark-clear { justify-self:start; display:grid; place-items:center; inline-size:36px; block-size:36px; padding:0; border:0; border-radius:50%; background:#1c1c1e; box-shadow:inset 0 0 0 1px #ffffff14; color:#ff6961; transition:opacity .2s,scale .2s var(--spring); }
+.mark-clear svg,.mark-icon-toggle svg,.mark-use svg { inline-size:18px; block-size:18px; fill:none; stroke:currentColor; stroke-width:1.9; stroke-linecap:round; stroke-linejoin:round; }
+.mark-clear:disabled { opacity:.3; }
+.mark-clear:not(:disabled):active { scale:.9; }
+/* Profile row: avatar, name, then small round toggles. */
+.mark-profile { gap:10px; }
+.mark-icon-toggle { display:grid; place-items:center; flex:none; inline-size:40px; block-size:40px; padding:0; border:0; border-radius:50%; background:#ffffff14; color:#aeaeb2; transition:background-color .2s,color .2s,scale .2s var(--spring); }
+.mark-icon-toggle[aria-pressed=true] { background:var(--select); color:var(--select-ink); box-shadow:var(--select-edge); }
+.mark-icon-toggle:disabled { opacity:.35; }
+.mark-icon-toggle:not(:disabled):active,.mark-use:not(:disabled):active { scale:.9; }
+.mark-use { border:0; font-family:inherit; min-block-size:36px; }
+.mark-use:disabled { opacity:.4; }
+.mark-use.is-on { min-inline-size:40px; inline-size:40px; block-size:40px; padding:0; border-radius:50%; background:#ffffff1f; box-shadow:none; color:#f5f5f7; }
+.mark-upload { display:flex; align-items:center; gap:10px; padding:10px 12px; border-radius:18px; background:#1c1c1e; box-shadow:inset 0 0 0 1px #ffffff12; }
+.mark-upload-main { display:flex; flex:1; min-inline-size:0; align-items:center; gap:12px; padding:0; border:0; background:none; color:#fff; text-align:start; font-family:inherit; }
+.mark-upload-main > span:last-child { display:grid; gap:2px; min-inline-size:0; }
 
+/* Section tabs read as navigation, lighter than the Text / Image choice above them. */
+.mark-tabs { background:none; padding:0; }
+.mark-tabs::before { inset:4px auto 4px 0; inline-size:calc(100% / var(--count,3)); border-radius:15px; background:#2c2c2e; box-shadow:none; }
+.mark-tabs button { min-block-size:34px; color:#8e8e93; font-size:13px; }
