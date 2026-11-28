@@ -84,3 +84,7 @@ button.settings-row:not(:disabled):active,a.settings-row:not([aria-disabled]):ac
 /* With Premium the usual price is struck through, so “free” is clear. */
 .settings-cost-was { color:#6c6c72; text-decoration-thickness:1px; }
 .settings-cost-free { color:#fff; font-weight:600; }
+
+.app-settings .setting-promo { background:#bf5af2; }
+.app-settings .setting-dashboard { background:#0a84ff; }
+.settings-loading { min-block-size:50vh; }

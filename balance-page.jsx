@@ -13,11 +13,11 @@ const creditUses = [
   ['quality','High quality',exportCreditCost('photo','high')-exportCreditCost('photo'),'+'],
 ];
 
-export default function BalancePage({ onSubscription, balance=0, premium=false, payment, onSelection }) {
+export default function BalancePage({ onSubscription, balance=0, premium=false, payment, onSelection, discount }) {
   const [selected,setSelected] = useState(creditPacks[0].id);
   const pack = creditPacks.find(option => option.id === selected);
   const formattedBalance = balance.toLocaleString(document.documentElement.lang);
-  return <PurchasePage className="balance-page" label="My balance" payment={payment} product={pack}
+  return <PurchasePage className="balance-page" label="My balance" payment={payment} product={pack} discount={discount}
     action={t('Buy {amount} stars').replace('{amount}',pack.credits-(pack.bonus??0))} note="By purchasing, you agree to our Terms of Service.">
     <div className="purchase-hero balance-hero">
       <div className="purchase-hero-copy">
@@ -37,7 +37,7 @@ export default function BalancePage({ onSubscription, balance=0, premium=false, 
     </section>
 
     <div className="credit-chooser">
-      <PurchaseOptions title="Choose a star pack" options={creditPacks} selected={selected}
+      <PurchaseOptions title="Choose a star pack" options={creditPacks} selected={selected} discount={discount}
         disabled={Boolean(payment?.pending)} onSelect={id=>{setSelected(id);onSelection?.();}}
         renderOption={option=><>
           <span className="purchase-option-amount">{option.credits-(option.bonus??0)}</span>

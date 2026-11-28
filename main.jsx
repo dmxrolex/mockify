@@ -31,6 +31,7 @@ import SettingsPage from './settings-page.jsx';
 import BalancePage from './balance-page.jsx';
 import SubscriptionPage from './subscription-page.jsx';
 import { subscriptionInfo } from './subscription-model.js';
+import { discountFor } from './promo-model.js';
 import { HeaderCoin } from './coin-motion.jsx';
 import { sceneHasMotion, EFFECT_SECONDS } from './motion-effects.js';
 import { setLanguage, t } from './i18n.js';
@@ -1140,9 +1141,9 @@ function App({initialTelegram=null,initialProfile=null}) {
       {lookSave&&<LookSaveSheet thumb={lookSave.thumb} texts={lookSave.texts} initialName={lookSave.name} updating={!!lookSave.update} busy={lookBusy} error={lookError} limit={lookLimit(premium)} count={looks?.length??0} premium={premium} onPremium={()=>{setLookSave(null);openSubscription();}} onSave={commitLookSave} onClose={()=>setLookSave(null)}/>}
       {managingLook&&<LookManageSheet look={managingLook} onUse={()=>useLook(managingLook,editing)} onRename={name=>renameLook(managingLook,name)} onUpdate={editing&&!managingLook.starter?()=>{const target=managingLook;setManagingLook(null);openLookSave(target);}:null} onDelete={()=>deleteSavedLook(managingLook)} onClose={()=>setManagingLook(null)}/>}
       {page === 'files' && <DraftPage list={draftList} onOpen={openDraft} onRemove={draft => drafts.remove(draft.id).then(refreshDrafts).catch(() => notify('Could not delete the draft'))}/>}
-      {page === 'settings' && <SettingsPage preferences={preferences} update={updatePreferences} onBalance={openBalance} onSubscription={openSubscription} profile={profile} botUsername={config?.botUsername} draftCount={draftList?.length??0}/>}
-      {balancePage&&<BalancePage onSubscription={openSubscription} balance={profile?.credits??0} premium={premiumActive(profile)} payment={payment} onSelection={purchaseSelection}/>}
-      {subscriptionPage&&<SubscriptionPage subscription={profile?.subscription} payment={payment} onSelection={purchaseSelection}/>}
+      {page === 'settings' && <SettingsPage preferences={preferences} update={updatePreferences} onBalance={openBalance} onSubscription={openSubscription} profile={profile} botUsername={config?.botUsername} draftCount={draftList?.length??0} telegram={telegram} onAccount={updateAccount}/>}
+      {balancePage&&<BalancePage onSubscription={openSubscription} balance={profile?.credits??0} premium={premiumActive(profile)} payment={payment} onSelection={purchaseSelection} discount={discountFor(profile,'credits')}/>}
+      {subscriptionPage&&<SubscriptionPage subscription={profile?.subscription} payment={payment} onSelection={purchaseSelection} discount={discountFor(profile,'premium')}/>}
       {page === 'profile' && <ProfilePage profile={profile} authStatus={authStatus} telegram={telegram} config={config} onRetry={()=>signIn(telegram)}/>}
       {editing && <Editor looks={looks??[]} onUseLook={look=>useLook(look,true)} onManageLook={setManagingLook} onSaveLook={()=>openLookSave()} backHandler={editorBack} exporting={exporting} project={project} profile={profile} telegram={telegram} mutateProject={setProject} ready={ready} notify={notify} busy={busy} undo={undo} canUndo={canUndo}
         update={patch => setProject(prior => changeScene(prior, patch))}
