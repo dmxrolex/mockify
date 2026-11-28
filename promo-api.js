@@ -91,9 +91,9 @@ export async function adminRequest(env,body,now=Date.now()){
   if(action==='overview'){
     const today=new Date(now);today.setUTCHours(0,0,0,0);const start=today.getTime()-6*DAY;
     const [totals,daily,recent,payments,revenue,exportsWeek,premium,promos]=await env.DB.batch([
-      env.DB.prepare("SELECT COUNT(*) AS users, COALESCE(SUM(created_at>?),0) AS day, COALESCE(SUM(created_at>?),0) AS week, COALESCE(SUM(last_seen_at>?),0) AS active, COALESCE(SUM(subscription_expires_at>?),0) AS premium, COALESCE(SUM(source='bot'),0) AS bot FROM users").bind(now-DAY,now-7*DAY,now-7*DAY,now),
-      env.DB.prepare('SELECT CAST((created_at-?)/86400000 AS INTEGER) AS day, COUNT(*) AS count FROM users WHERE created_at>=? GROUP BY day').bind(start,start),
-      env.DB.prepare(`SELECT ${userColumns} FROM users ORDER BY created_at DESC LIMIT 25`),
+      env.DB.prepare("SELECT COALESCE(SUM(app),0) AS users, COALESCE(SUM(app AND created_at>?),0) AS day, COALESCE(SUM(app AND created_at>?),0) AS week, COALESCE(SUM(app AND last_seen_at>?),0) AS active, COALESCE(SUM(subscription_expires_at>?),0) AS premium, COALESCE(SUM(NOT app),0) AS bot FROM (SELECT *, COALESCE(source,'app')!='bot' AS app FROM users)").bind(now-DAY,now-7*DAY,now-7*DAY,now),
+      env.DB.prepare("SELECT CAST((created_at-?)/86400000 AS INTEGER) AS day, COUNT(*) AS count FROM users WHERE created_at>=? AND COALESCE(source,'app')!='bot' GROUP BY day").bind(start,start),
+      env.DB.prepare(`SELECT ${userColumns} FROM users WHERE COALESCE(source,'app')!='bot' ORDER BY created_at DESC LIMIT 25`),
       env.DB.prepare("SELECT o.user_id,o.kind,o.stars,o.months,o.credits,o.paid_at,o.promo_code,u.profile FROM payment_orders o LEFT JOIN users u ON u.id=o.user_id WHERE o.status='paid' ORDER BY o.paid_at DESC LIMIT 20"),
       env.DB.prepare("SELECT COALESCE(SUM(stars),0) AS total, COALESCE(SUM(CASE WHEN paid_at>? THEN stars END),0) AS week, COUNT(*) AS orders FROM payment_orders WHERE status='paid'").bind(now-7*DAY),
       env.DB.prepare('SELECT COUNT(*) AS count FROM exports WHERE created_at>?').bind(now-7*DAY),

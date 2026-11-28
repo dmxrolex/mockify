@@ -1,3 +1,5 @@
+import { frameAspectFor } from './asset-library.js';
+const SOFT_BORDER=1.5;
 import { sceneLayers } from './text-model.js';
 
 export function imageLayers(settings) {
@@ -31,7 +33,9 @@ export function presentationFor(media,cleanup='auto') {
   if(isPhoneCapture(media))return {device:'iphone18',locked:true,cleanup,scale:89,zoom:0,x:0,y:0,roll:0,hideDevice:false};
   const aspect=media.width/media.height;
   return {device:'flat',cleanup:'off',fit:'contain',imageEdges:4,shadow:38,shadowStyle:'soft',shadowAngle:0,
-    ratio:aspect>1.25?'wide':aspect<.8?'portrait':'square',locked:false,scale:100,zoom:0,x:0,y:0,roll:0,selectedLayerId:null,hideDevice:false};
+    ratio:aspect>1.25?'wide':aspect<.8?'portrait':'square',locked:false,scale:100,zoom:0,x:0,y:0,roll:0,selectedLayerId:null,hideDevice:false,
+    // Photos that aren't phone screenshots start with a slim white border (removable in Borders).
+    ...(media.kind==='image'?{assetKind:'border',assetEmpty:false,borderStyle:'white',borderWidth:SOFT_BORDER,frameAspect:frameAspectFor('border',aspect,{borderWidth:SOFT_BORDER})}:{})};
 }
 
 export function imageGeometry(settings,media,width,height) {
