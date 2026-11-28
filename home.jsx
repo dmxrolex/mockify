@@ -36,17 +36,22 @@ export default function HomeScreen({ busy, onPick, onDrop, recent, onOpen, looks
 
     {/* Your Looks: saved designs to reuse. Tap to start, long-press for more. */}
     <section className="home-looks" aria-labelledby="home-looks-heading">
-      <header><h2 id="home-looks-heading">{t('Your looks')}</h2>{looks&&<small>{looks.length}/{lookLimit}</small>}</header>
-      <div className="home-look-row">
-        {(looks??[]).map(look=><button key={look.id} type="button" className="home-look" aria-label={look.name} {...press(look)}><LookThumb look={look}/><span>{look.name}</span></button>)}
-        {(!looks||looks.length===0)&&<div className="home-look-empty"><strong>{t('Save a design as a look')}</strong><span>{t('In the editor, tap + in the looks row. Next time just drop in new screenshots.')}</span></div>}
+      <header><h2 id="home-looks-heading">{t('Your looks')}</h2>{looks&&<small className="home-count">{looks.length}/{lookLimit}</small>}</header>
+      {looks?.length?<div className="home-look-row">
+        {looks.map(look=><button key={look.id} type="button" className="home-look" aria-label={look.name} {...press(look)}><LookThumb look={look}/><span className="home-look-name">{look.name}</span></button>)}
       </div>
+      :<button type="button" className="home-look-empty" onClick={()=>onPick()} disabled={busy}>
+        <span className="home-look-empty-art" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M7 3.5h10a1.5 1.5 0 0 1 1.5 1.5v15.5L12 16.5l-6.5 4V5A1.5 1.5 0 0 1 7 3.5Z"/><path d="M12 7.5v5m-2.5-2.5h5"/></svg></span>
+        <span className="home-look-empty-text"><strong>{t('Save your first look')}</strong><span>{t('Design once, then reuse it with new screenshots.')}</span></span>
+        <span className="home-look-empty-go" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="m9 5 7 7-7 7"/></svg></span>
+      </button>}
     </section>
 
-    <section className="home-looks" aria-labelledby="home-starters-heading">
-      <header><h2 id="home-starters-heading">{t('Starter looks')}</h2></header>
+    {/* Quick start: ready-made designs, previewed with real renders. */}
+    <section className="home-looks home-quick" aria-labelledby="home-quick-heading">
+      <header><h2 id="home-quick-heading">{t('Quick start')}</h2><small>{t('Tap a design, add your screenshots')}</small></header>
       <div className="home-look-row">
-        {starters.map(look=><button key={look.id} type="button" className="home-look" aria-label={t(look.name)} {...pressStarter(look)}><LookThumb look={look}/><span>{t(look.name)}</span></button>)}
+        {starters.map(look=><button key={look.id} type="button" className="home-look home-quick-card" aria-label={t(look.name)} {...pressStarter(look)}><LookThumb look={look}/><span className="home-look-name">{t(look.name)}</span><small>{look.tag}</small></button>)}
       </div>
     </section>
   </div>;
