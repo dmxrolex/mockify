@@ -80,22 +80,20 @@ export default function SettingsPage({preferences,update,onBalance,onSubscriptio
         </button>
       </div>
 
-      <h2 className="account-section-label">{t('Preferences')}</h2>
       <div className="ios-settings-group settings-group">
         <Row icon="language" className="settings-language-link" label="Language" value={languages.find(([value])=>value===preferences.language)?.[1]} onClick={()=>go('language')}/>
-        <Toggle icon="haptics" label="Haptic feedback" caption="Subtle taps on dials, wheels and choices" checked={preferences.haptics!==false} onChange={haptics=>update({haptics})}/>
-        <Toggle icon="statusbar" label="Clean status bar" caption="New screenshots get a tidy iOS status bar" checked={preferences.cleanup!=='off'} onChange={on=>update({cleanup:on?'auto':'off'})}/>
+        <Toggle icon="haptics" label="Haptic feedback" checked={preferences.haptics!==false} onChange={haptics=>update({haptics})}/>
+        <Toggle icon="statusbar" label="Clean status bar" checked={preferences.cleanup!=='off'} onChange={on=>update({cleanup:on?'auto':'off'})}/>
       </div>
 
-      <h2 className="account-section-label">{t('Usage')}</h2>
       <div className="ios-settings-group settings-group">
         <div className="ios-setting-row settings-row settings-usage">
           <PlanIcon name="drafts"/>
-          <span className="settings-row-label">{t('Saved drafts')}<small>{premium?t('Unlimited with Premium'):t('{used} of {limit} on the free plan').replace('{used}',drafts).replace('{limit}',FREE_DRAFT_LIMIT)}</small></span>
+          <span className="settings-row-label">{t('Saved drafts')}</span><span className="ios-setting-value">{premium?t('Unlimited'):drafts+' / '+FREE_DRAFT_LIMIT}</span>
           {!premium&&<span className="settings-meter" role="meter" aria-label={t('Saved drafts')} aria-valuemin={0} aria-valuemax={FREE_DRAFT_LIMIT} aria-valuenow={drafts}><i style={{inlineSize:drafts/FREE_DRAFT_LIMIT*100+'%'}}/></span>}
         </div>
         <button type="button" className="ios-setting-row settings-row" aria-expanded={costs} onClick={()=>setCosts(!costs)}>
-          <span className="ios-setting-icon setting-costs"><Glyph name="costs"/></span><span className="settings-row-label">{t('Export costs')}<small>{premium?t('Free with your Premium'):t('Paid per export in stars')}</small></span>
+          <span className="ios-setting-icon setting-costs"><Glyph name="costs"/></span><span className="settings-row-label">{t('Export costs')}</span>
           <span className="ios-setting-value">{premium?t('No charge'):t('From {price}').replace('{price}',starCount(exportCreditCost('photo')))}</span><span className="settings-chevron settings-disclosure"><Glyph name="next"/></span>
         </button>
         <div className="settings-costs" data-open={costs} inert={costs?undefined:''}><div>
@@ -103,7 +101,6 @@ export default function SettingsPage({preferences,update,onBalance,onSubscriptio
         </div></div>
       </div>
 
-      <h2 className="account-section-label">{t('Help')}</h2>
       <div className="ios-settings-group settings-group">
         <Row icon="support" label="Contact support" href="https://t.me/DMX_ROLEX" onClick={event=>openTelegram(event,'https://t.me/DMX_ROLEX')}/>
         <Row icon="share" label="Share Mockify" href={shareHref} disabled={!shareHref} onClick={event=>{if(!shareHref){event.preventDefault();return;}openTelegram(event,shareHref);}}/>
